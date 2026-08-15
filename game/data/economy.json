@@ -1,0 +1,12 @@
+{
+	"starting_balances": {
+		"scrap": 100,
+		"cloudsilk": 0,
+		"crystals": 10
+	},
+	"fuel": {
+		"starting": 5,
+		"cap": 5,
+		"regen_seconds": 1200
+	}
+}

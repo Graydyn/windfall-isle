@@ -5,6 +5,10 @@ config_version=5
 config/name="Windfall Isles"
 config/features=PackedStringArray("4.6")
 
+[autoload]
+
+DataDefs="*res://game/autoload/data_defs.gd"
+
 [display]
 
 window/size/viewport_width=720
