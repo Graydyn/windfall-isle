@@ -13,3 +13,14 @@ offset_left = 24.0
 offset_top = 48.0
 offset_right = 500.0
 offset_bottom = 300.0
+
+[node name="LaunchButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 1080.0
+offset_right = 560.0
+offset_bottom = 1160.0
+text = "Launch Expedition"
+
+[node name="RefreshTimer" type="Timer" parent="."]
+wait_time = 1.0
+autostart = true
