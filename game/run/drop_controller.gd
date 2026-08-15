@@ -3,6 +3,7 @@ extends Node2D
 ## One-thumb drop aiming (spec 3.2): touch anywhere to start aiming, drag to
 ## slide the drop point along the top edge, release to drop. Pure input; the
 ## run scene decides whether a drop is actually allowed.
+## Only the finger that started aiming can move or end it; other fingers are ignored.
 
 signal drop_requested(x: float)
 
@@ -13,6 +14,7 @@ var max_x := 676.0
 
 var _aiming := false
 var _aim_x := 360.0
+var _touch_index := -1
 
 
 func configure(board: Dictionary, pod_radius: float) -> void:
@@ -28,12 +30,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			_aiming = true
-			_aim_x = clampf(event.position.x, min_x, max_x)
-		elif _aiming:
+			if not _aiming:
+				_aiming = true
+				_touch_index = event.index
+				_aim_x = clampf(event.position.x, min_x, max_x)
+			elif event.index != _touch_index:
+				return
+		elif _aiming and event.index == _touch_index:
 			_aiming = false
+			_touch_index = -1
 			drop_requested.emit(_aim_x)
-	elif event is InputEventScreenDrag and _aiming:
+	elif event is InputEventScreenDrag and _aiming and event.index == _touch_index:
 		_aim_x = clampf(event.position.x, min_x, max_x)
 	queue_redraw()
 
