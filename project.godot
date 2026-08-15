@@ -11,6 +11,7 @@ DataDefs="*res://game/autoload/data_defs.gd"
 GameState="*res://game/autoload/game_state.gd"
 Economy="*res://game/autoload/economy.gd"
 TimerService="*res://game/autoload/timer_service.gd"
+Ads="*res://game/autoload/ads.gd"
 
 [display]
 
