@@ -25,12 +25,17 @@ func balance(currency: String) -> int:
 
 
 func add(currency: String, amount: int) -> void:
-	assert(amount >= 0, "use spend() to remove currency")
+	if amount < 0:
+		push_error("Economy.add rejected negative amount %d for %s" % [amount, currency])
+		return
 	_currencies()[currency] = balance(currency) + amount
 	balance_changed.emit(currency, balance(currency))
 
 
 func spend(currency: String, amount: int) -> bool:
+	if amount < 0:
+		push_error("Economy.spend rejected negative amount %d for %s" % [amount, currency])
+		return false
 	if balance(currency) < amount:
 		return false
 	_currencies()[currency] = balance(currency) - amount
@@ -46,6 +51,10 @@ func can_afford(cost: Dictionary) -> bool:
 
 
 func pay(cost: Dictionary) -> bool:
+	for currency in cost:
+		if int(cost[currency]) < 0:
+			push_error("Economy.pay rejected negative cost for %s" % currency)
+			return false
 	if not can_afford(cost):
 		return false
 	for currency in cost:

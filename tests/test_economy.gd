@@ -52,3 +52,19 @@ func test_mutations_land_in_state_dict() -> void:
 	econ.add("scrap", 1)
 	assert_eq(int(state.data["currencies"]["scrap"]), 101,
 		"Economy must mutate GameState.data so saves capture it")
+
+func test_add_negative_amount_is_rejected() -> void:
+	econ.add("scrap", -5)
+	assert_eq(econ.balance("scrap"), 100)
+	assert_push_error_count(1)
+
+func test_spend_negative_amount_is_rejected() -> void:
+	assert_false(econ.spend("scrap", -5))
+	assert_eq(econ.balance("scrap"), 100)
+	assert_push_error_count(1)
+
+func test_pay_with_negative_cost_value_charges_nothing() -> void:
+	assert_false(econ.pay({"scrap": 10, "crystals": -1}))
+	assert_eq(econ.balance("scrap"), 100)
+	assert_eq(econ.balance("crystals"), 10)
+	assert_push_error_count(1)
