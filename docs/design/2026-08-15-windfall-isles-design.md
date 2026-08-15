@@ -1,8 +1,8 @@
-# Driftfall: Design Document
+# Windfall Isles: Design Document
 
 **Status:** Approved concept, pre-implementation
 **Date:** 2026-08-15
-**Working title:** Driftfall (placeholder, final name TBD before store listing)
+**Title:** Windfall Isles (chosen 2026-08-15). "Windfall" carries the double meaning of a fortune that falls to you (the pachinko payout) and wind + fall (the drop through the sky); "Isles" anchors the base-builder half. Store-collision check found no existing game with this exact title; nearest neighbors are a niche Steam sailing sim named "Windfall" and Zelda's fictional Windfall Island (a location, not a product). Note: "Driftfall", the original placeholder, is unusable; an existing Android game "Driftfall: Pixel Action RPG" already features floating-fortress building.
 
 ---
 
@@ -234,10 +234,9 @@ Single local save, versioned schema with per-version migration functions, temp-f
 
 ## 9. Open questions (deferred, not blocking)
 
-1. Final name and store identity.
-2. Whether boons should persist as a permanent "expedition perks" tree in late game.
-3. Sound/music direction (nothing researched yet).
-4. Whether the second build slot should be permanent-unlock or per-use.
+1. Whether boons should persist as a permanent "expedition perks" tree in late game.
+2. Sound/music direction (nothing researched yet).
+3. Whether the second build slot should be permanent-unlock or per-use.
 
 ---
 
