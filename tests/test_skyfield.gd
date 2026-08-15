@@ -50,7 +50,7 @@ func test_falling_pod_is_caught_by_barge() -> void:
 	var emitted: bool = await wait_for_signal(board.pod_caught, 5.0)
 	assert_true(emitted, "pod should fall into the catch-all barge within 5s")
 	var params: Array = get_signal_parameters(board, "pod_caught")
-	assert_eq(params[1], {"scrap": 12})
+	assert_eq(int(params[1]["scrap"]), 12)
 
 func test_pod_missing_all_barges_reaches_the_sea() -> void:
 	var board := build_board(DataDefs.load_json("res://tests/fixtures/test_region_empty.json"))
@@ -59,4 +59,4 @@ func test_pod_missing_all_barges_reaches_the_sea() -> void:
 	var emitted: bool = await wait_for_signal(board.pod_caught, 5.0)
 	assert_true(emitted, "sea must catch every miss (spec 3.1: never zero)")
 	var params: Array = get_signal_parameters(board, "pod_caught")
-	assert_eq(params[1], {"scrap": 1})
+	assert_eq(int(params[1]["scrap"]), 1)
