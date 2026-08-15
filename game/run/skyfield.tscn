@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/run/skyfield.gd" id="1_sky"]
+
+[node name="Skyfield" type="Node2D"]
+script = ExtResource("1_sky")
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="Pegs" type="Node2D" parent="."]
+
+[node name="Barges" type="Node2D" parent="."]
+
+[node name="GizmoSlots" type="Node2D" parent="."]
