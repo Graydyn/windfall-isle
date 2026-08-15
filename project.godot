@@ -9,6 +9,7 @@ config/features=PackedStringArray("4.6")
 
 DataDefs="*res://game/autoload/data_defs.gd"
 GameState="*res://game/autoload/game_state.gd"
+Economy="*res://game/autoload/economy.gd"
 
 [display]
 
