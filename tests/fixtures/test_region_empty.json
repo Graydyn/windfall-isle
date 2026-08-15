@@ -1,0 +1,7 @@
+{
+	"name": "Test Open Sea",
+	"board": {"left": 20, "right": 700, "top": 140, "bottom": 1020},
+	"pegs": [],
+	"gizmo_slots": [],
+	"barges": []
+}

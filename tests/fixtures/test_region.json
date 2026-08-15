@@ -1,0 +1,9 @@
+{
+	"name": "Test Catch-All",
+	"board": {"left": 20, "right": 700, "top": 140, "bottom": 1020},
+	"pegs": [],
+	"gizmo_slots": [],
+	"barges": [
+		{"id": "catch_all", "x": 360, "y": 900, "half_width": 340, "half_height": 25, "payout": {"scrap": 12}}
+	]
+}
