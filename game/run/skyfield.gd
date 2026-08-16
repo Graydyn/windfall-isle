@@ -5,7 +5,7 @@ extends Node2D
 ## sea are Area2D catchers. Gizmo slots are Marker2D anchors that Plan 3
 ## attaches crafted gizmos to.
 
-signal pod_caught(pod: RigidBody2D, payout: Dictionary)
+signal pod_caught(pod: RigidBody2D, payout: Dictionary, source: String)
 
 var sea_payout: Dictionary = {}
 
@@ -66,7 +66,7 @@ func _build_barges(barges: Array) -> void:
 		])
 		visual.color = Color(0.35, 0.55, 0.4)
 		area.add_child(visual)
-		area.body_entered.connect(_on_catcher_body.bind((barge.get("payout", {}) as Dictionary).duplicate()))
+		area.body_entered.connect(_on_catcher_body.bind((barge.get("payout", {}) as Dictionary).duplicate(), "barge"))
 		$Barges.add_child(area)
 
 
@@ -79,7 +79,7 @@ func _build_sea() -> void:
 	shape.size = Vector2(760, 80)
 	collider.shape = shape
 	sea.add_child(collider)
-	sea.body_entered.connect(_on_catcher_body.bind(sea_payout.duplicate()))
+	sea.body_entered.connect(_on_catcher_body.bind(sea_payout.duplicate(), "sea"))
 	add_child(sea)
 
 
@@ -107,10 +107,10 @@ func install_gizmos(loadout: Dictionary, gizmo_defs: Dictionary, owned: Dictiona
 		gizmo.setup(def, int(owned.get(gizmo_id, 1)), context)
 
 
-func _on_catcher_body(body: Node2D, payout: Dictionary) -> void:
+func _on_catcher_body(body: Node2D, payout: Dictionary, source: String) -> void:
 	if not (body is RigidBody2D):
 		return
 	if body.has_meta("caught"):
 		return
 	body.set_meta("caught", true)
-	pod_caught.emit(body, payout.duplicate())
+	pod_caught.emit(body, payout.duplicate(), source)

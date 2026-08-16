@@ -59,3 +59,18 @@ func _check_over() -> void:
 	if is_over() and not _over_emitted:
 		_over_emitted = true
 		run_over.emit()
+
+
+func add_bonus_loot(payout: Dictionary) -> void:
+	# Gizmo bonuses (Lightning Jar): loot without pod bookkeeping.
+	for currency in payout:
+		loot[currency] = int(loot.get(currency, 0)) + int(payout[currency])
+	loot_changed.emit(loot)
+
+
+func add_split_pod() -> bool:
+	# Splitter Vane: one more pod in flight without consuming a drop.
+	if abandoned or pods_in_flight <= 0 or pods_in_flight >= max_active_pods:
+		return false
+	pods_in_flight += 1
+	return true

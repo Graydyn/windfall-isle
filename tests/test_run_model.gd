@@ -67,3 +67,30 @@ func test_resolve_after_abandon_still_banks_loot() -> void:
 	model.abandon()
 	model.resolve_pod({"scrap": 3})
 	assert_eq(model.loot, {"scrap": 3}, "a pod already falling at abandon still pays out")
+
+func test_add_bonus_loot_accumulates_without_pod_bookkeeping() -> void:
+	var model := make_model()
+	watch_signals(model)
+	model.begin_drop()
+	model.add_bonus_loot({"scrap": 6})
+	assert_eq(model.loot, {"scrap": 6})
+	assert_eq(model.drops_remaining(), 2, "bonus loot consumes no drops")
+	assert_eq(model.pods_in_flight, 1, "bonus loot resolves no pods")
+	assert_signal_emitted(model, "loot_changed")
+
+func test_add_split_pod_respects_cap_and_flight() -> void:
+	var model := make_model(3, 2)
+	assert_false(model.add_split_pod(), "nothing in flight yet")
+	model.begin_drop()
+	assert_true(model.add_split_pod())
+	assert_eq(model.pods_in_flight, 2)
+	assert_false(model.add_split_pod(), "at cap 2")
+
+func test_split_pod_extends_run_until_both_resolve() -> void:
+	var model := make_model(1, 4)
+	model.begin_drop()
+	model.add_split_pod()
+	model.resolve_pod({"scrap": 1})
+	assert_false(model.is_over(), "the split twin is still falling")
+	model.resolve_pod({"scrap": 1})
+	assert_true(model.is_over())

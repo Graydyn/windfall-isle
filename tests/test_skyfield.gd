@@ -93,3 +93,12 @@ func test_gizmo_base_scaled() -> void:
 	assert_almost_eq(gizmo.scaled(100.0), 100.0, 0.001)
 	gizmo.level = 3
 	assert_almost_eq(gizmo.scaled(100.0), 150.0, 0.001)
+
+func test_pod_caught_carries_source_tag() -> void:
+	var board := build_board(DataDefs.load_json("res://tests/fixtures/test_region.json"))
+	watch_signals(board)
+	drop_pod_over(board, 360.0)
+	var emitted: bool = await wait_for_signal(board.pod_caught, 5.0)
+	assert_true(emitted)
+	var params: Array = get_signal_parameters(board, "pod_caught")
+	assert_eq(params[2], "barge")

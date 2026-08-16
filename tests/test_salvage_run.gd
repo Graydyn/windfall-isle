@@ -115,3 +115,51 @@ func test_catch_credits_multiplied_payout() -> void:
 	scene._on_pod_caught(pod, {"scrap": 5})
 	assert_eq(Economy.balance("scrap"), scrap_before + 10)
 	assert_eq(scene.model.loot, {"scrap": 10}, "the model banks the multiplied value too")
+
+func test_add_bonus_credits_and_banks() -> void:
+	var scrap_before := Economy.balance("scrap")
+	scene.add_bonus({"scrap": 6})
+	assert_eq(Economy.balance("scrap"), scrap_before + 6)
+	assert_eq(scene.model.loot, {"scrap": 6})
+
+func test_next_barge_multiplier_applies_to_barge_only_and_once() -> void:
+	# The await after each catch lets the freed pod leave the "pods" group
+	# before the next drop's group lookup (queue_free defers to frame end).
+	var scrap_before := Economy.balance("scrap")
+	scene.set_next_barge_multiplier(2.0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(pod, {"scrap": 5}, "sea")
+	await wait_physics_frames(1)
+	assert_eq(Economy.balance("scrap"), scrap_before + 5, "sea catches never consume the chime")
+	scene._on_drop_requested(360.0)
+	var second: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(second, {"scrap": 5}, "barge")
+	await wait_physics_frames(1)
+	assert_eq(Economy.balance("scrap"), scrap_before + 5 + 10, "the barge catch doubles once")
+	scene._on_drop_requested(360.0)
+	var third: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(third, {"scrap": 5}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before + 5 + 10 + 5, "the multiplier is consumed")
+
+func test_chime_does_not_stack() -> void:
+	scene.set_next_barge_multiplier(2.0)
+	scene.set_next_barge_multiplier(2.0)
+	assert_almost_eq(scene._next_barge_multiplier, 2.0, 0.001)
+
+func test_request_split_spawns_mirrored_clone() -> void:
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	pod.linear_velocity = Vector2(120, 200)
+	pod.set_meta("value_mult", 0.5)
+	assert_true(scene.request_split(pod))
+	await wait_physics_frames(1)
+	var pods: Array = get_tree().get_nodes_in_group("pods")
+	assert_eq(pods.size(), 2)
+	assert_eq(scene.model.pods_in_flight, 2)
+	assert_eq(scene.model.drops_remaining(), int(DataDefs.run["drops_per_run"]) - 1,
+		"the split consumed no extra drop")
+	var clone: Node = pods[1] if pods[0] == pod else pods[0]
+	assert_almost_eq(float(clone.get_meta("value_mult")), 0.5, 0.001)
+	assert_true(clone.has_meta("split"))
+	assert_almost_eq(clone.linear_velocity.x, -120.0, 2.0)

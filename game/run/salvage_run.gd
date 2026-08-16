@@ -8,6 +8,7 @@ const PodScene := preload("res://game/run/pod.tscn")
 
 var model: RunModel
 var pod_defs: Dictionary
+var _next_barge_multiplier := 1.0
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -57,8 +58,14 @@ func _start_watchdog(pod: Pod) -> void:
 	watchdog.start()
 
 
-func _on_pod_caught(pod: Node, payout: Dictionary) -> void:
+func _on_pod_caught(pod: Node, payout: Dictionary, source: String = "barge") -> void:
 	payout = _compute_payout(pod, payout)
+	if source == "barge" and _next_barge_multiplier > 1.0:
+		var boosted := {}
+		for currency in payout:
+			boosted[currency] = roundi(float(payout[currency]) * _next_barge_multiplier)
+		payout = boosted
+		_next_barge_multiplier = 1.0
 	if is_instance_valid(pod):
 		pod.queue_free()
 	for currency in payout:
@@ -74,7 +81,7 @@ func _on_pod_timeout(pod_ref: WeakRef, watchdog: Timer) -> void:
 	if pod == null or pod.has_meta("caught"):
 		return
 	pod.set_meta("caught", true)
-	_on_pod_caught(pod, board.sea_payout.duplicate())
+	_on_pod_caught(pod, board.sea_payout.duplicate(), "sea")
 
 
 func _on_run_over() -> void:
@@ -126,3 +133,37 @@ func _summary_text() -> String:
 	for currency in model.loot:
 		lines.append("  %s: %d" % [currency, int(model.loot[currency])])
 	return "\n".join(lines)
+
+
+func add_bonus(payout: Dictionary) -> void:
+	# Gizmo context: Lightning Jar bonuses credit like any other loot.
+	for currency in payout:
+		Economy.add(currency, int(payout[currency]))
+	model.add_bonus_loot(payout)
+	_refresh_hud()
+
+
+func set_next_barge_multiplier(factor: float) -> void:
+	# Gizmo context: Chime Bell. Non-stacking; the strongest pending ring wins.
+	_next_barge_multiplier = maxf(_next_barge_multiplier, factor)
+
+
+func request_split(pod: RigidBody2D) -> bool:
+	# Gizmo context: Splitter Vane. The clone mirrors horizontal velocity and
+	# carries the original's value_mult (already halved by the vane).
+	if not is_instance_valid(pod) or pod.has_meta("caught"):
+		return false
+	if not model.add_split_pod():
+		return false
+	var clone: Pod = PodScene.instantiate()
+	var side := -1.0 if pod.linear_velocity.x >= 0.0 else 1.0
+	clone.position = pod.position + Vector2(30.0 * side, 0.0)
+	clone.setup(pod_defs)
+	board.add_child(clone)
+	clone.linear_velocity = Vector2(-pod.linear_velocity.x, pod.linear_velocity.y)
+	if pod.has_meta("value_mult"):
+		clone.set_meta("value_mult", pod.get_meta("value_mult"))
+	clone.set_meta("split", true)
+	_start_watchdog(clone)
+	_refresh_hud()
+	return true
