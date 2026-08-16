@@ -100,3 +100,18 @@ func test_ready_installs_loadout_gizmos() -> void:
 	assert_eq(second.get_node("Skyfield/Gizmos").get_child_count(), 1,
 		"the run scene installs the persisted loadout at boot")
 	DataDefs.gizmos["defs"].erase("test_gizmo")
+
+func test_compute_payout_applies_pod_value_mult() -> void:
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	pod.set_meta("value_mult", 1.5)
+	assert_eq(scene._compute_payout(pod, {"scrap": 2, "cloudsilk": 1}), {"scrap": 3, "cloudsilk": 2})
+
+func test_catch_credits_multiplied_payout() -> void:
+	var scrap_before := Economy.balance("scrap")
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	pod.set_meta("value_mult", 2.0)
+	scene._on_pod_caught(pod, {"scrap": 5})
+	assert_eq(Economy.balance("scrap"), scrap_before + 10)
+	assert_eq(scene.model.loot, {"scrap": 10}, "the model banks the multiplied value too")

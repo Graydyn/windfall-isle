@@ -58,6 +58,7 @@ func _start_watchdog(pod: Pod) -> void:
 
 
 func _on_pod_caught(pod: Node, payout: Dictionary) -> void:
+	payout = _compute_payout(pod, payout)
 	if is_instance_valid(pod):
 		pod.queue_free()
 	for currency in payout:
@@ -92,6 +93,23 @@ func _on_abandon_pressed() -> void:
 
 func _on_return_pressed() -> void:
 	get_tree().change_scene_to_file("res://game/main.tscn")
+
+
+func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
+	# Central payout resolution: pod-carried multipliers (Crystal Prism,
+	# Splitter Vane) apply here so every catch path (barge, sea, watchdog)
+	# gets identical treatment. Plan 3b adds the next-barge multiplier.
+	var mult := 1.0
+	if is_instance_valid(pod) and pod.has_meta("value_mult"):
+		mult = float(pod.get_meta("value_mult"))
+	if is_equal_approx(mult, 1.0):
+		return base.duplicate()
+	var out := {}
+	for currency in base:
+		var value := roundi(float(base[currency]) * mult)
+		if value > 0:
+			out[currency] = value
+	return out
 
 
 func _refresh_hud() -> void:
