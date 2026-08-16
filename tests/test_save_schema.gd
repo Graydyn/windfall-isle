@@ -15,7 +15,7 @@ func test_default_data_shape() -> void:
 	assert_eq(int(data["fuel"]["cap"]), 5)
 	assert_eq(int(data["fuel"]["regen_seconds"]), 1200)
 	assert_eq(data["timers"], {})
-	assert_eq(data["island"], {})
+	assert_eq(data["island"], {"plots": {}, "build_slots": 1})
 	assert_eq(data["gizmos"], {"owned": {}, "loadout": {}})
 
 func test_default_data_does_not_alias_defs() -> void:
@@ -79,8 +79,34 @@ func test_migrate_v2_preserves_loadout() -> void:
 	var migrated := SaveSchema.migrate(v2, GIZMO_DEFS)
 	assert_eq(migrated["gizmos"]["loadout"], {"region_1": {"slot_0": "wind_fan"}})
 
-func test_current_version_is_three_and_defaults_grant_eight() -> void:
-	assert_eq(SaveSchema.CURRENT_VERSION, 3)
+func test_current_version_is_four_and_defaults_grant_eight() -> void:
+	assert_eq(SaveSchema.CURRENT_VERSION, 4)
 	var data := SaveSchema.default_data(DEFS, DataDefs.gizmos)
 	assert_eq((data["gizmos"]["owned"] as Dictionary).size(), 8,
 		"all eight MVP gizmos are starters until the Workshop lands (Plan 4)")
+
+func test_default_data_has_v4_island_shape() -> void:
+	var data := SaveSchema.default_data(DEFS)
+	assert_eq(int(data["version"]), 4)
+	assert_eq(data["island"], {"plots": {}, "build_slots": 1})
+	assert_eq(data["trickle"], {"last_collect": 0})
+	assert_eq(data["daily_crate"], {"last_claim_day": 0})
+
+func test_migrate_v3_to_v4_adds_island_losslessly() -> void:
+	var v3 := SaveSchema.default_data(DEFS, GIZMO_DEFS)
+	v3["version"] = 3
+	v3.erase("island")
+	v3["currencies"]["scrap"] = 555
+	var migrated := SaveSchema.migrate(v3, GIZMO_DEFS)
+	assert_eq(int(migrated["version"]), 4)
+	assert_eq(migrated["island"], {"plots": {}, "build_slots": 1})
+	assert_eq(int(migrated["currencies"]["scrap"]), 555)
+
+func test_migrate_v1_hops_all_the_way_to_v4() -> void:
+	var v1 := SaveSchema.default_data(DEFS)
+	v1["version"] = 1
+	v1["gizmos"] = {}
+	var migrated := SaveSchema.migrate(v1, GIZMO_DEFS)
+	assert_eq(int(migrated["version"]), 4)
+	assert_has(migrated, "island")
+	assert_has(migrated, "daily_crate")

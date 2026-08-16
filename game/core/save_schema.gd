@@ -2,7 +2,7 @@ class_name SaveSchema
 ## Versioned save schema (spec 7.3). One dict is the whole save.
 ## "island" and "gizmos" are reserved for the base-builder and gizmo plans.
 
-const CURRENT_VERSION := 3
+const CURRENT_VERSION := 4
 
 
 static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
@@ -19,7 +19,9 @@ static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dicti
 			"updated_at": 0,  # caller stamps with TimeUtil.now()
 		},
 		"timers": {},
-		"island": {},
+		"island": _fresh_island(),
+		"trickle": {"last_collect": 0},
+		"daily_crate": {"last_claim_day": 0},
 		"gizmos": _fresh_gizmos(gizmo_defs),
 	}
 
@@ -32,6 +34,8 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 		data = _migrate_1_to_2(data, gizmo_defs)
 	if int(data["version"]) == 2:
 		data = _migrate_2_to_3(data, gizmo_defs)
+	if int(data["version"]) == 3:
+		data = _migrate_3_to_4(data)
 	return data
 
 
@@ -70,3 +74,16 @@ static func _fresh_gizmos(gizmo_defs: Dictionary) -> Dictionary:
 		"owned": (gizmo_defs.get("starting_inventory", {}) as Dictionary).duplicate(),
 		"loadout": {},
 	}
+
+
+static func _fresh_island() -> Dictionary:
+	return {"plots": {}, "build_slots": 1}
+
+
+static func _migrate_3_to_4(data: Dictionary) -> Dictionary:
+	# Loop 1 arrives: plots/build slots, idle trickle clock, daily crate day.
+	data["island"] = _fresh_island()
+	data["trickle"] = {"last_collect": 0}
+	data["daily_crate"] = {"last_claim_day": 0}
+	data["version"] = 4
+	return data

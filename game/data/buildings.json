@@ -1,0 +1,63 @@
+{
+	"build_slots": {"free": 1, "max": 2, "second_slot_crystal_cost": 20},
+	"plot_count": 6,
+	"defs": {
+		"workshop": {
+			"name": "Workshop",
+			"max_level": 3,
+			"levels": [
+				{"cost": {"scrap": 60}, "build_seconds": 60},
+				{"cost": {"scrap": 240, "cloudsilk": 2}, "build_seconds": 900},
+				{"cost": {"scrap": 800, "cloudsilk": 6}, "build_seconds": 3600}
+			]
+		},
+		"wind_still": {
+			"name": "Wind Still",
+			"max_level": 3,
+			"fuel_cap_bonus_per_level": 1,
+			"regen_delta_per_level": -120.0,
+			"levels": [
+				{"cost": {"scrap": 80}, "build_seconds": 120},
+				{"cost": {"scrap": 320, "cloudsilk": 3}, "build_seconds": 1200},
+				{"cost": {"scrap": 1000, "cloudsilk": 8}, "build_seconds": 4800}
+			]
+		},
+		"dock": {
+			"name": "Dock",
+			"max_level": 2,
+			"levels": [
+				{"cost": {"scrap": 120}, "build_seconds": 180},
+				{"cost": {"scrap": 500, "cloudsilk": 4}, "build_seconds": 1800}
+			]
+		},
+		"balloonworks": {
+			"name": "Balloonworks",
+			"max_level": 3,
+			"drops_bonus_per_level": 1,
+			"levels": [
+				{"cost": {"scrap": 100}, "build_seconds": 150},
+				{"cost": {"scrap": 400, "cloudsilk": 3}, "build_seconds": 1500},
+				{"cost": {"scrap": 1200, "cloudsilk": 10}, "build_seconds": 5400}
+			]
+		},
+		"observatory": {
+			"name": "Observatory",
+			"max_level": 1,
+			"teaser": "Charted winds hint at the Brasswork Reach beyond the eastern clouds.",
+			"levels": [
+				{"cost": {"scrap": 150, "crystals": 2}, "build_seconds": 300}
+			]
+		},
+		"gardens": {
+			"name": "Gardens & Cisterns",
+			"max_level": 3,
+			"scrap_per_hour_per_level": 20,
+			"cap_hours": 8.0,
+			"levels": [
+				{"cost": {"scrap": 90}, "build_seconds": 120},
+				{"cost": {"scrap": 360, "cloudsilk": 2}, "build_seconds": 1200},
+				{"cost": {"scrap": 1100, "cloudsilk": 7}, "build_seconds": 4200}
+			]
+		}
+	}
+}

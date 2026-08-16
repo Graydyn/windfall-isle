@@ -9,6 +9,7 @@
 		"cargo_net": 1,
 		"splitter_vane": 1
 	},
+	"craft_max_level": 5,
 	"defs": {
 		"wind_fan": {
 			"name": "Wind Fan",
@@ -16,20 +17,26 @@
 			"force": 260.0,
 			"direction": 1.0,
 			"column_width": 90.0,
-			"column_height": 420.0
+			"column_height": 420.0,
+			"craft_cost": {"scrap": 80},
+			"craft_seconds": 120
 		},
 		"balloon_cluster": {
 			"name": "Balloon Cluster",
 			"scene": "res://game/run/gizmos/balloon_cluster.tscn",
 			"impulse": 420.0,
 			"max_hits": 3,
-			"radius": 26.0
+			"radius": 26.0,
+			"craft_cost": {"scrap": 90},
+			"craft_seconds": 150
 		},
 		"crystal_prism": {
 			"name": "Crystal Prism",
 			"scene": "res://game/run/gizmos/crystal_prism.tscn",
 			"multiplier": 1.5,
-			"radius": 30.0
+			"radius": 30.0,
+			"craft_cost": {"scrap": 150, "cloudsilk": 1},
+			"craft_seconds": 300
 		},
 		"lightning_jar": {
 			"name": "Lightning Jar",
@@ -38,20 +45,26 @@
 			"zap_radius": 150.0,
 			"pegs_zapped": 3,
 			"scrap_per_peg": 2,
-			"charges": 2
+			"charges": 2,
+			"craft_cost": {"scrap": 140, "cloudsilk": 1},
+			"craft_seconds": 240
 		},
 		"chime_bell": {
 			"name": "Chime Bell",
 			"scene": "res://game/run/gizmos/chime_bell.tscn",
 			"radius": 26.0,
 			"barge_multiplier": 2.0,
-			"uses_per_run": 2
+			"uses_per_run": 2,
+			"craft_cost": {"scrap": 120},
+			"craft_seconds": 200
 		},
 		"magnet_buoy": {
 			"name": "Magnet Buoy",
 			"scene": "res://game/run/gizmos/magnet_buoy.tscn",
 			"radius": 160.0,
-			"force": 240.0
+			"force": 240.0,
+			"craft_cost": {"scrap": 110},
+			"craft_seconds": 180
 		},
 		"cargo_net": {
 			"name": "Cargo Net",
@@ -61,13 +74,17 @@
 			"redrop_angle_degrees": 60.0,
 			"redrop_speed": 420.0,
 			"board_center_x": 360.0,
-			"uses": 1
+			"uses": 1,
+			"craft_cost": {"scrap": 100},
+			"craft_seconds": 160
 		},
 		"splitter_vane": {
 			"name": "Splitter Vane",
 			"scene": "res://game/run/gizmos/splitter_vane.tscn",
 			"radius": 24.0,
-			"value_multiplier": 0.5
+			"value_multiplier": 0.5,
+			"craft_cost": {"scrap": 160, "cloudsilk": 2},
+			"craft_seconds": 360
 		}
 	}
 }

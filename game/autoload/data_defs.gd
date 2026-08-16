@@ -5,16 +5,22 @@ extends Node
 const ECONOMY_PATH := "res://game/data/economy.json"
 const RUN_PATH := "res://game/data/run.json"
 const GIZMOS_PATH := "res://game/data/gizmos.json"
+const BUILDINGS_PATH := "res://game/data/buildings.json"
+const RETENTION_PATH := "res://game/data/retention.json"
 
 var economy: Dictionary = {}
 var run: Dictionary = {}
 var gizmos: Dictionary = {}
+var buildings: Dictionary = {}
+var retention: Dictionary = {}
 
 
 func _ready() -> void:
 	economy = load_json(ECONOMY_PATH)
 	run = load_json(RUN_PATH)
 	gizmos = load_json(GIZMOS_PATH)
+	buildings = load_json(BUILDINGS_PATH)
+	retention = load_json(RETENTION_PATH)
 
 
 static func load_json(path: String) -> Dictionary:
