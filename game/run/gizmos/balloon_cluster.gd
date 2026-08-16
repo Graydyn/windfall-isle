@@ -25,7 +25,8 @@ func _on_body_entered(body: Node2D) -> void:
 	if _hits_left <= 0 or not (body is RigidBody2D):
 		return
 	_hits_left -= 1
-	body.linear_velocity = Vector2(body.linear_velocity.x, -_impulse)
+	body.linear_velocity = Vector2(body.linear_velocity.x, 0.0)
+	body.apply_central_impulse(Vector2(0.0, -_impulse))
 	if _hits_left <= 0:
 		$Visual.modulate.a = 0.25
 		zone.set_deferred("monitoring", false)
