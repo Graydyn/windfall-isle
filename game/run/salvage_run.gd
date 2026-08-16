@@ -159,11 +159,16 @@ func request_split(pod: RigidBody2D) -> bool:
 	var side := -1.0 if pod.linear_velocity.x >= 0.0 else 1.0
 	clone.position = pod.position + Vector2(30.0 * side, 0.0)
 	clone.setup(pod_defs)
-	board.add_child(clone)
 	clone.linear_velocity = Vector2(-pod.linear_velocity.x, pod.linear_velocity.y)
+	# Absent value_mult meta is fine: _compute_payout falls back to a 1.0
+	# default, so only copy the meta when the original actually carries one.
 	if pod.has_meta("value_mult"):
 		clone.set_meta("value_mult", pod.get_meta("value_mult"))
 	clone.set_meta("split", true)
+	# request_split runs from Area2D.body_entered during a physics-query
+	# flush; entering the tree synchronously here throws "Can't change this
+	# state while flushing queries", so the add is deferred to end of frame.
+	board.add_child.call_deferred(clone)
 	_start_watchdog(clone)
 	_refresh_hud()
 	return true

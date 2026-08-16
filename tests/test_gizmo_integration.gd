@@ -77,3 +77,21 @@ func test_splitter_through_the_real_scene_credits_two_half_pods() -> void:
 	assert_eq(scene.model.pods_in_flight, 0, "one drop, two pods, both resolved")
 	assert_eq(scene.model.drops_remaining(), int(DataDefs.run["drops_per_run"]) - 1,
 		"the split twin consumed no drop")
+
+func test_splitter_splits_on_real_contact_without_errors() -> void:
+	GameState._io = SaveIO.new("user://test_gizmo_integration.json")
+	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
+	var scene = add_child_autofree(preload("res://game/run/salvage_run.tscn").instantiate())
+	var vane = preload("res://game/run/gizmos/splitter_vane.tscn").instantiate()
+	# x=130 sits 30-35px from every real peg column in region_1 (peg+pod
+	# radii sum to 26), clearing a straight fall; x=360 lands dead-center on
+	# a peg column and traps the pod bouncing forever instead of reaching
+	# the vane, so this test cannot reuse the drop column used elsewhere.
+	vane.position = Vector2(130, 500)
+	scene.board.get_node("Gizmos").add_child(vane)
+	vane.setup((DataDefs.gizmos["defs"]["splitter_vane"] as Dictionary).duplicate(), 1, scene)
+	scene._on_drop_requested(130.0)
+	await wait_seconds(1.2)
+	assert_eq(get_tree().get_nodes_in_group("pods").size(), 2,
+		"a real falling pod through the vane must split without engine errors")
+	assert_eq(scene.model.pods_in_flight, 2)
