@@ -72,3 +72,26 @@ func test_caught_pod_triggers_nothing() -> void:
 	pod.set_meta("caught", true)
 	jar._on_body_entered(pod)
 	assert_eq(context_stub.bonuses.size(), 0)
+
+func test_zap_prefers_nearest_pegs() -> void:
+	make_peg(Vector2(360, 380))
+	make_peg(Vector2(360, 460))
+	make_peg(Vector2(360, 520))
+	make_peg(Vector2(460, 500))
+	jar._on_body_entered(make_pod())
+	await wait_physics_frames(1)
+	var survivors: Array = get_tree().get_nodes_in_group("pegs")
+	assert_eq(survivors.size(), 1)
+	assert_eq((survivors[0] as Node2D).position, Vector2(360, 380),
+		"the farthest in-range peg survives when the cap bites")
+
+func test_out_of_range_contact_consumes_no_charge() -> void:
+	make_peg(Vector2(360, 900))
+	jar._on_body_entered(make_pod())
+	jar._on_body_entered(make_pod())
+	jar._on_body_entered(make_pod())
+	assert_eq(context_stub.bonuses.size(), 0, "no pegs in range, no bonus ever")
+	make_peg(Vector2(360, 480))
+	jar._on_body_entered(make_pod())
+	assert_eq(context_stub.bonuses.size(), 1,
+		"charges were never consumed by the empty zaps")

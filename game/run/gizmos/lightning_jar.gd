@@ -28,14 +28,19 @@ func _configure() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if _charges <= 0 or not (body is RigidBody2D) or body.has_meta("caught"):
 		return
-	var zapped := 0
+	var candidates: Array = []
 	for peg in get_tree().get_nodes_in_group("pegs"):
+		if peg.global_position.distance_to(global_position) <= _zap_radius:
+			candidates.append(peg)
+	candidates.sort_custom(func(a: Node2D, b: Node2D) -> bool:
+		return a.global_position.distance_squared_to(global_position) < b.global_position.distance_squared_to(global_position))
+	var zapped := 0
+	for peg in candidates:
 		if zapped >= _pegs_zapped:
 			break
-		if peg.global_position.distance_to(global_position) <= _zap_radius:
-			peg.queue_free()
-			peg.remove_from_group("pegs")
-			zapped += 1
+		peg.queue_free()
+		peg.remove_from_group("pegs")
+		zapped += 1
 	if zapped == 0:
 		return
 	_charges -= 1

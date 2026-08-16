@@ -49,7 +49,14 @@ static func _migrate_1_to_2(data: Dictionary, gizmo_defs: Dictionary) -> Diction
 static func _migrate_2_to_3(data: Dictionary, gizmo_defs: Dictionary) -> Dictionary:
 	# New gizmos joined the starting inventory; merge-grant the missing ones
 	# without touching levels the player already upgraded or their loadout.
-	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
+	if not data.has("gizmos") or not (data["gizmos"] is Dictionary):
+		data["gizmos"] = _fresh_gizmos(gizmo_defs)
+	var gizmos: Dictionary = data["gizmos"]
+	if not gizmos.has("owned"):
+		gizmos["owned"] = {}
+	if not gizmos.has("loadout"):
+		gizmos["loadout"] = {}
+	var owned: Dictionary = gizmos["owned"]
 	var starters: Dictionary = gizmo_defs.get("starting_inventory", {})
 	for id in starters:
 		if not owned.has(id):
