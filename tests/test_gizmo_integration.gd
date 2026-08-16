@@ -6,6 +6,15 @@ const PodScene := preload("res://game/run/pod.tscn")
 var run_defs := {"sea_payout": {"scrap": 1}, "pod": {"radius": 12.0, "bounce": 0.55, "friction": 0.2}}
 
 
+func after_all() -> void:
+	var dir := DirAccess.open("user://")
+	for f in ["test_gizmo_integration.json", "test_gizmo_integration.json.tmp", "test_gizmo_integration.json.bak"]:
+		if dir.file_exists(f):
+			dir.remove(f)
+	GameState._io = SaveIO.new()
+	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)
+
+
 func test_slotted_balloon_bounces_a_real_drop_then_pod_lands() -> void:
 	var board: Skyfield = add_child_autofree(SkyfieldScene.instantiate())
 	board.build(DataDefs.load_json("res://tests/fixtures/test_region_slot.json"), run_defs)
@@ -68,9 +77,3 @@ func test_splitter_through_the_real_scene_credits_two_half_pods() -> void:
 	assert_eq(scene.model.pods_in_flight, 0, "one drop, two pods, both resolved")
 	assert_eq(scene.model.drops_remaining(), int(DataDefs.run["drops_per_run"]) - 1,
 		"the split twin consumed no drop")
-	var dir := DirAccess.open("user://")
-	for f in ["test_gizmo_integration.json", "test_gizmo_integration.json.tmp", "test_gizmo_integration.json.bak"]:
-		if dir.file_exists(f):
-			dir.remove(f)
-	GameState._io = SaveIO.new()
-	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)
