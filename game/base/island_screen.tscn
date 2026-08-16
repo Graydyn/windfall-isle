@@ -25,6 +25,27 @@ offset_bottom = 760.0
 wait_time = 1.0
 autostart = true
 
+[node name="GardensButton" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 780.0
+offset_right = 350.0
+offset_bottom = 840.0
+text = "Collect trickle"
+
+[node name="CrateButton" type="Button" parent="."]
+offset_left = 370.0
+offset_top = 780.0
+offset_right = 700.0
+offset_bottom = 840.0
+text = "Open daily crate"
+
+[node name="SlotButton" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 860.0
+offset_right = 700.0
+offset_bottom = 920.0
+text = "Unlock 2nd build slot"
+
 [node name="WorkshopButton" type="Button" parent="."]
 offset_left = 160.0
 offset_top = 990.0

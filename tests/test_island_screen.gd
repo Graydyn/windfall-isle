@@ -58,3 +58,27 @@ func test_built_observatory_shows_its_teaser() -> void:
 	var text: String = screen._row_text("plot_3", GameState.data["island"], TimeUtil.now())
 	assert_string_contains(text, "Brasswork Reach",
 		"spec 4.1: the Observatory reveals upcoming regions")
+
+func test_gardens_collect_credits_scrap() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
+	var scrap_before := Economy.balance("scrap")
+	screen._on_gardens_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 20)
+	assert_eq(TrickleModel.pending(GameState.data, DataDefs.buildings, TimeUtil.now()), 0)
+
+func test_crate_claims_once() -> void:
+	GameState.data["daily_crate"]["last_claim_day"] = 0
+	var scrap_before := Economy.balance("scrap")
+	var crystals_before := Economy.balance("crystals")
+	screen._on_crate_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 40)
+	assert_eq(Economy.balance("crystals"), crystals_before + 1)
+	screen._on_crate_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 40, "second claim same day is a no-op")
+
+func test_slot_button_unlocks_second_slot() -> void:
+	GameState.data["currencies"]["crystals"] = 30
+	screen._on_slot_pressed()
+	assert_eq(int(GameState.data["island"]["build_slots"]), 2)
+	assert_eq(Economy.balance("crystals"), 10)

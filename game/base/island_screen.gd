@@ -13,6 +13,9 @@ func _ready() -> void:
 	$WorkshopButton.pressed.connect(_on_workshop_pressed)
 	$BackButton.pressed.connect(_on_back_pressed)
 	$RefreshTimer.timeout.connect(_rebuild)
+	$GardensButton.pressed.connect(_on_gardens_pressed)
+	$CrateButton.pressed.connect(_on_crate_pressed)
+	$SlotButton.pressed.connect(_on_slot_pressed)
 	_rebuild()
 
 
@@ -61,6 +64,14 @@ func _rebuild() -> void:
 			build.pressed.connect(_on_build_pressed.bind(plot))
 			row.add_child(build)
 		rows.add_child(row)
+	var pending := TrickleModel.pending(GameState.data, DataDefs.buildings, now)
+	$GardensButton.text = "Collect trickle (%d scrap)" % pending
+	$GardensButton.disabled = pending <= 0
+	$CrateButton.disabled = not DailyCrate.can_claim(GameState.data, now)
+	$CrateButton.text = "Open daily crate" if not $CrateButton.disabled else "Crate opened today"
+	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
+	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
+	$SlotButton.text = "Unlock 2nd build slot (%d crystals)" % int(slots_cfg.get("second_slot_crystal_cost", 20))
 
 
 func _row_text(plot: String, island: Dictionary, now: int) -> String:
@@ -135,3 +146,27 @@ func _on_workshop_pressed() -> void:
 func _on_back_pressed() -> void:
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/main.tscn")
+
+
+func _on_gardens_pressed() -> void:
+	var amount := TrickleModel.collect(GameState.data, DataDefs.buildings, TimeUtil.now())
+	if amount > 0:
+		Economy.add("scrap", amount)
+		GameState.save_game()
+	_rebuild()
+
+
+func _on_crate_pressed() -> void:
+	var payout := DailyCrate.claim(GameState.data, DataDefs.retention, TimeUtil.now())
+	if payout.is_empty():
+		return
+	for currency in payout:
+		Economy.add(currency, int(payout[currency]))
+	GameState.save_game()
+	_rebuild()
+
+
+func _on_slot_pressed() -> void:
+	if IslandModel.unlock_second_slot(GameState.data["island"], DataDefs.buildings, Economy):
+		GameState.save_game()
+	_rebuild()
