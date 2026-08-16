@@ -10,6 +10,7 @@ var _selection: Dictionary = {}
 
 
 func _ready() -> void:
+	$WorkshopButton.pressed.connect(_on_workshop_pressed)
 	$BackButton.pressed.connect(_on_back_pressed)
 	$RefreshTimer.timeout.connect(_rebuild)
 	_rebuild()
@@ -124,6 +125,11 @@ func _on_collect_pressed(plot: String) -> void:
 		IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
 	GameState.save_game()
 	_rebuild()
+
+
+func _on_workshop_pressed() -> void:
+	GameState.save_game()
+	get_tree().change_scene_to_file("res://game/base/workshop_screen.tscn")
 
 
 func _on_back_pressed() -> void:

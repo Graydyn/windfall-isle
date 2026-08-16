@@ -25,6 +25,13 @@ offset_bottom = 760.0
 wait_time = 1.0
 autostart = true
 
+[node name="WorkshopButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 990.0
+offset_right = 560.0
+offset_bottom = 1060.0
+text = "Workshop"
+
 [node name="BackButton" type="Button" parent="."]
 offset_left = 160.0
 offset_top = 1080.0

@@ -1,0 +1,33 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/base/workshop_screen.gd" id="1_ws"]
+
+[node name="WorkshopScreen" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_ws")
+
+[node name="SlotsLabel" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 660.0
+offset_bottom = 64.0
+text = "Workshop"
+
+[node name="Rows" type="VBoxContainer" parent="."]
+offset_left = 20.0
+offset_top = 90.0
+offset_right = 700.0
+offset_bottom = 900.0
+
+[node name="RefreshTimer" type="Timer" parent="."]
+wait_time = 1.0
+autostart = true
+
+[node name="BackButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 1080.0
+offset_right = 560.0
+offset_bottom = 1160.0
+text = "Back to Island"
