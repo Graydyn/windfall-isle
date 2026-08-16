@@ -1,0 +1,131 @@
+extends Control
+## The home island (spec 4.1): plots, timed construction, upgrades. Dumb UI:
+## every rule lives in IslandModel; this screen renders state and forwards
+## taps. T9 adds the retention controls (gardens trickle, daily crate,
+## second build slot) to this same screen.
+
+var _selection: Dictionary = {}
+
+@onready var rows: VBoxContainer = $Rows
+
+
+func _ready() -> void:
+	$BackButton.pressed.connect(_on_back_pressed)
+	$RefreshTimer.timeout.connect(_rebuild)
+	_rebuild()
+
+
+func _plot_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for i in int(DataDefs.buildings.get("plot_count", 6)):
+		ids.append("plot_%d" % i)
+	return ids
+
+
+func _unbuilt_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for id in DataDefs.buildings.get("defs", {}):
+		if IslandModel.building_level(GameState.data["island"], String(id)) == 0 \
+				and IslandModel.plot_of(GameState.data["island"], String(id)) == "":
+			ids.append(String(id))
+	return ids
+
+
+func _rebuild() -> void:
+	for child in rows.get_children():
+		child.queue_free()
+	var now := TimeUtil.now()
+	var island: Dictionary = GameState.data["island"]
+	for plot in _plot_ids():
+		var row := HBoxContainer.new()
+		row.custom_minimum_size = Vector2(0, 64)
+		var label := Label.new()
+		label.custom_minimum_size = Vector2(320, 0)
+		label.text = _row_text(plot, island, now)
+		row.add_child(label)
+		var timer_id := "build_" + plot
+		if TimerService.active_timers().has(timer_id):
+			if TimerService.is_done(timer_id, now):
+				var collect := Button.new()
+				collect.text = "Complete!"
+				collect.pressed.connect(_on_collect_pressed.bind(plot))
+				row.add_child(collect)
+		else:
+			var select := Button.new()
+			select.text = _selection_text(plot, island)
+			select.pressed.connect(_on_select_pressed.bind(plot))
+			row.add_child(select)
+			var build := Button.new()
+			build.text = "Build"
+			build.pressed.connect(_on_build_pressed.bind(plot))
+			row.add_child(build)
+		rows.add_child(row)
+
+
+func _row_text(plot: String, island: Dictionary, now: int) -> String:
+	var timer_id := "build_" + plot
+	var plots: Dictionary = island.get("plots", {})
+	if TimerService.active_timers().has(timer_id):
+		var payload: Dictionary = TimerService.active_timers()[timer_id].get("payload", {})
+		var remaining := TimerService.remaining(timer_id, now)
+		return "%s: building %s (%ds)" % [plot, String(payload.get("building", "?")), remaining]
+	if plots.has(plot):
+		var entry: Dictionary = plots[plot]
+		var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary).get(String(entry["building"]), {})
+		var text := "%s: %s Lv %d" % [plot, String(def.get("name", entry["building"])), int(entry["level"])]
+		if String(entry["building"]) == "observatory" and int(entry["level"]) >= 1:
+			text += "\n    %s" % String(def.get("teaser", ""))
+		return text
+	return "%s: (empty)" % plot
+
+
+func _selection_text(plot: String, island: Dictionary) -> String:
+	var plots: Dictionary = island.get("plots", {})
+	if plots.has(plot):
+		return "Upgrade"
+	var chosen := String(_selection.get(plot, ""))
+	return chosen if chosen != "" else "Choose..."
+
+
+func _on_select_pressed(plot: String) -> void:
+	var plots: Dictionary = GameState.data["island"]["plots"]
+	if plots.has(plot):
+		return
+	var options := _unbuilt_ids()
+	if options.is_empty():
+		return
+	var current := String(_selection.get(plot, ""))
+	var index := options.find(current)
+	_selection[plot] = options[(index + 1) % options.size()]
+	_rebuild()
+
+
+func _on_build_pressed(plot: String) -> void:
+	var island: Dictionary = GameState.data["island"]
+	var building_id: String
+	if island["plots"].has(plot):
+		building_id = String(island["plots"][plot]["building"])
+	else:
+		building_id = String(_selection.get(plot, ""))
+	if building_id == "":
+		return
+	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, TimeUtil.now()):
+		GameState.save_game()
+	_rebuild()
+
+
+func _on_collect_pressed(plot: String) -> void:
+	var now := TimeUtil.now()
+	var payload := TimerService.collect("build_" + plot, now)
+	if payload.is_empty():
+		return
+	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now)
+	if String(payload.get("building", "")) == "wind_still":
+		IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
+	GameState.save_game()
+	_rebuild()
+
+
+func _on_back_pressed() -> void:
+	GameState.save_game()
+	get_tree().change_scene_to_file("res://game/main.tscn")

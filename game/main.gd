@@ -11,6 +11,7 @@ func _ready() -> void:
 	Economy.balance_changed.connect(_on_balance_changed)
 	launch_button.pressed.connect(_on_launch_pressed)
 	$GizmosButton.pressed.connect(_on_gizmos_pressed)
+	$IslandButton.pressed.connect(_on_island_pressed)
 	$RefreshTimer.timeout.connect(_refresh)
 	_refresh()
 
@@ -43,3 +44,7 @@ func _on_launch_pressed() -> void:
 
 func _on_gizmos_pressed() -> void:
 	get_tree().change_scene_to_file("res://game/ui/loadout_screen.tscn")
+
+
+func _on_island_pressed() -> void:
+	get_tree().change_scene_to_file("res://game/base/island_screen.tscn")

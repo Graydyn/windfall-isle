@@ -21,6 +21,13 @@ offset_right = 560.0
 offset_bottom = 1160.0
 text = "Launch Expedition"
 
+[node name="IslandButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 890.0
+offset_right = 560.0
+offset_bottom = 960.0
+text = "Island"
+
 [node name="GizmosButton" type="Button" parent="."]
 offset_left = 160.0
 offset_top = 980.0

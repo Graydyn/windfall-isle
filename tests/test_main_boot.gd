@@ -32,3 +32,6 @@ func test_launch_disabled_when_fuel_empty() -> void:
 
 func test_gizmos_button_exists() -> void:
 	assert_not_null(main.get_node_or_null("GizmosButton"))
+
+func test_island_button_exists() -> void:
+	assert_not_null(main.get_node_or_null("IslandButton"))
