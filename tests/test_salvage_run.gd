@@ -54,7 +54,7 @@ func test_abandon_shows_results_and_frees_pods() -> void:
 	scene._on_abandon_pressed()
 	assert_true(scene.model.is_over())
 	assert_true(scene.get_node("UI/Results").visible)
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	assert_eq(get_tree().get_nodes_in_group("pods").size(), 0, "live pods freed on abandon")
 
 func test_pod_timeout_pays_sea_minimum() -> void:

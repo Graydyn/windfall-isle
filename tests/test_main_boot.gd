@@ -10,7 +10,7 @@ func before_each() -> void:
 	GameState.data["created_at"] = 1000
 	GameState.data["fuel"]["updated_at"] = 1000
 	main = add_child_autofree(MainScene.instantiate())
-	await wait_frames(1)
+	await wait_physics_frames(1)
 
 func after_all() -> void:
 	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)

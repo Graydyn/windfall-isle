@@ -9,6 +9,8 @@ extends Node2D
 ##   request_split(pod: RigidBody2D) -> bool
 ## Pod-carried effects use pod metadata; "value_mult" (float) multiplies the
 ## pod's payouts at resolution.
+## Contact gizmos that can overlap catchers must early-return on
+## body.has_meta("caught") so resolved pods trigger nothing further.
 
 var defs: Dictionary = {}
 var level: int = 1

@@ -10,7 +10,7 @@ func before_each() -> void:
 	GameState._io = SaveIO.new(TEST_SAVE)
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	screen = add_child_autofree(LoadoutScene.instantiate())
-	await wait_frames(1)
+	await wait_physics_frames(1)
 
 func after_all() -> void:
 	var dir := DirAccess.open("user://")

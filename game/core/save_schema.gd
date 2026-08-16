@@ -34,6 +34,8 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 
 
 static func _migrate_1_to_2(data: Dictionary, gizmo_defs: Dictionary) -> Dictionary:
+	if (gizmo_defs.get("starting_inventory", {}) as Dictionary).is_empty():
+		push_warning("Migrating v1 save with no gizmo defs; starting grant will be empty until a later merge-grant hop")
 	# v1 shipped "gizmos" as a reserved empty dict; v2 gives it structure and
 	# grants the starting inventory so pre-gizmo saves get the same starters
 	# a fresh save does.
