@@ -74,7 +74,7 @@ static func start_build(island: Dictionary, defs: Dictionary, economy: Node, tim
 		{"plot": plot, "building": building_id, "to_level": to_level})
 
 
-static func complete_build(island: Dictionary, payload: Dictionary, data: Dictionary, now: int) -> void:
+static func complete_build(island: Dictionary, payload: Dictionary, data: Dictionary, now: int, building_defs: Dictionary = {}) -> void:
 	if payload.is_empty():
 		return
 	var plot := String(payload.get("plot", ""))
@@ -82,9 +82,26 @@ static func complete_build(island: Dictionary, payload: Dictionary, data: Dictio
 	var plots: Dictionary = island.get("plots", {})
 	if not plots.has(plot):
 		return
-	plots[plot]["level"] = int(payload.get("to_level", 1))
-	if building_id == "gardens" and int(plots[plot]["level"]) == 1:
-		(data.get("trickle", {}) as Dictionary)["last_collect"] = now
+	if building_id == "gardens":
+		var to_level := int(payload.get("to_level", 1))
+		if to_level == 1:
+			plots[plot]["level"] = to_level
+			(data.get("trickle", {}) as Dictionary)["last_collect"] = now
+		elif not building_defs.is_empty():
+			# Rebase last_collect at the new rate so the pending VALUE carries
+			# over unchanged instead of being re-rated retroactively (spec
+			# 4.1 retention finding: an upgrade must not gift or forfeit scrap
+			# that already accrued at the old level).
+			var pending_old := TrickleModel.pending(data, building_defs, now)
+			plots[plot]["level"] = to_level
+			var def: Dictionary = (building_defs.get("defs", {}) as Dictionary).get("gardens", {})
+			var new_rate := int(payload.get("to_level", 1)) * int(def.get("scrap_per_hour_per_level", 20))
+			if new_rate > 0:
+				(data.get("trickle", {}) as Dictionary)["last_collect"] = now - int(float(pending_old) * 3600.0 / float(new_rate))
+		else:
+			plots[plot]["level"] = to_level
+	else:
+		plots[plot]["level"] = int(payload.get("to_level", 1))
 
 
 static func unlock_second_slot(island: Dictionary, defs: Dictionary, economy: Node) -> bool:

@@ -77,6 +77,23 @@ func test_gardens_completion_stamps_trickle_clock() -> void:
 	assert_eq(int(state.data["trickle"]["last_collect"]), 5200,
 		"the trickle counts from the moment gardens first exist")
 
+func test_gardens_upgrade_preserves_pending_trickle_value() -> void:
+	IslandModel.start_build(island, defs, econ, timers, "plot_2", "gardens", 1000)
+	IslandModel.complete_build(island, timers.collect("build_plot_2", 1200), state.data, 1200, defs)
+	var later := 1200 + 3600
+	assert_eq(TrickleModel.pending(state.data, defs, later), 20, "1h at Lv1")
+	IslandModel.start_build(island, defs, econ, timers, "plot_2", "gardens", later)
+	var done := later + 1201
+	var pending_before_upgrade := TrickleModel.pending(state.data, defs, done)
+	assert_eq(pending_before_upgrade, 26,
+		"1.3336h elapsed at Lv1's 20/hr since the last_collect stamp at 1200 (floor(20 * 4801/3600) = 26)")
+	IslandModel.complete_build(island, timers.collect("build_plot_2", done), state.data, done, defs)
+	assert_eq(TrickleModel.pending(state.data, defs, done), pending_before_upgrade,
+		"pending immediately after the upgrade equals pending immediately before it: no retroactive re-rating")
+	var after := done + 3600
+	assert_eq(TrickleModel.pending(state.data, defs, after), pending_before_upgrade + 40,
+		"accrual after the upgrade runs at the new Lv2 rate of 40/hr")
+
 func test_insufficient_funds_rejected() -> void:
 	state.data["currencies"]["scrap"] = 10
 	assert_false(IslandModel.start_build(island, defs, econ, timers, "plot_0", "workshop", 1000))

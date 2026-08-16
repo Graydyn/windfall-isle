@@ -131,7 +131,7 @@ func _on_collect_pressed(plot: String) -> void:
 	var payload := TimerService.collect("build_" + plot, now)
 	if payload.is_empty():
 		return
-	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now)
+	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now, DataDefs.buildings)
 	if String(payload.get("building", "")) == "wind_still":
 		IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
 	GameState.save_game()

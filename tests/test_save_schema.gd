@@ -110,3 +110,17 @@ func test_migrate_v1_hops_all_the_way_to_v4() -> void:
 	assert_eq(int(migrated["version"]), 4)
 	assert_has(migrated, "island")
 	assert_has(migrated, "daily_crate")
+
+func test_migrate_v2_self_heals_malformed_gizmos() -> void:
+	var broken := SaveSchema.default_data(DEFS)
+	broken["version"] = 2
+	broken["gizmos"] = 7
+	var healed := SaveSchema.migrate(broken, GIZMO_DEFS)
+	assert_eq(healed["gizmos"]["owned"], {"wind_fan": 1, "crystal_prism": 1},
+		"a wrong-typed gizmos section is rebuilt and granted")
+	var missing_keys := SaveSchema.default_data(DEFS)
+	missing_keys["version"] = 2
+	missing_keys["gizmos"] = {"owned": {"wind_fan": 3}}
+	var healed2 := SaveSchema.migrate(missing_keys, GIZMO_DEFS)
+	assert_eq(healed2["gizmos"]["loadout"], {}, "missing loadout is backfilled")
+	assert_eq(int(healed2["gizmos"]["owned"]["wind_fan"]), 3, "existing levels survive the heal")
