@@ -2,10 +2,10 @@ class_name SaveSchema
 ## Versioned save schema (spec 7.3). One dict is the whole save.
 ## "island" and "gizmos" are reserved for the base-builder and gizmo plans.
 
-const CURRENT_VERSION := 1
+const CURRENT_VERSION := 2
 
 
-static func default_data(defs: Dictionary) -> Dictionary:
+static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
 	var balances: Dictionary = defs.get("starting_balances", {})
 	var fuel_defs: Dictionary = defs.get("fuel", {})
 	return {
@@ -20,15 +20,30 @@ static func default_data(defs: Dictionary) -> Dictionary:
 		},
 		"timers": {},
 		"island": {},
-		"gizmos": {},
+		"gizmos": _fresh_gizmos(gizmo_defs),
 	}
 
 
-static func migrate(data: Dictionary) -> Dictionary:
+static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
 	var version := int(data.get("version", 0))
 	if version <= 0 or version > CURRENT_VERSION:
 		return {}
-	# When CURRENT_VERSION bumps past 1, add a `while version < CURRENT_VERSION`
-	# loop here dispatching to _migrate_N_to_M(data) functions, stamping
-	# data["version"] after each hop. v1 has no predecessors to migrate from.
+	if version == 1:
+		data = _migrate_1_to_2(data, gizmo_defs)
 	return data
+
+
+static func _migrate_1_to_2(data: Dictionary, gizmo_defs: Dictionary) -> Dictionary:
+	# v1 shipped "gizmos" as a reserved empty dict; v2 gives it structure and
+	# grants the starting inventory so pre-gizmo saves get the same starters
+	# a fresh save does.
+	data["gizmos"] = _fresh_gizmos(gizmo_defs)
+	data["version"] = 2
+	return data
+
+
+static func _fresh_gizmos(gizmo_defs: Dictionary) -> Dictionary:
+	return {
+		"owned": (gizmo_defs.get("starting_inventory", {}) as Dictionary).duplicate(),
+		"loadout": {},
+	}

@@ -9,14 +9,14 @@ var _io: SaveIO = SaveIO.new()
 
 
 func _ready() -> void:
-	load_game(DataDefs.economy, TimeUtil.now())
+	load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)
 
 
-func load_game(defs: Dictionary, now: int) -> void:
+func load_game(defs: Dictionary, now: int, gizmo_defs: Dictionary = {}) -> void:
 	var raw := _io.read()
-	var migrated: Dictionary = SaveSchema.migrate(raw) if not raw.is_empty() else {}
+	var migrated: Dictionary = SaveSchema.migrate(raw, gizmo_defs) if not raw.is_empty() else {}
 	if migrated.is_empty():
-		migrated = SaveSchema.default_data(defs)
+		migrated = SaveSchema.default_data(defs, gizmo_defs)
 		migrated["created_at"] = now
 		migrated["fuel"]["updated_at"] = now
 	data = migrated

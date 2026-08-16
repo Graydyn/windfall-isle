@@ -16,7 +16,7 @@ func test_default_data_shape() -> void:
 	assert_eq(int(data["fuel"]["regen_seconds"]), 1200)
 	assert_eq(data["timers"], {})
 	assert_eq(data["island"], {})
-	assert_eq(data["gizmos"], {})
+	assert_eq(data["gizmos"], {"owned": {}, "loadout": {}})
 
 func test_default_data_does_not_alias_defs() -> void:
 	var data := SaveSchema.default_data(DEFS)
@@ -33,3 +33,30 @@ func test_migrate_rejects_unversioned_data() -> void:
 
 func test_migrate_rejects_future_version() -> void:
 	assert_eq(SaveSchema.migrate({"version": 99}), {})
+
+const GIZMO_DEFS := {"starting_inventory": {"wind_fan": 1, "crystal_prism": 1}}
+
+
+func test_default_data_grants_starting_gizmos() -> void:
+	var data := SaveSchema.default_data(DEFS, GIZMO_DEFS)
+	assert_eq(data["gizmos"]["owned"], {"wind_fan": 1, "crystal_prism": 1})
+	data["gizmos"]["owned"]["wind_fan"] = 5
+	assert_eq(int(GIZMO_DEFS["starting_inventory"]["wind_fan"]), 1,
+		"granting must not alias the defs")
+
+func test_migrate_v1_to_v2_grants_gizmo_structure() -> void:
+	var v1 := SaveSchema.default_data(DEFS)
+	v1["version"] = 1
+	v1["gizmos"] = {}
+	v1["currencies"]["scrap"] = 777
+	var migrated := SaveSchema.migrate(v1, GIZMO_DEFS)
+	assert_eq(int(migrated["version"]), 2)
+	assert_eq(migrated["gizmos"], {"owned": {"wind_fan": 1, "crystal_prism": 1}, "loadout": {}})
+	assert_eq(int(migrated["currencies"]["scrap"]), 777, "migration must be lossless")
+
+func test_migrate_v1_without_gizmo_defs_still_structures() -> void:
+	var v1 := SaveSchema.default_data(DEFS)
+	v1["version"] = 1
+	v1["gizmos"] = {}
+	var migrated := SaveSchema.migrate(v1)
+	assert_eq(migrated["gizmos"], {"owned": {}, "loadout": {}})

@@ -1,0 +1,30 @@
+{
+	"starting_inventory": {
+		"wind_fan": 1,
+		"balloon_cluster": 1,
+		"crystal_prism": 1
+	},
+	"defs": {
+		"wind_fan": {
+			"name": "Wind Fan",
+			"scene": "res://game/run/gizmos/wind_fan.tscn",
+			"force": 260.0,
+			"direction": 1.0,
+			"column_width": 90.0,
+			"column_height": 420.0
+		},
+		"balloon_cluster": {
+			"name": "Balloon Cluster",
+			"scene": "res://game/run/gizmos/balloon_cluster.tscn",
+			"impulse": 420.0,
+			"max_hits": 3,
+			"radius": 26.0
+		},
+		"crystal_prism": {
+			"name": "Crystal Prism",
+			"scene": "res://game/run/gizmos/crystal_prism.tscn",
+			"multiplier": 1.5,
+			"radius": 30.0
+		}
+	}
+}
