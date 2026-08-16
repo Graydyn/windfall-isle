@@ -2,7 +2,7 @@ class_name SaveSchema
 ## Versioned save schema (spec 7.3). One dict is the whole save.
 ## "island" and "gizmos" are reserved for the base-builder and gizmo plans.
 
-const CURRENT_VERSION := 2
+const CURRENT_VERSION := 3
 
 
 static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
@@ -30,6 +30,8 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 		return {}
 	if version == 1:
 		data = _migrate_1_to_2(data, gizmo_defs)
+	if int(data["version"]) == 2:
+		data = _migrate_2_to_3(data, gizmo_defs)
 	return data
 
 
@@ -41,6 +43,18 @@ static func _migrate_1_to_2(data: Dictionary, gizmo_defs: Dictionary) -> Diction
 	# a fresh save does.
 	data["gizmos"] = _fresh_gizmos(gizmo_defs)
 	data["version"] = 2
+	return data
+
+
+static func _migrate_2_to_3(data: Dictionary, gizmo_defs: Dictionary) -> Dictionary:
+	# New gizmos joined the starting inventory; merge-grant the missing ones
+	# without touching levels the player already upgraded or their loadout.
+	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
+	var starters: Dictionary = gizmo_defs.get("starting_inventory", {})
+	for id in starters:
+		if not owned.has(id):
+			owned[id] = int(starters[id])
+	data["version"] = 3
 	return data
 
 

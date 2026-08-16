@@ -2,7 +2,12 @@
 	"starting_inventory": {
 		"wind_fan": 1,
 		"balloon_cluster": 1,
-		"crystal_prism": 1
+		"crystal_prism": 1,
+		"lightning_jar": 1,
+		"chime_bell": 1,
+		"magnet_buoy": 1,
+		"cargo_net": 1,
+		"splitter_vane": 1
 	},
 	"defs": {
 		"wind_fan": {
@@ -25,6 +30,44 @@
 			"scene": "res://game/run/gizmos/crystal_prism.tscn",
 			"multiplier": 1.5,
 			"radius": 30.0
+		},
+		"lightning_jar": {
+			"name": "Lightning Jar",
+			"scene": "res://game/run/gizmos/lightning_jar.tscn",
+			"zone_radius": 24.0,
+			"zap_radius": 150.0,
+			"pegs_zapped": 3,
+			"scrap_per_peg": 2,
+			"charges": 2
+		},
+		"chime_bell": {
+			"name": "Chime Bell",
+			"scene": "res://game/run/gizmos/chime_bell.tscn",
+			"radius": 26.0,
+			"barge_multiplier": 2.0,
+			"uses_per_run": 2
+		},
+		"magnet_buoy": {
+			"name": "Magnet Buoy",
+			"scene": "res://game/run/gizmos/magnet_buoy.tscn",
+			"radius": 160.0,
+			"force": 240.0
+		},
+		"cargo_net": {
+			"name": "Cargo Net",
+			"scene": "res://game/run/gizmos/cargo_net.tscn",
+			"radius": 34.0,
+			"hold_seconds": 0.8,
+			"redrop_angle_degrees": 60.0,
+			"redrop_speed": 420.0,
+			"board_center_x": 360.0,
+			"uses": 1
+		},
+		"splitter_vane": {
+			"name": "Splitter Vane",
+			"scene": "res://game/run/gizmos/splitter_vane.tscn",
+			"radius": 24.0,
+			"value_multiplier": 0.5
 		}
 	}
 }
