@@ -163,3 +163,8 @@ func test_request_split_spawns_mirrored_clone() -> void:
 	assert_almost_eq(float(clone.get_meta("value_mult")), 0.5, 0.001)
 	assert_true(clone.has_meta("split"))
 	assert_almost_eq(clone.linear_velocity.x, -120.0, 2.0)
+
+func test_run_drops_include_balloonworks_bonus() -> void:
+	GameState.data["island"]["plots"]["plot_1"] = {"building": "balloonworks", "level": 1}
+	var second = add_child_autofree(RunScene.instantiate())
+	assert_eq(second.model.drops_remaining(), int(DataDefs.run["drops_per_run"]) + 1)

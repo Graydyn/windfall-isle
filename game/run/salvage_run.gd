@@ -18,7 +18,9 @@ func _ready() -> void:
 	var run_defs: Dictionary = DataDefs.run
 	pod_defs = run_defs.get("pod", {})
 	var region: Dictionary = DataDefs.skyfield("region_1")
-	model = RunModel.new(run_defs)
+	var run_config: Dictionary = run_defs.duplicate()
+	run_config["drops_per_run"] = IslandEffects.drops_per_run(run_defs, GameState.data["island"], DataDefs.buildings)
+	model = RunModel.new(run_config)
 	board.build(region, run_defs)
 	var gizmos_state: Dictionary = GameState.data["gizmos"]
 	board.install_gizmos(
