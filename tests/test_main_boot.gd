@@ -29,3 +29,6 @@ func test_launch_disabled_when_fuel_empty() -> void:
 	GameState.data["fuel"]["updated_at"] = TimeUtil.now()
 	main._refresh()
 	assert_true(main.get_node("LaunchButton").disabled)
+
+func test_gizmos_button_exists() -> void:
+	assert_not_null(main.get_node_or_null("GizmosButton"))

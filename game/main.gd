@@ -10,6 +10,7 @@ extends Control
 func _ready() -> void:
 	Economy.balance_changed.connect(_on_balance_changed)
 	launch_button.pressed.connect(_on_launch_pressed)
+	$GizmosButton.pressed.connect(_on_gizmos_pressed)
 	$RefreshTimer.timeout.connect(_refresh)
 	_refresh()
 
@@ -38,3 +39,7 @@ func _on_launch_pressed() -> void:
 		return
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/run/salvage_run.tscn")
+
+
+func _on_gizmos_pressed() -> void:
+	get_tree().change_scene_to_file("res://game/ui/loadout_screen.tscn")
