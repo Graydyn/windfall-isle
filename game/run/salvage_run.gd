@@ -73,6 +73,7 @@ func _on_pod_timeout(pod_ref: WeakRef, watchdog: Timer) -> void:
 func _on_run_over() -> void:
 	controller.enabled = false
 	for pod in get_tree().get_nodes_in_group("pods"):
+		pod.set_meta("caught", true)
 		pod.queue_free()
 	GameState.save_game()
 	$UI/Results/VBox/Summary.text = _summary_text()

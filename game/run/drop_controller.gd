@@ -7,7 +7,13 @@ extends Node2D
 
 signal drop_requested(x: float)
 
-var enabled := true
+var enabled := true:
+	set(value):
+		enabled = value
+		if not enabled:
+			_aiming = false
+			_touch_index = -1
+		queue_redraw()
 var drop_y := 100.0
 var min_x := 44.0
 var max_x := 676.0

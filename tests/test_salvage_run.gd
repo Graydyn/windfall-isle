@@ -84,3 +84,10 @@ func test_watchdog_timer_dies_with_the_scene() -> void:
 	scene._on_drop_requested(360.0)
 	var timers_after: int = scene.get_children().filter(func(c: Node) -> bool: return c is Timer).size()
 	assert_eq(timers_after, timers_before + 1, "each drop parents its watchdog Timer to the scene")
+
+func test_run_over_marks_swept_pods_caught() -> void:
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_abandon_pressed()
+	assert_true(pod.has_meta("caught"),
+		"swept pods must be marked so no catcher or watchdog can resolve them later")

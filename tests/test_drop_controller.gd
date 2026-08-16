@@ -77,3 +77,13 @@ func test_second_finger_release_does_not_drop() -> void:
 	assert_signal_not_emitted(controller, "drop_requested")
 	controller._unhandled_input(touch(Vector2(300, 80), false, 0))
 	assert_signal_emitted_with_parameters(controller, "drop_requested", [300.0])
+
+func test_disabling_resets_aim_state() -> void:
+	watch_signals(controller)
+	controller._unhandled_input(touch(Vector2(300, 80), true))
+	controller.enabled = false
+	controller.enabled = true
+	# After a disable/enable cycle a new finger (any index) must aim cleanly
+	controller._unhandled_input(touch(Vector2(500, 90), true, 1))
+	controller._unhandled_input(touch(Vector2(500, 90), false, 1))
+	assert_signal_emitted_with_parameters(controller, "drop_requested", [500.0])
