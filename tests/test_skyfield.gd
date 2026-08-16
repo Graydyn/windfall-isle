@@ -60,3 +60,36 @@ func test_pod_missing_all_barges_reaches_the_sea() -> void:
 	assert_true(emitted, "sea must catch every miss (spec 3.1: never zero)")
 	var params: Array = get_signal_parameters(board, "pod_caught")
 	assert_eq(int(params[1]["scrap"]), 1)
+
+const TEST_GIZMO_DEFS := {
+	"defs": {
+		"test_gizmo": {"name": "Test Gizmo", "scene": "res://tests/fixtures/test_gizmo.tscn", "power": 10.0}
+	}
+}
+
+
+func test_install_gizmos_places_scene_at_marker() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	board.install_gizmos({"slot_1": "test_gizmo"}, TEST_GIZMO_DEFS, {"test_gizmo": 3}, self)
+	var gizmos: Node = board.get_node("Gizmos")
+	assert_eq(gizmos.get_child_count(), 1)
+	var gizmo: GizmoBase = gizmos.get_child(0)
+	assert_eq(gizmo.position, board.get_node("GizmoSlots/slot_1").position)
+	assert_eq(gizmo.level, 3)
+	assert_eq(float(gizmo.defs["power"]), 10.0)
+	assert_true(gizmo.context == self)
+	assert_true(gizmo.configured, "_configure must run during setup")
+
+func test_install_gizmos_skips_unknown_entries() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	board.install_gizmos(
+		{"slot_0": "no_such_gizmo", "slot_99": "test_gizmo", "slot_2": "test_gizmo"},
+		TEST_GIZMO_DEFS, {"test_gizmo": 1}, self)
+	assert_eq(board.get_node("Gizmos").get_child_count(), 1, "only the valid entry installs")
+
+func test_gizmo_base_scaled() -> void:
+	var gizmo: GizmoBase = autofree(GizmoBase.new())
+	gizmo.level = 1
+	assert_almost_eq(gizmo.scaled(100.0), 100.0, 0.001)
+	gizmo.level = 3
+	assert_almost_eq(gizmo.scaled(100.0), 150.0, 0.001)

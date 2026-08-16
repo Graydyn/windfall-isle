@@ -19,6 +19,12 @@ func _ready() -> void:
 	var region: Dictionary = DataDefs.skyfield("region_1")
 	model = RunModel.new(run_defs)
 	board.build(region, run_defs)
+	var gizmos_state: Dictionary = GameState.data["gizmos"]
+	board.install_gizmos(
+		GizmoLoadout.loadout_for(gizmos_state, "region_1"),
+		DataDefs.gizmos,
+		GizmoLoadout.owned(gizmos_state),
+		self)
 	controller.configure(region.get("board", {}), float(pod_defs.get("radius", 12.0)))
 	board.pod_caught.connect(_on_pod_caught)
 	controller.drop_requested.connect(_on_drop_requested)

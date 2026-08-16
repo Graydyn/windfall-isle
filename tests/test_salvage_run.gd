@@ -8,7 +8,7 @@ var scene
 
 func before_each() -> void:
 	GameState._io = SaveIO.new(TEST_SAVE)
-	GameState.data = SaveSchema.default_data(DataDefs.economy)
+	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	GameState.data["created_at"] = 1000
 	GameState.data["fuel"]["updated_at"] = 1000
 	scene = add_child_autofree(RunScene.instantiate())
@@ -91,3 +91,12 @@ func test_run_over_marks_swept_pods_caught() -> void:
 	scene._on_abandon_pressed()
 	assert_true(pod.has_meta("caught"),
 		"swept pods must be marked so no catcher or watchdog can resolve them later")
+
+func test_ready_installs_loadout_gizmos() -> void:
+	GameState.data["gizmos"]["owned"]["test_gizmo"] = 1
+	DataDefs.gizmos["defs"]["test_gizmo"] = {"name": "Test Gizmo", "scene": "res://tests/fixtures/test_gizmo.tscn"}
+	GizmoLoadout.set_slot(GameState.data["gizmos"], "region_1", "slot_0", "test_gizmo")
+	var second = add_child_autofree(RunScene.instantiate())
+	assert_eq(second.get_node("Skyfield/Gizmos").get_child_count(), 1,
+		"the run scene installs the persisted loadout at boot")
+	DataDefs.gizmos["defs"].erase("test_gizmo")

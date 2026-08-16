@@ -91,6 +91,22 @@ func _build_slots(slots: Array) -> void:
 		$GizmoSlots.add_child(marker)
 
 
+func install_gizmos(loadout: Dictionary, gizmo_defs: Dictionary, owned: Dictionary, context: Node) -> void:
+	var defs_by_id: Dictionary = gizmo_defs.get("defs", {})
+	for slot in loadout:
+		var gizmo_id: String = String(loadout[slot])
+		var marker: Marker2D = $GizmoSlots.get_node_or_null(NodePath(slot))
+		var def: Dictionary = defs_by_id.get(gizmo_id, {})
+		var scene_path := String(def.get("scene", ""))
+		if marker == null or def.is_empty() or not ResourceLoader.exists(scene_path):
+			push_warning("Skipping gizmo '%s' in slot '%s' (unknown id, slot, or scene)" % [gizmo_id, slot])
+			continue
+		var gizmo: GizmoBase = (load(scene_path) as PackedScene).instantiate()
+		gizmo.position = marker.position
+		$Gizmos.add_child(gizmo)
+		gizmo.setup(def, int(owned.get(gizmo_id, 1)), context)
+
+
 func _on_catcher_body(body: Node2D, payout: Dictionary) -> void:
 	if not (body is RigidBody2D):
 		return
