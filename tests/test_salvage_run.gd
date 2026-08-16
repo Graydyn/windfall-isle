@@ -61,7 +61,26 @@ func test_pod_timeout_pays_sea_minimum() -> void:
 	scene._on_drop_requested(360.0)
 	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
 	var scrap_before := Economy.balance("scrap")
-	scene._on_pod_timeout(pod)
+	scene._on_pod_timeout(weakref(pod), add_child_autofree(Timer.new()))
 	assert_eq(Economy.balance("scrap"), scrap_before + 1, "stuck pod resolves as a sea miss")
-	scene._on_pod_timeout(pod)
+	scene._on_pod_timeout(weakref(pod), add_child_autofree(Timer.new()))
 	assert_eq(Economy.balance("scrap"), scrap_before + 1, "timeout after resolution is a no-op")
+
+func test_watchdog_is_harmless_after_pod_is_freed() -> void:
+	# Regression: the watchdog used to bind the raw pod into a typed Node
+	# parameter; a pod freed before the 12s timer fired failed argument
+	# marshalling with "Cannot convert argument 1 from Object to Object".
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	pod.free()
+	scene._on_pod_timeout(weakref(pod), add_child_autofree(Timer.new()))
+	assert_eq(Economy.balance("scrap"), scrap_before, "freed pod must credit nothing, silently")
+
+func test_watchdog_timer_dies_with_the_scene() -> void:
+	# A SceneTreeTimer would outlive the scene and error at a freed target;
+	# the watchdog must be a child Timer node instead.
+	var timers_before: int = scene.get_children().filter(func(c: Node) -> bool: return c is Timer).size()
+	scene._on_drop_requested(360.0)
+	var timers_after: int = scene.get_children().filter(func(c: Node) -> bool: return c is Timer).size()
+	assert_eq(timers_after, timers_before + 1, "each drop parents its watchdog Timer to the scene")

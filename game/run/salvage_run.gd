@@ -35,9 +35,20 @@ func _on_drop_requested(x: float) -> void:
 	pod.position = Vector2(x, controller.drop_y)
 	pod.setup(pod_defs)
 	board.add_child(pod)
-	var timeout := float(DataDefs.run.get("pod_timeout_seconds", 12.0))
-	get_tree().create_timer(timeout).timeout.connect(_on_pod_timeout.bind(pod))
+	_start_watchdog(pod)
 	_refresh_hud()
+
+
+func _start_watchdog(pod: Pod) -> void:
+	# A child Timer dies with this scene and a WeakRef survives the pod being
+	# freed; a SceneTreeTimer bound to the raw pod errors on both counts
+	# (freed pods fail typed-argument marshalling before the handler runs).
+	var watchdog := Timer.new()
+	watchdog.one_shot = true
+	watchdog.wait_time = float(DataDefs.run.get("pod_timeout_seconds", 12.0))
+	add_child(watchdog)
+	watchdog.timeout.connect(_on_pod_timeout.bind(weakref(pod), watchdog))
+	watchdog.start()
 
 
 func _on_pod_caught(pod: Node, payout: Dictionary) -> void:
@@ -49,9 +60,11 @@ func _on_pod_caught(pod: Node, payout: Dictionary) -> void:
 	_refresh_hud()
 
 
-func _on_pod_timeout(pod: Node) -> void:
+func _on_pod_timeout(pod_ref: WeakRef, watchdog: Timer) -> void:
 	# Watchdog: a pod balanced on a peg must never deadlock the run.
-	if not is_instance_valid(pod) or pod.has_meta("caught"):
+	watchdog.queue_free()
+	var pod: Node = pod_ref.get_ref()
+	if pod == null or pod.has_meta("caught"):
 		return
 	pod.set_meta("caught", true)
 	_on_pod_caught(pod, board.sea_payout.duplicate())
