@@ -35,6 +35,7 @@ func _build_walls(board: Dictionary) -> void:
 func _build_pegs(pegs: Array) -> void:
 	for peg in pegs:
 		var body := StaticBody2D.new()
+		body.add_to_group("pegs")
 		body.position = Vector2(float(peg["x"]), float(peg["y"]))
 		var collider := CollisionShape2D.new()
 		var shape := CircleShape2D.new()

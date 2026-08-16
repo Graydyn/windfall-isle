@@ -102,3 +102,8 @@ func test_pod_caught_carries_source_tag() -> void:
 	assert_true(emitted)
 	var params: Array = get_signal_parameters(board, "pod_caught")
 	assert_eq(params[2], "barge")
+
+func test_pegs_join_pegs_group() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	var first_peg: Node = board.get_node("Pegs").get_child(0)
+	assert_true(first_peg.is_in_group("pegs"))
