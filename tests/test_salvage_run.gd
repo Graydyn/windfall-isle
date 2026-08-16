@@ -19,7 +19,7 @@ func after_all() -> void:
 		if dir.file_exists(f):
 			dir.remove(f)
 	GameState._io = SaveIO.new()
-	GameState.load_game(DataDefs.economy, TimeUtil.now())
+	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)
 
 
 func test_drop_spawns_pod_and_consumes_drop() -> void:

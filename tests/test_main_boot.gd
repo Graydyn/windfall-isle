@@ -13,7 +13,7 @@ func before_each() -> void:
 	await wait_frames(1)
 
 func after_all() -> void:
-	GameState.load_game(DataDefs.economy, TimeUtil.now())
+	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos)
 
 
 func test_main_scene_boots_and_shows_balances() -> void:
