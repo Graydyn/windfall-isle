@@ -48,6 +48,19 @@ func test_craft_max_level_respected() -> void:
 	state.data["gizmos"]["owned"]["wind_fan"] = 5
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"))
 
-func test_unowned_gizmo_cannot_be_crafted() -> void:
+func test_unowned_gizmo_craft_grants_level_one() -> void:
 	state.data["gizmos"]["owned"].erase("wind_fan")
-	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"))
+	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"),
+		"recipes are craft-to-acquire; resources are the gate (spec 3.3)")
+	CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000)
+	CraftModel.complete_craft(state.data, timers.collect("craft_wind_fan", 1200))
+	assert_eq(int(state.data["gizmos"]["owned"]["wind_fan"]), 1)
+
+func test_unknown_gizmo_id_cannot_be_crafted() -> void:
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "no_such_gizmo"))
+
+func test_brasswork_gates_the_brass_recipes() -> void:
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"),
+		"5000 scrap but zero brasswork: locked")
+	state.data["currencies"]["brasswork"] = 2
+	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"))

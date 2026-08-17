@@ -20,7 +20,7 @@ func _ready() -> void:
 
 func _signature(now: int) -> String:
 	var parts := PackedStringArray()
-	for gizmo_id in GameState.data["gizmos"]["owned"]:
+	for gizmo_id in DataDefs.gizmos["defs"]:
 		var timer_id := "craft_" + String(gizmo_id)
 		if TimerService.active_timers().has(timer_id):
 			parts.append("d" if TimerService.is_done(timer_id, now) else "r")
@@ -54,7 +54,11 @@ func _slots_text() -> String:
 func _gizmo_label_text(gizmo_id: String, now: int) -> String:
 	var owned: Dictionary = GameState.data["gizmos"]["owned"]
 	var def: Dictionary = (DataDefs.gizmos["defs"] as Dictionary).get(gizmo_id, {})
-	var text := "%s Lv %d" % [String(def.get("name", gizmo_id)), int(owned.get(gizmo_id, 1))]
+	var text: String
+	if owned.has(gizmo_id):
+		text = "%s Lv %d" % [String(def.get("name", gizmo_id)), int(owned[gizmo_id])]
+	else:
+		text = "%s (not owned)" % String(def.get("name", gizmo_id))
 	var timer_id := "craft_" + gizmo_id
 	if TimerService.active_timers().has(timer_id) and not TimerService.is_done(timer_id, now):
 		text += "  (%ds)" % TimerService.remaining(timer_id, now)
@@ -68,8 +72,7 @@ func _rebuild() -> void:
 	var now := TimeUtil.now()
 	_last_signature = _signature(now)
 	slots_label.text = _slots_text()
-	var owned: Dictionary = GameState.data["gizmos"]["owned"]
-	for gizmo_id in owned:
+	for gizmo_id in DataDefs.gizmos["defs"]:
 		var row := HBoxContainer.new()
 		row.custom_minimum_size = Vector2(0, 56)
 		var label := Label.new()

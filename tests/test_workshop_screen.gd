@@ -23,8 +23,9 @@ func after_all() -> void:
 	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings)
 
 
-func test_one_row_per_owned_gizmo() -> void:
-	assert_eq(screen.get_node("Rows").get_child_count(), 8, "all eight starters owned")
+func test_one_row_per_recipe() -> void:
+	assert_eq(screen.get_node("Rows").get_child_count(), (DataDefs.gizmos["defs"] as Dictionary).size(),
+		"every recipe shows, owned or not (craft-to-acquire)")
 
 func test_craft_starts_through_model() -> void:
 	screen._on_craft_pressed("wind_fan")
@@ -74,3 +75,14 @@ func test_tick_rebuilds_when_a_craft_finishes() -> void:
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, running_signature,
 		"done is structural: the Collect! button must appear")
+
+func test_unowned_recipe_row_is_labeled_and_craftable() -> void:
+	GameState.data["currencies"]["brasswork"] = 2
+	screen._rebuild()
+	assert_string_contains(screen._gizmo_label_text("gyro_damper", TimeUtil.now()), "(not owned)")
+	screen._on_craft_pressed("gyro_damper")
+	assert_true(TimerService.active_timers().has("craft_gyro_damper"))
+	TimerService._state.data["timers"]["craft_gyro_damper"]["ends_at"] = 0
+	screen._on_collect_pressed("gyro_damper")
+	assert_eq(int(GameState.data["gizmos"]["owned"]["gyro_damper"]), 1,
+		"first craft grants ownership at level 1")

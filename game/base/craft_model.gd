@@ -22,12 +22,14 @@ static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, t
 		return false
 	if timers.active_timers().has("craft_" + gizmo_id):
 		return false
-	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
-	if not owned.has(gizmo_id):
-		return false
-	if int(owned[gizmo_id]) >= int(gizmo_defs.get("craft_max_level", 5)):
-		return false
 	var def: Dictionary = (gizmo_defs.get("defs", {}) as Dictionary).get(gizmo_id, {})
+	if def.is_empty():
+		return false
+	# Craft-to-acquire (spec 3.3): unowned recipes craft at level 0 -> 1;
+	# resources (regional materials) are the gate, not ownership.
+	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
+	if int(owned.get(gizmo_id, 0)) >= int(gizmo_defs.get("craft_max_level", 5)):
+		return false
 	return economy.can_afford(def.get("craft_cost", {}))
 
 
@@ -44,6 +46,7 @@ static func complete_craft(data: Dictionary, payload: Dictionary) -> void:
 	if payload.is_empty():
 		return
 	var gizmo_id := String(payload.get("gizmo", ""))
+	if gizmo_id == "":
+		return
 	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
-	if owned.has(gizmo_id):
-		owned[gizmo_id] = int(owned[gizmo_id]) + 1
+	owned[gizmo_id] = int(owned.get(gizmo_id, 0)) + 1
