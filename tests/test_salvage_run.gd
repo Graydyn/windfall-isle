@@ -187,3 +187,29 @@ func test_tier_multiplier_applies_to_later_catches_only() -> void:
 func test_scene_reads_quota_tiers_from_region_data() -> void:
 	assert_false(scene.model.tiers.is_empty(),
 		"region_1 quota tiers must reach the run model")
+
+func test_double_payout_credits_loot_again_exactly_once() -> void:
+	scene.model = RunModel.new({"drops_per_run": 1, "max_active_pods": 4})
+	scene.model.run_over.connect(scene._on_run_over)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"scrap": 9})
+	assert_eq(Economy.balance("scrap"), scrap_before + 9)
+	assert_true(scene.get_node("UI/Results/VBox/DoubleButton").visible)
+	scene._on_double_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 18, "double credits the run loot once more")
+	scene._on_double_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 18, "double is once per run")
+	assert_true(scene.get_node("UI/Results/VBox/DoubleButton").disabled)
+
+func test_double_button_hidden_when_nothing_was_salvaged() -> void:
+	scene.model = RunModel.new({"drops_per_run": 1, "max_active_pods": 4})
+	scene.model.run_over.connect(scene._on_run_over)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	pod.set_meta("value_mult", 0.0)
+	scene._on_pod_caught(pod, {"scrap": 1})
+	assert_true(scene.get_node("UI/Results").visible)
+	assert_false(scene.get_node("UI/Results/VBox/DoubleButton").visible,
+		"nothing to double")

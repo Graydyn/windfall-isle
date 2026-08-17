@@ -39,5 +39,8 @@ offset_bottom = 700.0
 [node name="Summary" type="Label" parent="UI/Results/VBox"]
 text = "Expedition complete"
 
+[node name="DoubleButton" type="Button" parent="UI/Results/VBox"]
+text = "Double payout (ad)"
+
 [node name="ReturnButton" type="Button" parent="UI/Results/VBox"]
 text = "Return to Island"

@@ -12,6 +12,7 @@ func _ready() -> void:
 	launch_button.pressed.connect(_on_launch_pressed)
 	$GizmosButton.pressed.connect(_on_gizmos_pressed)
 	$IslandButton.pressed.connect(_on_island_pressed)
+	$RefillButton.pressed.connect(_on_refill_pressed)
 	$RefreshTimer.timeout.connect(_refresh)
 	_refresh()
 
@@ -30,6 +31,9 @@ func _refresh() -> void:
 		FuelModel.current(fuel, now),
 		int(fuel["cap"]),
 	]
+	$RefillButton.visible = Ads.service.is_available(AdService.Placement.FUEL_REFILL)
+	$RefillButton.disabled = FuelModel.current(fuel, now) >= int(fuel["cap"]) \
+		or not AdLimits.can_use(GameState.data, "fuel_refill", _refill_limit(), now)
 	launch_button.disabled = FuelModel.current(fuel, now) < int(DataDefs.run.get("fuel_cost", 1))
 
 
@@ -48,3 +52,30 @@ func _on_gizmos_pressed() -> void:
 
 func _on_island_pressed() -> void:
 	get_tree().change_scene_to_file("res://game/base/island_screen.tscn")
+
+
+func _on_refill_pressed() -> void:
+	var now := TimeUtil.now()
+	if not Ads.service.is_available(AdService.Placement.FUEL_REFILL):
+		return
+	if not AdLimits.can_use(GameState.data, "fuel_refill", _refill_limit(), now):
+		return
+	if FuelModel.current(GameState.data["fuel"], now) >= int(GameState.data["fuel"]["cap"]):
+		return
+	Ads.service.request_reward(AdService.Placement.FUEL_REFILL, _grant_fuel_refill)
+
+
+func _grant_fuel_refill() -> void:
+	# The limit is consumed at GRANT time so a dismissed real ad costs nothing.
+	var now := TimeUtil.now()
+	if not AdLimits.use(GameState.data, "fuel_refill", _refill_limit(), now):
+		return
+	var fuel: Dictionary = GameState.data["fuel"]
+	FuelModel.materialize(fuel, now)
+	fuel["amount"] = int(fuel["cap"])
+	GameState.save_game()
+	_refresh()
+
+
+func _refill_limit() -> int:
+	return int((DataDefs.retention.get("ads", {}) as Dictionary).get("fuel_refills_per_day", 2))

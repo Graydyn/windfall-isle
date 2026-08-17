@@ -9,6 +9,7 @@ const PodScene := preload("res://game/run/pod.tscn")
 var model: RunModel
 var pod_defs: Dictionary
 var _next_barge_multiplier := 1.0
+var _payout_doubled := false
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -35,6 +36,7 @@ func _ready() -> void:
 	model.run_over.connect(_on_run_over)
 	$UI/AbandonButton.pressed.connect(_on_abandon_pressed)
 	$UI/Results/VBox/ReturnButton.pressed.connect(_on_return_pressed)
+	$UI/Results/VBox/DoubleButton.pressed.connect(_on_double_pressed)
 	_refresh_hud()
 
 
@@ -94,6 +96,9 @@ func _on_run_over() -> void:
 		pod.queue_free()
 	GameState.save_game()
 	$UI/Results/VBox/Summary.text = _summary_text()
+	$UI/Results/VBox/DoubleButton.visible = Ads.service.is_available(AdService.Placement.PAYOUT_DOUBLE) \
+		and not model.loot.is_empty()
+	$UI/Results/VBox/DoubleButton.disabled = false
 	$UI/Results.visible = true
 
 
@@ -175,3 +180,22 @@ func request_split(pod: RigidBody2D) -> bool:
 	_start_watchdog(clone)
 	_refresh_hud()
 	return true
+
+
+func _on_double_pressed() -> void:
+	if _payout_doubled or not Ads.service.is_available(AdService.Placement.PAYOUT_DOUBLE):
+		return
+	Ads.service.request_reward(AdService.Placement.PAYOUT_DOUBLE, _grant_payout_double)
+
+
+func _grant_payout_double() -> void:
+	# Once per run (spec 6 placement 3), credited straight to the economy;
+	# model.loot stays the true single-run tally.
+	if _payout_doubled:
+		return
+	_payout_doubled = true
+	for currency in model.loot:
+		Economy.add(currency, int(model.loot[currency]))
+	GameState.save_game()
+	$UI/Results/VBox/Summary.text = _summary_text() + "\nPayout doubled!"
+	$UI/Results/VBox/DoubleButton.disabled = true

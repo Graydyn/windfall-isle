@@ -35,6 +35,13 @@ offset_right = 560.0
 offset_bottom = 1050.0
 text = "Gizmos"
 
+[node name="RefillButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 800.0
+offset_right = 560.0
+offset_bottom = 860.0
+text = "Refill fuel (ad)"
+
 [node name="RefreshTimer" type="Timer" parent="."]
 wait_time = 1.0
 autostart = true
