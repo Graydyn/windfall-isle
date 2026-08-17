@@ -2,7 +2,7 @@ class_name SaveSchema
 ## Versioned save schema (spec 7.3). One dict is the whole save.
 ## "island" and "gizmos" are reserved for the base-builder and gizmo plans.
 
-const CURRENT_VERSION := 4
+const CURRENT_VERSION := 5
 
 
 static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
@@ -23,6 +23,8 @@ static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dicti
 		"trickle": {"last_collect": 0},
 		"daily_crate": {"last_claim_day": 0},
 		"gizmos": _fresh_gizmos(gizmo_defs),
+		"ads": _fresh_ads(),
+		"notifications": _fresh_notifications(),
 	}
 
 
@@ -36,6 +38,9 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 		data = _migrate_2_to_3(data, gizmo_defs)
 	if int(data["version"]) == 3:
 		data = _migrate_3_to_4(data)
+	if int(data["version"]) == 4:
+		data = _migrate_4_to_5(data)
+	_backfill_missing_keys(data, gizmo_defs)
 	return data
 
 
@@ -91,3 +96,30 @@ static func _migrate_3_to_4(data: Dictionary) -> Dictionary:
 	data["daily_crate"] = {"last_claim_day": 0}
 	data["version"] = 4
 	return data
+
+
+static func _migrate_4_to_5(data: Dictionary) -> Dictionary:
+	# Retention/Android glue: rewarded-ad daily counters and the
+	# notification-permission flag.
+	data["ads"] = _fresh_ads()
+	data["notifications"] = _fresh_notifications()
+	data["version"] = 5
+	return data
+
+
+static func _fresh_ads() -> Dictionary:
+	return {"day": 0, "counts": {}}
+
+
+static func _fresh_notifications() -> Dictionary:
+	return {"permission_requested": false}
+
+
+static func _backfill_missing_keys(data: Dictionary, gizmo_defs: Dictionary) -> void:
+	# A structurally damaged save of the current version (hand-edited, partial
+	# write survived by the backup) heals to neutral defaults instead of
+	# crashing consumers; healthy saves are untouched because every key exists.
+	var defaults := default_data({}, gizmo_defs)
+	for key in defaults:
+		if not data.has(key):
+			data[key] = defaults[key]

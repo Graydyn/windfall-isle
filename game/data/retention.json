@@ -2,5 +2,9 @@
 	"daily_crate": {
 		"scrap": 40,
 		"crystals": 1
+	},
+	"ads": {
+		"fuel_refills_per_day": 2,
+		"bonus_crates_per_day": 1
 	}
 }
