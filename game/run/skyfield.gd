@@ -16,17 +16,23 @@ func build(region_defs: Dictionary, run_defs: Dictionary) -> void:
 	_build_walls(board)
 	_build_pegs(region_defs.get("pegs", []))
 	_build_barges(region_defs.get("barges", []))
-	_build_sea()
+	_build_sea(board)
 	_build_slots(region_defs.get("gizmo_slots", []))
 
 
 func _build_walls(board: Dictionary) -> void:
+	# Walls span from above the drop line to below the sea, all derived from
+	# board data so taller region-2+ boards keep pods contained (for region 1
+	# this reproduces the original constants exactly).
+	var bottom := float(board.get("bottom", 1020))
+	var top_edge := -60.0
+	var bottom_edge := bottom + 320.0
 	for x in [float(board.get("left", 20)) - 10.0, float(board.get("right", 700)) + 10.0]:
 		var wall := StaticBody2D.new()
-		wall.position = Vector2(x, 640)
+		wall.position = Vector2(x, (top_edge + bottom_edge) / 2.0)
 		var collider := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()
-		shape.size = Vector2(20, 1400)
+		shape.size = Vector2(20, bottom_edge - top_edge)
 		collider.shape = shape
 		wall.add_child(collider)
 		$Walls.add_child(wall)
@@ -49,7 +55,22 @@ func _build_pegs(pegs: Array) -> void:
 		$Pegs.add_child(body)
 
 
+static func duplicate_barge_ids(barges: Array) -> Array:
+	# Region-authoring validation: duplicate ids make payout attribution
+	# ambiguous and Godot silently renames the second Area2D.
+	var seen := {}
+	var dupes: Array = []
+	for barge in barges:
+		var id := String((barge as Dictionary).get("id", "barge"))
+		if seen.has(id) and not dupes.has(id):
+			dupes.append(id)
+		seen[id] = true
+	return dupes
+
+
 func _build_barges(barges: Array) -> void:
+	for id in duplicate_barge_ids(barges):
+		push_warning("Region JSON has duplicate barge id '%s'" % id)
 	for barge in barges:
 		var area := Area2D.new()
 		area.name = String(barge.get("id", "barge"))
@@ -71,13 +92,16 @@ func _build_barges(barges: Array) -> void:
 		$Barges.add_child(area)
 
 
-func _build_sea() -> void:
+func _build_sea(board: Dictionary) -> void:
+	var left := float(board.get("left", 20))
+	var right := float(board.get("right", 700))
+	var bottom := float(board.get("bottom", 1020))
 	var sea := Area2D.new()
 	sea.name = "Sea"
-	sea.position = Vector2(360, 1180)
+	sea.position = Vector2((left + right) / 2.0, bottom + 160.0)
 	var collider := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(760, 80)
+	shape.size = Vector2(right - left + 80.0, 80.0)
 	collider.shape = shape
 	sea.add_child(collider)
 	sea.body_entered.connect(_on_catcher_body.bind(sea_payout.duplicate(), "sea"))

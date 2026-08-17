@@ -107,3 +107,40 @@ func test_pegs_join_pegs_group() -> void:
 	var board := build_board(DataDefs.skyfield("region_1"))
 	var first_peg: Node = board.get_node("Pegs").get_child(0)
 	assert_true(first_peg.is_in_group("pegs"))
+
+const TALL_REGION := {
+	"name": "Tall Test",
+	"board": {"left": 40, "right": 500, "top": 140, "bottom": 2000},
+	"pegs": [], "gizmo_slots": [], "barges": [],
+}
+
+
+func test_sea_geometry_derives_from_board_data() -> void:
+	var board := build_board(TALL_REGION)
+	var sea: Area2D = board.get_node("Sea")
+	assert_eq(sea.position, Vector2(270, 2160), "sea centers under the board, below bottom")
+	var shape: RectangleShape2D = (sea.get_child(0) as CollisionShape2D).shape
+	assert_eq(shape.size, Vector2(540, 80), "sea spans the board width plus margin")
+
+func test_wall_geometry_derives_from_board_data() -> void:
+	var board := build_board(TALL_REGION)
+	var wall: StaticBody2D = board.get_node("Walls").get_child(0)
+	assert_eq(wall.position, Vector2(30, 1130), "left wall hugs the board and spans past the sea")
+	var shape: RectangleShape2D = (wall.get_child(0) as CollisionShape2D).shape
+	assert_eq(shape.size, Vector2(20, 2380))
+
+func test_region_1_geometry_is_unchanged_by_the_derivation() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	assert_eq((board.get_node("Sea") as Area2D).position, Vector2(360, 1180))
+	var wall: StaticBody2D = board.get_node("Walls").get_child(0)
+	assert_eq(wall.position, Vector2(10, 640))
+
+func test_duplicate_barge_ids_are_flagged() -> void:
+	var dupes := Skyfield.duplicate_barge_ids([
+		{"id": "left"}, {"id": "center"}, {"id": "left"}, {"id": "left"},
+	])
+	assert_eq(dupes, ["left"])
+
+func test_region_1_has_no_duplicate_barge_ids() -> void:
+	var region := DataDefs.skyfield("region_1")
+	assert_eq(Skyfield.duplicate_barge_ids(region.get("barges", [])), [])
