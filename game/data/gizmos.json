@@ -85,6 +85,22 @@
 			"value_multiplier": 0.5,
 			"craft_cost": {"scrap": 160, "cloudsilk": 2},
 			"craft_seconds": 360
+		},
+		"gyro_damper": {
+			"name": "Gyro Damper",
+			"scene": "res://game/run/gizmos/gyro_damper.tscn",
+			"field_radius": 140.0,
+			"craft_cost": {"scrap": 200, "brasswork": 2},
+			"craft_seconds": 420
+		},
+		"piston_kicker": {
+			"name": "Piston Kicker",
+			"scene": "res://game/run/gizmos/piston_kicker.tscn",
+			"force": 520.0,
+			"direction": 1.0,
+			"radius": 24.0,
+			"craft_cost": {"scrap": 180, "brasswork": 1},
+			"craft_seconds": 300
 		}
 	}
 }
