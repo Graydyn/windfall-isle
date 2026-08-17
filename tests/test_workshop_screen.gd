@@ -49,3 +49,28 @@ func test_skip_completes_a_craft_timer_then_collect_merges() -> void:
 	screen._on_collect_pressed("wind_fan")
 	assert_eq(int(GameState.data["gizmos"]["owned"]["wind_fan"]), 2,
 		"skip then collect merges the level like any finished craft")
+
+func test_tick_without_state_change_keeps_row_nodes_alive() -> void:
+	var row_before: Node = screen.get_node("Rows").get_child(0)
+	screen._refresh_tick()
+	assert_true(is_instance_valid(row_before) and not row_before.is_queued_for_deletion(),
+		"per-second ticks must not free a button under the player's finger")
+
+func test_tick_updates_the_countdown_in_place() -> void:
+	screen._on_craft_pressed("wind_fan")
+	var label: Label = screen._gizmo_labels["wind_fan"]
+	var text_before: String = label.text
+	TimerService._state.data["timers"]["craft_wind_fan"]["ends_at"] = \
+		int(TimerService._state.data["timers"]["craft_wind_fan"]["ends_at"]) - 5
+	screen._refresh_tick()
+	assert_true(is_instance_valid(label), "the label survives the tick")
+	assert_ne(label.text, text_before, "the countdown advanced without a rebuild")
+
+func test_tick_rebuilds_when_a_craft_finishes() -> void:
+	screen._on_craft_pressed("wind_fan")
+	screen._refresh_tick()
+	var running_signature: String = screen._last_signature
+	TimerService._state.data["timers"]["craft_wind_fan"]["ends_at"] = 0
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, running_signature,
+		"done is structural: the Collect! button must appear")

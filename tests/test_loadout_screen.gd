@@ -43,3 +43,10 @@ func test_same_gizmo_cannot_occupy_two_slots() -> void:
 	screen._on_slot_pressed("slot_1")
 	var second: String = GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1").get("slot_1", "")
 	assert_ne(first, second, "slot_1's first option skips what slot_0 holds")
+
+func test_slot_edit_persists_without_pressing_back() -> void:
+	screen._on_slot_pressed("slot_0")
+	var saved := SaveIO.new(TEST_SAVE).read()
+	var loadout: Dictionary = ((saved["gizmos"] as Dictionary)["loadout"] as Dictionary).get("region_1", {})
+	assert_true(loadout.has("slot_0"),
+		"an OS kill right after a tap must not lose the edit (save-anywhere)")

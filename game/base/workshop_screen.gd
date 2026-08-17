@@ -1,6 +1,12 @@
 extends Control
 ## Workshop crafting (spec 4.1): craft duplicates of owned gizmos; a finished
 ## craft merges into a level (spec 3.3). Dumb UI over CraftModel.
+##
+## Refresh discipline mirrors island_screen: ticks rebuild only on structural
+## change; countdown labels update in place.
+
+var _last_signature := ""
+var _gizmo_labels: Dictionary = {}
 
 @onready var rows: VBoxContainer = $Rows
 @onready var slots_label: Label = $SlotsLabel
@@ -8,26 +14,69 @@ extends Control
 
 func _ready() -> void:
 	$BackButton.pressed.connect(_on_back_pressed)
-	$RefreshTimer.timeout.connect(_rebuild)
+	$RefreshTimer.timeout.connect(_refresh_tick)
 	_rebuild()
+
+
+func _signature(now: int) -> String:
+	var parts := PackedStringArray()
+	for gizmo_id in GameState.data["gizmos"]["owned"]:
+		var timer_id := "craft_" + String(gizmo_id)
+		if TimerService.active_timers().has(timer_id):
+			parts.append("d" if TimerService.is_done(timer_id, now) else "r")
+		else:
+			parts.append("i")
+	return ",".join(parts)
+
+
+func _refresh_tick() -> void:
+	var now := TimeUtil.now()
+	if _signature(now) != _last_signature:
+		_rebuild()
+		return
+	_refresh_labels(now)
+
+
+func _refresh_labels(now: int) -> void:
+	slots_label.text = _slots_text()
+	for gizmo_id in _gizmo_labels:
+		var label: Label = _gizmo_labels[gizmo_id]
+		if is_instance_valid(label):
+			label.text = _gizmo_label_text(String(gizmo_id), now)
+
+
+func _slots_text() -> String:
+	var slots := CraftModel.craft_slots(GameState.data["island"])
+	return "Workshop Lv %d: crafting %d/%d" % [slots, CraftModel.active_crafts(TimerService), maxi(slots, 0)] \
+		if slots > 0 else "Build a Workshop on the island to craft"
+
+
+func _gizmo_label_text(gizmo_id: String, now: int) -> String:
+	var owned: Dictionary = GameState.data["gizmos"]["owned"]
+	var def: Dictionary = (DataDefs.gizmos["defs"] as Dictionary).get(gizmo_id, {})
+	var text := "%s Lv %d" % [String(def.get("name", gizmo_id)), int(owned.get(gizmo_id, 1))]
+	var timer_id := "craft_" + gizmo_id
+	if TimerService.active_timers().has(timer_id) and not TimerService.is_done(timer_id, now):
+		text += "  (%ds)" % TimerService.remaining(timer_id, now)
+	return text
 
 
 func _rebuild() -> void:
 	for child in rows.get_children():
 		child.queue_free()
+	_gizmo_labels.clear()
 	var now := TimeUtil.now()
-	var slots := CraftModel.craft_slots(GameState.data["island"])
-	slots_label.text = "Workshop Lv %d: crafting %d/%d" % [slots, CraftModel.active_crafts(TimerService), maxi(slots, 0)] \
-		if slots > 0 else "Build a Workshop on the island to craft"
+	_last_signature = _signature(now)
+	slots_label.text = _slots_text()
 	var owned: Dictionary = GameState.data["gizmos"]["owned"]
 	for gizmo_id in owned:
 		var row := HBoxContainer.new()
 		row.custom_minimum_size = Vector2(0, 56)
-		var def: Dictionary = (DataDefs.gizmos["defs"] as Dictionary).get(String(gizmo_id), {})
 		var label := Label.new()
 		label.custom_minimum_size = Vector2(360, 0)
-		label.text = "%s Lv %d" % [String(def.get("name", gizmo_id)), int(owned[gizmo_id])]
+		label.text = _gizmo_label_text(String(gizmo_id), now)
 		row.add_child(label)
+		_gizmo_labels[String(gizmo_id)] = label
 		var timer_id := "craft_" + String(gizmo_id)
 		if TimerService.active_timers().has(timer_id):
 			if TimerService.is_done(timer_id, now):
@@ -35,13 +84,11 @@ func _rebuild() -> void:
 				collect.text = "Collect!"
 				collect.pressed.connect(_on_collect_pressed.bind(String(gizmo_id)))
 				row.add_child(collect)
-			else:
-				label.text += "  (%ds)" % TimerService.remaining(timer_id, now)
-				if Ads.service.is_available(AdService.Placement.TIMER_SKIP):
-					var skip := Button.new()
-					skip.text = "Skip (ad)"
-					skip.pressed.connect(_on_skip_pressed.bind(timer_id))
-					row.add_child(skip)
+			elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+				var skip := Button.new()
+				skip.text = "Skip (ad)"
+				skip.pressed.connect(_on_skip_pressed.bind(timer_id))
+				row.add_child(skip)
 		else:
 			var craft := Button.new()
 			craft.text = "Craft"

@@ -49,6 +49,9 @@ func _on_slot_pressed(slot: String) -> void:
 			used.append(loadout[other_slot])
 	var next := GizmoLoadout.next_choice(String(loadout.get(slot, "")), GizmoLoadout.owned(gizmos_state).keys(), used)
 	GizmoLoadout.set_slot(gizmos_state, region_id, slot, next)
+	# Persist per tap: Android may kill the app at any moment and the pause
+	# notification is not guaranteed on every death path (save-anywhere).
+	GameState.save_game()
 	_rebuild()
 
 
