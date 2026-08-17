@@ -161,6 +161,7 @@ func _on_select_pressed(plot: String) -> void:
 	var current := String(_selection.get(plot, ""))
 	var index := options.find(current)
 	_selection[plot] = options[(index + 1) % options.size()]
+	$StatusLabel.text = ""
 	_rebuild()
 
 

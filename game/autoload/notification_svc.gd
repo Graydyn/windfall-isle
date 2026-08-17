@@ -21,7 +21,11 @@ func schedule_all(now: int) -> void:
 
 func request_permission_once() -> void:
 	# Spec 5: ask at the first construction completion, not at first launch.
-	var flags: Dictionary = GameState.data.get("notifications", {})
+	# Write the section back first so a damaged save cannot swallow the flag
+	# in a detached dict (same discipline as AdLimits._ads).
+	if not GameState.data.has("notifications"):
+		GameState.data["notifications"] = {"permission_requested": false}
+	var flags: Dictionary = GameState.data["notifications"]
 	if bool(flags.get("permission_requested", false)):
 		return
 	flags["permission_requested"] = true

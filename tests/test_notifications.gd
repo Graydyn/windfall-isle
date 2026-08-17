@@ -109,3 +109,14 @@ func test_permission_requested_only_once() -> void:
 	NotificationSvc.request_permission_once()
 	assert_eq(rec.permission_calls, 1)
 	assert_true(bool(GameState.data["notifications"]["permission_requested"]))
+
+func test_permission_once_heals_a_missing_notifications_section() -> void:
+	var rec := RecordingScheduler.new()
+	NotificationSvc.scheduler = rec
+	var data := make_data()
+	data.erase("notifications")
+	GameState.data = data
+	NotificationSvc.request_permission_once()
+	assert_true(GameState.data.has("notifications"), "the section is written back, not lost in a detached dict")
+	assert_true(bool(GameState.data["notifications"]["permission_requested"]))
+	assert_eq(rec.permission_calls, 1)

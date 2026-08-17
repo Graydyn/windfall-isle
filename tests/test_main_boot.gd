@@ -60,10 +60,7 @@ func test_refill_grants_full_tank_and_counts_the_use() -> void:
 
 func test_refill_stops_at_the_daily_limit() -> void:
 	var limit := int((DataDefs.retention["ads"] as Dictionary)["fuel_refills_per_day"])
-	for i in limit:
-		GameState.data["fuel"]["amount"] = 0
-		GameState.data["fuel"]["updated_at"] = TimeUtil.now()
-		main._on_refill_pressed()
+	GameState.data["ads"] = {"day": DailyCrate.day_of(TimeUtil.now()), "counts": {"fuel_refill": limit}}
 	GameState.data["fuel"]["amount"] = 0
 	GameState.data["fuel"]["updated_at"] = TimeUtil.now()
 	main._on_refill_pressed()

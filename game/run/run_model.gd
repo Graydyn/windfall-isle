@@ -24,7 +24,7 @@ var _over_emitted := false
 func _init(config: Dictionary) -> void:
 	drops_total = int(config.get("drops_per_run", 8))
 	max_active_pods = int(config.get("max_active_pods", 4))
-	tiers = config.get("quota_tiers", [])
+	tiers = _valid_tiers(config.get("quota_tiers", []))
 
 
 func drops_remaining() -> int:
@@ -96,3 +96,18 @@ func _check_tier() -> void:
 	while tier < tiers.size() and int(loot.get("scrap", 0)) >= int((tiers[tier] as Dictionary).get("scrap_quota", 0)):
 		tier += 1
 		tier_reached.emit(tier)
+
+
+static func _valid_tiers(rows: Variant) -> Array:
+	# Region-authoring validation (Plan 5 final-review carry-forward): a row
+	# missing scrap_quota would lift the tier at 0 scrap on the first catch.
+	var out: Array = []
+	if not (rows is Array):
+		return out
+	for row in rows:
+		if row is Dictionary and int((row as Dictionary).get("scrap_quota", 0)) > 0 \
+				and (row as Dictionary).has("payout_multiplier"):
+			out.append(row)
+		else:
+			push_warning("Ignoring malformed quota tier row: %s" % [row])
+	return out

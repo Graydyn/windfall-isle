@@ -95,6 +95,7 @@ func test_bonus_crate_pays_and_respects_the_daily_limit() -> void:
 	var scrap_before := Economy.balance("scrap")
 	screen._on_bonus_crate_pressed()
 	assert_eq(Economy.balance("scrap"), scrap_before + 40)
+	GameState.data["ads"]["day"] = DailyCrate.day_of(TimeUtil.now())
 	screen._on_bonus_crate_pressed()
 	assert_eq(Economy.balance("scrap"), scrap_before + 40, "bonus crate is once per day")
 
@@ -157,3 +158,8 @@ func test_any_completion_reapplies_fuel_effects() -> void:
 	screen._on_collect_pressed("plot_0")
 	assert_eq(int(GameState.data["fuel"]["cap"]), 5,
 		"apply_fuel is unconditional and idempotent; a mangled cap heals at any collect")
+
+func test_selection_change_clears_stale_status() -> void:
+	screen.get_node("StatusLabel").text = "Not enough resources."
+	screen._on_select_pressed("plot_0")
+	assert_eq(screen.get_node("StatusLabel").text, "", "a stale rejection must not outlive the selection it judged")

@@ -146,3 +146,23 @@ func test_no_tiers_config_never_lifts() -> void:
 	model.resolve_pod({"scrap": 999})
 	assert_eq(model.tier, 0)
 	assert_eq(model.payout_multiplier(), 1.0)
+
+func test_malformed_tier_rows_are_dropped_with_a_warning() -> void:
+	var model := RunModel.new({
+		"drops_per_run": 3, "max_active_pods": 4,
+		"quota_tiers": [
+			{"payout_multiplier": 9.0},
+			{"scrap_quota": 0, "payout_multiplier": 9.0},
+			{"scrap_quota": 10, "payout_multiplier": 1.5},
+			"junk",
+		],
+	})
+	assert_push_warning_count(3, "one warning per dropped row")
+	assert_eq(model.tiers.size(), 1, "only the well-formed row survives")
+	model.begin_drop()
+	model.resolve_pod({"scrap": 5})
+	assert_eq(model.tier, 0, "a zero-quota row must never lift at 0 scrap")
+	model.begin_drop()
+	model.resolve_pod({"scrap": 5})
+	assert_eq(model.tier, 1)
+	assert_eq(model.payout_multiplier(), 1.5)
