@@ -41,3 +41,11 @@ func test_no_workshop_blocks_crafting() -> void:
 	GameState.data["island"]["plots"].clear()
 	screen._on_craft_pressed("wind_fan")
 	assert_false(TimerService.active_timers().has("craft_wind_fan"))
+
+func test_skip_completes_a_craft_timer_then_collect_merges() -> void:
+	screen._on_craft_pressed("wind_fan")
+	screen._on_skip_pressed("craft_wind_fan")
+	assert_true(TimerService.is_done("craft_wind_fan", TimeUtil.now()))
+	screen._on_collect_pressed("wind_fan")
+	assert_eq(int(GameState.data["gizmos"]["owned"]["wind_fan"]), 2,
+		"skip then collect merges the level like any finished craft")

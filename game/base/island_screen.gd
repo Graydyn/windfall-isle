@@ -16,6 +16,7 @@ func _ready() -> void:
 	$GardensButton.pressed.connect(_on_gardens_pressed)
 	$CrateButton.pressed.connect(_on_crate_pressed)
 	$SlotButton.pressed.connect(_on_slot_pressed)
+	$BonusCrateButton.pressed.connect(_on_bonus_crate_pressed)
 	_rebuild()
 
 
@@ -54,6 +55,11 @@ func _rebuild() -> void:
 				collect.text = "Complete!"
 				collect.pressed.connect(_on_collect_pressed.bind(plot))
 				row.add_child(collect)
+			elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+				var skip := Button.new()
+				skip.text = "Skip (ad)"
+				skip.pressed.connect(_on_skip_pressed.bind(timer_id))
+				row.add_child(skip)
 		else:
 			var select := Button.new()
 			select.text = _selection_text(plot, island)
@@ -72,6 +78,8 @@ func _rebuild() -> void:
 	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
 	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
 	$SlotButton.text = "Unlock 2nd build slot (%d crystals)" % int(slots_cfg.get("second_slot_crystal_cost", 20))
+	$BonusCrateButton.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE)
+	$BonusCrateButton.disabled = not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)
 
 
 func _row_text(plot: String, island: Dictionary, now: int) -> String:
@@ -170,3 +178,41 @@ func _on_slot_pressed() -> void:
 	if IslandModel.unlock_second_slot(GameState.data["island"], DataDefs.buildings, Economy):
 		GameState.save_game()
 	_rebuild()
+
+
+func _on_skip_pressed(timer_id: String) -> void:
+	if not Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+		return
+	Ads.service.request_reward(AdService.Placement.TIMER_SKIP, _grant_skip.bind(timer_id))
+
+
+func _grant_skip(timer_id: String) -> void:
+	# skip() emits no signal; the rebuild surfaces Complete! and the player
+	# collects through the normal button.
+	TimerService.skip(timer_id)
+	GameState.save_game()
+	_rebuild()
+
+
+func _on_bonus_crate_pressed() -> void:
+	var now := TimeUtil.now()
+	if not Ads.service.is_available(AdService.Placement.BONUS_CRATE):
+		return
+	if not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now):
+		return
+	Ads.service.request_reward(AdService.Placement.BONUS_CRATE, _grant_bonus_crate)
+
+
+func _grant_bonus_crate() -> void:
+	var now := TimeUtil.now()
+	if not AdLimits.use(GameState.data, "bonus_crate", _bonus_crate_limit(), now):
+		return
+	var payout: Dictionary = DataDefs.retention.get("daily_crate", {})
+	for currency in payout:
+		Economy.add(currency, int(payout[currency]))
+	GameState.save_game()
+	_rebuild()
+
+
+func _bonus_crate_limit() -> int:
+	return int((DataDefs.retention.get("ads", {}) as Dictionary).get("bonus_crates_per_day", 1))

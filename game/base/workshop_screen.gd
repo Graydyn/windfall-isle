@@ -37,6 +37,11 @@ func _rebuild() -> void:
 				row.add_child(collect)
 			else:
 				label.text += "  (%ds)" % TimerService.remaining(timer_id, now)
+				if Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+					var skip := Button.new()
+					skip.text = "Skip (ad)"
+					skip.pressed.connect(_on_skip_pressed.bind(timer_id))
+					row.add_child(skip)
 		else:
 			var craft := Button.new()
 			craft.text = "Craft"
@@ -63,3 +68,15 @@ func _on_collect_pressed(gizmo_id: String) -> void:
 func _on_back_pressed() -> void:
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/base/island_screen.tscn")
+
+
+func _on_skip_pressed(timer_id: String) -> void:
+	if not Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+		return
+	Ads.service.request_reward(AdService.Placement.TIMER_SKIP, _grant_skip.bind(timer_id))
+
+
+func _grant_skip(timer_id: String) -> void:
+	TimerService.skip(timer_id)
+	GameState.save_game()
+	_rebuild()

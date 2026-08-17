@@ -82,3 +82,26 @@ func test_slot_button_unlocks_second_slot() -> void:
 	screen._on_slot_pressed()
 	assert_eq(int(GameState.data["island"]["build_slots"]), 2)
 	assert_eq(Economy.balance("crystals"), 10)
+
+func test_skip_completes_a_construction_timer() -> void:
+	screen._on_select_pressed("plot_0")
+	screen._on_build_pressed("plot_0")
+	assert_true(TimerService.active_timers().has("build_plot_0"))
+	screen._on_skip_pressed("build_plot_0")
+	assert_true(TimerService.is_done("build_plot_0", TimeUtil.now()),
+		"spec 6 placement 1: an ad skips the timer; the player still collects")
+
+func test_bonus_crate_pays_and_respects_the_daily_limit() -> void:
+	var scrap_before := Economy.balance("scrap")
+	screen._on_bonus_crate_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 40)
+	screen._on_bonus_crate_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 40, "bonus crate is once per day")
+
+func test_bonus_crate_is_independent_of_the_free_crate() -> void:
+	GameState.data["daily_crate"]["last_claim_day"] = 0
+	var scrap_before := Economy.balance("scrap")
+	screen._on_crate_pressed()
+	screen._on_bonus_crate_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 80,
+		"the free crate and the ad crate are separate faucets (spec 6 placement 4)")
