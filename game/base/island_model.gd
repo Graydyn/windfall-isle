@@ -49,15 +49,23 @@ static func _next_level_row(defs: Dictionary, island: Dictionary, plot: String, 
 	return rows[current]
 
 
-static func can_start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> bool:
+static func build_rejection(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> String:
+	# "" means buildable; anything else is a short player-facing reason
+	# (Plan 5 polish: a rejected Build tap must say why).
 	if timers.active_timers().has("build_" + plot):
-		return false
+		return "This plot is already under construction."
 	if active_constructions(timers, now) >= int(island.get("build_slots", 1)):
-		return false
+		return "All build slots are busy."
 	var row := _next_level_row(defs, island, plot, building_id)
 	if row.is_empty():
-		return false
-	return economy.can_afford(row.get("cost", {}))
+		return "%s cannot be built here." % building_id
+	if not economy.can_afford(row.get("cost", {})):
+		return "Not enough resources."
+	return ""
+
+
+static func can_start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> bool:
+	return build_rejection(island, defs, economy, timers, plot, building_id, now) == ""
 
 
 static func start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> bool:

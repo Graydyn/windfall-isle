@@ -98,3 +98,30 @@ func test_insufficient_funds_rejected() -> void:
 	state.data["currencies"]["scrap"] = 10
 	assert_false(IslandModel.start_build(island, defs, econ, timers, "plot_0", "workshop", 1000))
 	assert_eq(timers.active_timers().size(), 0)
+
+func test_build_rejection_empty_when_buildable() -> void:
+	assert_eq(IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "workshop", 1000), "")
+
+func test_build_rejection_names_busy_slots() -> void:
+	IslandModel.start_build(island, defs, econ, timers, "plot_0", "workshop", 1000)
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "plot_1", "gardens", 1000),
+		"slots are busy")
+
+func test_build_rejection_names_the_cost_shortfall() -> void:
+	state.data["currencies"]["scrap"] = 0
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "workshop", 1000),
+		"Not enough")
+
+func test_build_rejection_rejects_an_occupied_timer_plot() -> void:
+	IslandModel.start_build(island, defs, econ, timers, "plot_0", "workshop", 1000)
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "workshop", 1000),
+		"under construction")
+
+func test_build_rejection_rejects_an_impossible_target() -> void:
+	island["plots"]["plot_0"] = {"building": "workshop", "level": 3}
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "workshop", 1000),
+		"cannot be built")

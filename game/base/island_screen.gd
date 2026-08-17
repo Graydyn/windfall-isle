@@ -1,10 +1,17 @@
 extends Control
-## The home island (spec 4.1): plots, timed construction, upgrades. Dumb UI:
-## every rule lives in IslandModel; this screen renders state and forwards
-## taps. T9 adds the retention controls (gardens trickle, daily crate,
-## second build slot) to this same screen.
+## The home island (spec 4.1): plots, timed construction, upgrades, and the
+## retention controls (trickle, crates, build slot, rewarded-ad accelerators).
+## Dumb UI: every rule lives in IslandModel; this screen renders state and
+## forwards taps.
+##
+## Refresh discipline: RefreshTimer ticks call _refresh_tick, which rebuilds
+## the row tree ONLY when the structural signature changes (a timer starting,
+## finishing, or disappearing); otherwise labels update in place so a button
+## mid-tap is never freed under the player's finger.
 
 var _selection: Dictionary = {}
+var _last_signature := ""
+var _plot_labels: Dictionary = {}
 
 @onready var rows: VBoxContainer = $Rows
 
@@ -12,7 +19,7 @@ var _selection: Dictionary = {}
 func _ready() -> void:
 	$WorkshopButton.pressed.connect(_on_workshop_pressed)
 	$BackButton.pressed.connect(_on_back_pressed)
-	$RefreshTimer.timeout.connect(_rebuild)
+	$RefreshTimer.timeout.connect(_refresh_tick)
 	$GardensButton.pressed.connect(_on_gardens_pressed)
 	$CrateButton.pressed.connect(_on_crate_pressed)
 	$SlotButton.pressed.connect(_on_slot_pressed)
@@ -36,10 +43,40 @@ func _unbuilt_ids() -> Array[String]:
 	return ids
 
 
+func _signature(now: int) -> String:
+	var parts := PackedStringArray()
+	for plot in _plot_ids():
+		var timer_id := "build_" + plot
+		if TimerService.active_timers().has(timer_id):
+			parts.append("d" if TimerService.is_done(timer_id, now) else "r")
+		else:
+			parts.append("i")
+	return ",".join(parts)
+
+
+func _refresh_tick() -> void:
+	var now := TimeUtil.now()
+	if _signature(now) != _last_signature:
+		_rebuild()
+		return
+	_refresh_labels(now)
+
+
+func _refresh_labels(now: int) -> void:
+	var island: Dictionary = GameState.data["island"]
+	for plot in _plot_labels:
+		var label: Label = _plot_labels[plot]
+		if is_instance_valid(label):
+			label.text = _row_text(String(plot), island, now)
+	_refresh_static_controls(now)
+
+
 func _rebuild() -> void:
 	for child in rows.get_children():
 		child.queue_free()
+	_plot_labels.clear()
 	var now := TimeUtil.now()
+	_last_signature = _signature(now)
 	var island: Dictionary = GameState.data["island"]
 	for plot in _plot_ids():
 		var row := HBoxContainer.new()
@@ -48,6 +85,7 @@ func _rebuild() -> void:
 		label.custom_minimum_size = Vector2(320, 0)
 		label.text = _row_text(plot, island, now)
 		row.add_child(label)
+		_plot_labels[plot] = label
 		var timer_id := "build_" + plot
 		if TimerService.active_timers().has(timer_id):
 			if TimerService.is_done(timer_id, now):
@@ -70,14 +108,20 @@ func _rebuild() -> void:
 			build.pressed.connect(_on_build_pressed.bind(plot))
 			row.add_child(build)
 		rows.add_child(row)
+	_refresh_static_controls(now)
+
+
+func _refresh_static_controls(now: int) -> void:
 	var pending := TrickleModel.pending(GameState.data, DataDefs.buildings, now)
 	$GardensButton.text = "Collect trickle (%d scrap)" % pending
 	$GardensButton.disabled = pending <= 0
 	$CrateButton.disabled = not DailyCrate.can_claim(GameState.data, now)
 	$CrateButton.text = "Open daily crate" if not $CrateButton.disabled else "Crate opened today"
 	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
+	var slot_cost := int(slots_cfg.get("second_slot_crystal_cost", 20))
 	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
-	$SlotButton.text = "Unlock 2nd build slot (%d crystals)" % int(slots_cfg.get("second_slot_crystal_cost", 20))
+	$SlotButton.text = "Unlock 2nd build slot (%d crystals)" % slot_cost
+	$SlotButton.disabled = not Economy.can_afford({"crystals": slot_cost})
 	$BonusCrateButton.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE)
 	$BonusCrateButton.disabled = not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)
 
@@ -128,8 +172,15 @@ func _on_build_pressed(plot: String) -> void:
 	else:
 		building_id = String(_selection.get(plot, ""))
 	if building_id == "":
+		$StatusLabel.text = "Pick a building for %s first." % plot
 		return
-	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, TimeUtil.now()):
+	var now := TimeUtil.now()
+	var reason := IslandModel.build_rejection(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now)
+	if reason != "":
+		$StatusLabel.text = reason
+		return
+	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now):
+		$StatusLabel.text = ""
 		GameState.save_game()
 	_rebuild()
 
@@ -141,8 +192,9 @@ func _on_collect_pressed(plot: String) -> void:
 		return
 	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now, DataDefs.buildings)
 	NotificationSvc.request_permission_once()
-	if String(payload.get("building", "")) == "wind_still":
-		IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
+	# Idempotent re-application self-heals fuel cap/regen after ANY completion,
+	# not just the Wind Still: a mangled save heals at the next collect too.
+	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
 	GameState.save_game()
 	_rebuild()
 

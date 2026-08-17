@@ -53,6 +53,12 @@ offset_right = 700.0
 offset_bottom = 980.0
 text = "Bonus crate (ad)"
 
+[node name="StatusLabel" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 1190.0
+offset_right = 700.0
+offset_bottom = 1245.0
+
 [node name="WorkshopButton" type="Button" parent="."]
 offset_left = 160.0
 offset_top = 990.0

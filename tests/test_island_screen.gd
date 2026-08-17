@@ -113,3 +113,47 @@ func test_first_construction_completion_requests_notification_permission() -> vo
 	screen._on_collect_pressed("plot_0")
 	assert_true(bool(GameState.data["notifications"]["permission_requested"]),
 		"spec 5: permission asked at the first construction completion, not at launch")
+
+func test_tick_without_state_change_keeps_row_nodes_alive() -> void:
+	var row_before: Node = screen.get_node("Rows").get_child(0)
+	screen._refresh_tick()
+	assert_true(is_instance_valid(row_before) and not row_before.is_queued_for_deletion(),
+		"per-second ticks must not free a button under the player's finger")
+
+func test_tick_rebuilds_when_a_timer_finishes() -> void:
+	screen._on_select_pressed("plot_0")
+	screen._on_build_pressed("plot_0")
+	screen._refresh_tick()
+	var running_signature: String = screen._last_signature
+	TimerService._state.data["timers"]["build_plot_0"]["ends_at"] = 0
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, running_signature,
+		"done is structural: the Complete! button must appear")
+
+func test_slot_button_disabled_when_crystals_are_short() -> void:
+	GameState.data["currencies"]["crystals"] = 0
+	screen._rebuild()
+	assert_true(screen.get_node("SlotButton").disabled)
+
+func test_rejected_build_explains_itself() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._on_select_pressed("plot_0")
+	screen._on_build_pressed("plot_0")
+	assert_string_contains(screen.get_node("StatusLabel").text, "Not enough")
+
+func test_successful_build_clears_the_status() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._on_select_pressed("plot_0")
+	screen._on_build_pressed("plot_0")
+	GameState.data["currencies"]["scrap"] = 2000
+	screen._on_build_pressed("plot_0")
+	assert_eq(screen.get_node("StatusLabel").text, "")
+
+func test_any_completion_reapplies_fuel_effects() -> void:
+	GameState.data["fuel"]["cap"] = 99
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 0}
+	TimerService.start("build_plot_0", "construction", 10, 1000, {"plot": "plot_0", "building": "workshop", "to_level": 1})
+	TimerService._state.data["timers"]["build_plot_0"]["ends_at"] = 0
+	screen._on_collect_pressed("plot_0")
+	assert_eq(int(GameState.data["fuel"]["cap"]), 5,
+		"apply_fuel is unconditional and idempotent; a mangled cap heals at any collect")
