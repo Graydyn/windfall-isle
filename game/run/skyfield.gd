@@ -11,13 +11,14 @@ var sea_payout: Dictionary = {}
 
 
 func build(region_defs: Dictionary, run_defs: Dictionary) -> void:
-	sea_payout = (run_defs.get("sea_payout", {"scrap": 1}) as Dictionary).duplicate()
+	sea_payout = (region_defs.get("sea_payout", run_defs.get("sea_payout", {"scrap": 1})) as Dictionary).duplicate()
 	var board: Dictionary = region_defs.get("board", {})
 	_build_walls(board)
 	_build_pegs(region_defs.get("pegs", []))
 	_build_barges(region_defs.get("barges", []))
 	_build_sea(board)
 	_build_slots(region_defs.get("gizmo_slots", []))
+	_build_drift_zones(region_defs.get("drift_zones", []))
 
 
 func _build_walls(board: Dictionary) -> void:
@@ -114,6 +115,13 @@ func _build_slots(slots: Array) -> void:
 		marker.name = "slot_%d" % i
 		marker.position = Vector2(float(slots[i]["x"]), float(slots[i]["y"]))
 		$GizmoSlots.add_child(marker)
+
+
+func _build_drift_zones(zones: Array) -> void:
+	for zone_defs in zones:
+		var zone := DriftZone.new()
+		zone.setup(zone_defs as Dictionary)
+		$DriftZones.add_child(zone)
 
 
 func install_gizmos(loadout: Dictionary, gizmo_defs: Dictionary, owned: Dictionary, context: Node) -> void:
