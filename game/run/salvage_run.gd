@@ -20,6 +20,7 @@ func _ready() -> void:
 	var region: Dictionary = DataDefs.skyfield("region_1")
 	var run_config: Dictionary = run_defs.duplicate()
 	run_config["drops_per_run"] = IslandEffects.drops_per_run(run_defs, GameState.data["island"], DataDefs.buildings)
+	run_config["quota_tiers"] = region.get("quota_tiers", [])
 	model = RunModel.new(run_config)
 	board.build(region, run_defs)
 	var gizmos_state: Dictionary = GameState.data["gizmos"]
@@ -105,12 +106,12 @@ func _on_return_pressed() -> void:
 
 
 func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
-	# Central payout resolution: pod-carried multipliers (Crystal Prism,
-	# Splitter Vane) apply here so every catch path (barge, sea, watchdog)
-	# gets identical treatment. Plan 3b adds the next-barge multiplier.
-	var mult := 1.0
+	# Central payout resolution: the run's quota-tier multiplier and the
+	# pod-carried multipliers (Crystal Prism, Splitter Vane) apply here so
+	# every catch path (barge, sea, watchdog) gets identical treatment.
+	var mult := model.payout_multiplier()
 	if is_instance_valid(pod) and pod.has_meta("value_mult"):
-		mult = float(pod.get_meta("value_mult"))
+		mult *= float(pod.get_meta("value_mult"))
 	if is_equal_approx(mult, 1.0):
 		return base.duplicate()
 	var out := {}
@@ -125,7 +126,7 @@ func _refresh_hud() -> void:
 	var parts := PackedStringArray()
 	for currency in model.loot:
 		parts.append("%s +%d" % [currency, int(model.loot[currency])])
-	$UI/HudLabel.text = "Drops left: %d\n%s" % [model.drops_remaining(), " ".join(parts)]
+	$UI/HudLabel.text = "Drops left: %d   Tier %d\n%s" % [model.drops_remaining(), model.tier, " ".join(parts)]
 
 
 func _summary_text() -> String:

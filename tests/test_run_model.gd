@@ -94,3 +94,55 @@ func test_split_pod_extends_run_until_both_resolve() -> void:
 	assert_false(model.is_over(), "the split twin is still falling")
 	model.resolve_pod({"scrap": 1})
 	assert_true(model.is_over())
+
+func make_tiered(drops := 8) -> RunModel:
+	return RunModel.new({
+		"drops_per_run": drops,
+		"max_active_pods": 4,
+		"quota_tiers": [
+			{"scrap_quota": 10, "payout_multiplier": 1.5},
+			{"scrap_quota": 30, "payout_multiplier": 2.0},
+		],
+	})
+
+
+func test_tier_starts_at_zero_with_no_multiplier() -> void:
+	var model := make_tiered()
+	assert_eq(model.tier, 0)
+	assert_eq(model.payout_multiplier(), 1.0)
+
+func test_reaching_scrap_quota_lifts_tier() -> void:
+	var model := make_tiered()
+	watch_signals(model)
+	model.begin_drop()
+	model.resolve_pod({"scrap": 10})
+	assert_eq(model.tier, 1)
+	assert_eq(model.payout_multiplier(), 1.5)
+	assert_signal_emitted_with_parameters(model, "tier_reached", [1])
+
+func test_one_catch_can_cross_multiple_tiers() -> void:
+	var model := make_tiered()
+	watch_signals(model)
+	model.begin_drop()
+	model.resolve_pod({"scrap": 45})
+	assert_eq(model.tier, 2)
+	assert_eq(model.payout_multiplier(), 2.0)
+	assert_signal_emit_count(model, "tier_reached", 2)
+
+func test_bonus_loot_counts_toward_quota() -> void:
+	var model := make_tiered()
+	model.add_bonus_loot({"scrap": 10})
+	assert_eq(model.tier, 1, "Lightning Jar bonuses are salvage too")
+
+func test_non_scrap_loot_ignores_quota() -> void:
+	var model := make_tiered()
+	model.begin_drop()
+	model.resolve_pod({"cloudsilk": 50})
+	assert_eq(model.tier, 0, "the quota is measured in scrap (spec 4.2 common currency)")
+
+func test_no_tiers_config_never_lifts() -> void:
+	var model := make_model()
+	model.begin_drop()
+	model.resolve_pod({"scrap": 999})
+	assert_eq(model.tier, 0)
+	assert_eq(model.payout_multiplier(), 1.0)

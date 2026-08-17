@@ -168,3 +168,22 @@ func test_run_drops_include_balloonworks_bonus() -> void:
 	GameState.data["island"]["plots"]["plot_1"] = {"building": "balloonworks", "level": 1}
 	var second = add_child_autofree(RunScene.instantiate())
 	assert_eq(second.model.drops_remaining(), int(DataDefs.run["drops_per_run"]) + 1)
+
+func test_tier_multiplier_applies_to_later_catches_only() -> void:
+	scene.model = RunModel.new({
+		"drops_per_run": 8, "max_active_pods": 4,
+		"quota_tiers": [{"scrap_quota": 10, "payout_multiplier": 2.0}],
+	})
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(pod, {"scrap": 10})
+	assert_eq(scene.model.loot, {"scrap": 10}, "the crossing catch pays at the old tier")
+	await wait_physics_frames(1)
+	scene._on_drop_requested(300.0)
+	var pod2: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(pod2, {"scrap": 10})
+	assert_eq(int(scene.model.loot["scrap"]), 30, "tier 1 doubles the second catch")
+
+func test_scene_reads_quota_tiers_from_region_data() -> void:
+	assert_false(scene.model.tiers.is_empty(),
+		"region_1 quota tiers must reach the run model")

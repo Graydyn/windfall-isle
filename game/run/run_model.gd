@@ -6,6 +6,7 @@ extends RefCounted
 
 signal loot_changed(loot: Dictionary)
 signal run_over
+signal tier_reached(tier: int)
 
 var drops_total: int
 var drops_used := 0
@@ -14,12 +15,16 @@ var max_active_pods: int
 var loot: Dictionary = {}
 var abandoned := false
 
+var tiers: Array = []
+var tier := 0
+
 var _over_emitted := false
 
 
 func _init(config: Dictionary) -> void:
 	drops_total = int(config.get("drops_per_run", 8))
 	max_active_pods = int(config.get("max_active_pods", 4))
+	tiers = config.get("quota_tiers", [])
 
 
 func drops_remaining() -> int:
@@ -42,6 +47,7 @@ func resolve_pod(payout: Dictionary) -> void:
 	pods_in_flight = maxi(0, pods_in_flight - 1)
 	for currency in payout:
 		loot[currency] = int(loot.get(currency, 0)) + int(payout[currency])
+	_check_tier()
 	loot_changed.emit(loot)
 	_check_over()
 
@@ -65,6 +71,7 @@ func add_bonus_loot(payout: Dictionary) -> void:
 	# Gizmo bonuses (Lightning Jar): loot without pod bookkeeping.
 	for currency in payout:
 		loot[currency] = int(loot.get(currency, 0)) + int(payout[currency])
+	_check_tier()
 	loot_changed.emit(loot)
 
 
@@ -74,3 +81,18 @@ func add_split_pod() -> bool:
 		return false
 	pods_in_flight += 1
 	return true
+
+
+func payout_multiplier() -> float:
+	# The multiplier of the highest tier reached; the base tier is 1.0.
+	if tier <= 0:
+		return 1.0
+	return float((tiers[tier - 1] as Dictionary).get("payout_multiplier", 1.0))
+
+
+func _check_tier() -> void:
+	# Quota tiers (spec 3.2): the quota is measured in scrap collected this
+	# run. One rich catch may cross several tiers; each lift is announced.
+	while tier < tiers.size() and int(loot.get("scrap", 0)) >= int((tiers[tier] as Dictionary).get("scrap_quota", 0)):
+		tier += 1
+		tier_reached.emit(tier)
