@@ -12,16 +12,41 @@ var _slots: Array = []
 
 
 func _ready() -> void:
+	region_id = RegionModel.selected_id(GameState.data, DataDefs.run, GameState.data["island"])
+	$BackButton.pressed.connect(_on_back_pressed)
+	$RegionButton.pressed.connect(_on_region_pressed)
+	_load_region()
+
+
+func _load_region() -> void:
 	var region: Dictionary = DataDefs.skyfield(region_id)
 	_slots = []
 	for i in (region.get("gizmo_slots", []) as Array).size():
 		_slots.append("slot_%d" % i)
-	$BackButton.pressed.connect(_on_back_pressed)
+	$RegionButton.text = "Region: %s" % String(RegionModel.entry(DataDefs.run, region_id).get("name", region_id))
 	_rebuild()
+
+
+func _on_region_pressed() -> void:
+	var entries := RegionModel.unlocked_entries(DataDefs.run, GameState.data["island"])
+	if entries.size() <= 1:
+		return
+	var index := 0
+	for i in entries.size():
+		if String((entries[i] as Dictionary).get("id", "")) == region_id:
+			index = i
+			break
+	region_id = String((entries[(index + 1) % entries.size()] as Dictionary).get("id", RegionModel.FALLBACK_ID))
+	if not GameState.data.has("expedition"):
+		GameState.data["expedition"] = {"region": RegionModel.FALLBACK_ID}
+	(GameState.data["expedition"] as Dictionary)["region"] = region_id
+	GameState.save_game()
+	_load_region()
 
 
 func _rebuild() -> void:
 	for child in rows.get_children():
+		rows.remove_child(child)
 		child.queue_free()
 	var loadout := GizmoLoadout.loadout_for(GameState.data["gizmos"], region_id)
 	for slot in _slots:

@@ -21,6 +21,13 @@ offset_top = 100.0
 offset_right = 680.0
 offset_bottom = 640.0
 
+[node name="RegionButton" type="Button" parent="."]
+offset_left = 160.0
+offset_top = 1000.0
+offset_right = 560.0
+offset_bottom = 1060.0
+text = "Region"
+
 [node name="BackButton" type="Button" parent="."]
 offset_left = 160.0
 offset_top = 1080.0

@@ -50,3 +50,25 @@ func test_slot_edit_persists_without_pressing_back() -> void:
 	var loadout: Dictionary = ((saved["gizmos"] as Dictionary)["loadout"] as Dictionary).get("region_1", {})
 	assert_true(loadout.has("slot_0"),
 		"an OS kill right after a tap must not lose the edit (save-anywhere)")
+
+func test_region_cycle_without_a_dock_is_a_no_op() -> void:
+	screen._on_region_pressed()
+	assert_eq(screen.region_id, "region_1")
+	assert_eq(screen.get_node("Rows").get_child_count(), 6)
+
+func test_region_cycle_with_a_dock_edits_brasswork_reach() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "dock", "level": 1}
+	screen._on_region_pressed()
+	assert_eq(screen.region_id, "region_2")
+	assert_eq(screen.get_node("Rows").get_child_count(), 8, "region 2 has 8 slots")
+	assert_string_contains(screen.get_node("RegionButton").text, "Brasswork Reach")
+	var saved := SaveIO.new(TEST_SAVE).read()
+	assert_eq(String((saved["expedition"] as Dictionary)["region"]), "region_2")
+
+func test_slot_edits_land_in_the_cycled_region() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "dock", "level": 1}
+	screen._on_region_pressed()
+	screen._on_slot_pressed("slot_7")
+	var loadout := GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_2")
+	assert_true(loadout.has("slot_7"), "the edit belongs to region 2, not region 1")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {})
