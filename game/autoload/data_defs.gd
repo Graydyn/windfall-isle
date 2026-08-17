@@ -31,7 +31,27 @@ static func load_json(path: String) -> Dictionary:
 	if not (parsed is Dictionary):
 		push_error("Malformed JSON in %s" % path)
 		return {}
+	_normalize_json_types(parsed)
 	return parsed
+
+
+static func _normalize_json_types(obj: Variant) -> void:
+	if obj is Dictionary:
+		for key in obj:
+			if obj[key] is float:
+				var val := obj[key] as float
+				if val == int(val):
+					obj[key] = int(val)
+			elif obj[key] is Array or obj[key] is Dictionary:
+				_normalize_json_types(obj[key])
+	elif obj is Array:
+		for i in range((obj as Array).size()):
+			if obj[i] is float:
+				var val := obj[i] as float
+				if val == int(val):
+					obj[i] = int(val)
+			elif obj[i] is Array or obj[i] is Dictionary:
+				_normalize_json_types(obj[i])
 
 
 func skyfield(region_id: String) -> Dictionary:

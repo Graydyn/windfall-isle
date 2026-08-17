@@ -2,6 +2,7 @@
 	"starting_balances": {
 		"scrap": 100,
 		"cloudsilk": 0,
+		"brasswork": 0,
 		"crystals": 10
 	},
 	"fuel": {
