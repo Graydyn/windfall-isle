@@ -18,7 +18,8 @@ var _payout_doubled := false
 func _ready() -> void:
 	var run_defs: Dictionary = DataDefs.run
 	pod_defs = run_defs.get("pod", {})
-	var region: Dictionary = DataDefs.skyfield("region_1")
+	var region_id := RegionModel.selected_id(GameState.data, run_defs, GameState.data["island"])
+	var region: Dictionary = DataDefs.skyfield(region_id)
 	var run_config: Dictionary = run_defs.duplicate()
 	run_config["drops_per_run"] = IslandEffects.drops_per_run(run_defs, GameState.data["island"], DataDefs.buildings)
 	run_config["quota_tiers"] = region.get("quota_tiers", [])
@@ -26,7 +27,7 @@ func _ready() -> void:
 	board.build(region, run_defs)
 	var gizmos_state: Dictionary = GameState.data["gizmos"]
 	board.install_gizmos(
-		GizmoLoadout.loadout_for(gizmos_state, "region_1"),
+		GizmoLoadout.loadout_for(gizmos_state, region_id),
 		DataDefs.gizmos,
 		GizmoLoadout.owned(gizmos_state),
 		self)

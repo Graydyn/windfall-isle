@@ -213,3 +213,19 @@ func test_double_button_hidden_when_nothing_was_salvaged() -> void:
 	assert_true(scene.get_node("UI/Results").visible)
 	assert_false(scene.get_node("UI/Results/VBox/DoubleButton").visible,
 		"nothing to double")
+
+func test_scene_builds_the_selected_region() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "dock", "level": 1}
+	GameState.data["expedition"]["region"] = "region_2"
+	var second = add_child_autofree(RunScene.instantiate())
+	await wait_physics_frames(1)
+	assert_eq(second.get_node("Skyfield/DriftZones").get_child_count(), 2)
+	assert_eq(int((second.model.tiers[0] as Dictionary)["scrap_quota"]), 35,
+		"the run model carries region 2's quota tiers")
+
+func test_locked_selection_falls_back_to_region_1() -> void:
+	GameState.data["expedition"]["region"] = "region_2"
+	var second = add_child_autofree(RunScene.instantiate())
+	await wait_physics_frames(1)
+	assert_eq(second.get_node("Skyfield/DriftZones").get_child_count(), 0,
+		"no Dock, no Brasswork Reach; the scene falls back, never crashes")

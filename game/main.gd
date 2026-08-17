@@ -13,6 +13,7 @@ func _ready() -> void:
 	$GizmosButton.pressed.connect(_on_gizmos_pressed)
 	$IslandButton.pressed.connect(_on_island_pressed)
 	$RefillButton.pressed.connect(_on_refill_pressed)
+	$RegionButton.pressed.connect(_on_region_pressed)
 	$RefreshTimer.timeout.connect(_refresh)
 	_refresh()
 
@@ -24,9 +25,10 @@ func _on_balance_changed(_currency: String, _amount: int) -> void:
 func _refresh() -> void:
 	var now := TimeUtil.now()
 	var fuel: Dictionary = GameState.data["fuel"]
-	debug_label.text = "Scrap: %d\nCloudsilk: %d\nCrystals: %d\nFuel: %d/%d" % [
+	debug_label.text = "Scrap: %d\nCloudsilk: %d\nBrasswork: %d\nCrystals: %d\nFuel: %d/%d" % [
 		Economy.balance("scrap"),
 		Economy.balance("cloudsilk"),
+		Economy.balance("brasswork"),
 		Economy.balance("crystals"),
 		FuelModel.current(fuel, now),
 		int(fuel["cap"]),
@@ -34,11 +36,15 @@ func _refresh() -> void:
 	$RefillButton.visible = Ads.service.is_available(AdService.Placement.FUEL_REFILL)
 	$RefillButton.disabled = FuelModel.current(fuel, now) >= int(fuel["cap"]) \
 		or not AdLimits.can_use(GameState.data, "fuel_refill", _refill_limit(), now)
-	launch_button.disabled = FuelModel.current(fuel, now) < int(DataDefs.run.get("fuel_cost", 1))
+	var region_entry := RegionModel.entry(DataDefs.run, _selected_region())
+	var cost := RegionModel.fuel_cost(region_entry, GameState.data["island"])
+	$RegionButton.text = "Region: %s (%d fuel)" % [String(region_entry.get("name", "?")), cost]
+	launch_button.disabled = FuelModel.current(fuel, now) < cost
 
 
 func _on_launch_pressed() -> void:
-	var cost := int(DataDefs.run.get("fuel_cost", 1))
+	var region_entry := RegionModel.entry(DataDefs.run, _selected_region())
+	var cost := RegionModel.fuel_cost(region_entry, GameState.data["island"])
 	if not FuelModel.spend(GameState.data["fuel"], cost, TimeUtil.now()):
 		_refresh()
 		return
@@ -79,3 +85,25 @@ func _grant_fuel_refill() -> void:
 
 func _refill_limit() -> int:
 	return int((DataDefs.retention.get("ads", {}) as Dictionary).get("fuel_refills_per_day", 2))
+
+
+func _selected_region() -> String:
+	return RegionModel.selected_id(GameState.data, DataDefs.run, GameState.data["island"])
+
+
+func _on_region_pressed() -> void:
+	var entries := RegionModel.unlocked_entries(DataDefs.run, GameState.data["island"])
+	if entries.size() <= 1:
+		return
+	var current := _selected_region()
+	var index := 0
+	for i in entries.size():
+		if String((entries[i] as Dictionary).get("id", "")) == current:
+			index = i
+			break
+	if not GameState.data.has("expedition"):
+		GameState.data["expedition"] = {"region": RegionModel.FALLBACK_ID}
+	(GameState.data["expedition"] as Dictionary)["region"] = \
+		String((entries[(index + 1) % entries.size()] as Dictionary).get("id", RegionModel.FALLBACK_ID))
+	GameState.save_game()
+	_refresh()
