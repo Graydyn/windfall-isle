@@ -21,6 +21,7 @@ GameState="*res://game/autoload/game_state.gd"
 Economy="*res://game/autoload/economy.gd"
 TimerService="*res://game/autoload/timer_service.gd"
 Ads="*res://game/autoload/ads.gd"
+NotificationSvc="*res://game/autoload/notification_svc.gd"
 
 [display]
 

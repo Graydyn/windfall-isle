@@ -140,6 +140,7 @@ func _on_collect_pressed(plot: String) -> void:
 	if payload.is_empty():
 		return
 	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now, DataDefs.buildings)
+	NotificationSvc.request_permission_once()
 	if String(payload.get("building", "")) == "wind_still":
 		IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
 	GameState.save_game()

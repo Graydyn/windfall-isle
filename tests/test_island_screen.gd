@@ -105,3 +105,11 @@ func test_bonus_crate_is_independent_of_the_free_crate() -> void:
 	screen._on_bonus_crate_pressed()
 	assert_eq(Economy.balance("scrap"), scrap_before + 80,
 		"the free crate and the ad crate are separate faucets (spec 6 placement 4)")
+
+func test_first_construction_completion_requests_notification_permission() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 0}
+	TimerService.start("build_plot_0", "construction", 10, 1000, {"plot": "plot_0", "building": "workshop", "to_level": 1})
+	TimerService._state.data["timers"]["build_plot_0"]["ends_at"] = 0
+	screen._on_collect_pressed("plot_0")
+	assert_true(bool(GameState.data["notifications"]["permission_requested"]),
+		"spec 5: permission asked at the first construction completion, not at launch")
