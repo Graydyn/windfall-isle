@@ -79,11 +79,11 @@ func test_migrate_v2_preserves_loadout() -> void:
 	var migrated := SaveSchema.migrate(v2, GIZMO_DEFS)
 	assert_eq(migrated["gizmos"]["loadout"], {"region_1": {"slot_0": "wind_fan"}})
 
-func test_current_version_is_five_and_defaults_grant_eight() -> void:
-	assert_eq(SaveSchema.CURRENT_VERSION, 5)
+func test_current_version_is_six_and_defaults_grant_eight() -> void:
+	assert_eq(SaveSchema.CURRENT_VERSION, 6)
 	var data := SaveSchema.default_data(DEFS, DataDefs.gizmos)
 	assert_eq((data["gizmos"]["owned"] as Dictionary).size(), 8,
-		"all eight MVP gizmos are starters until the Workshop lands (Plan 4)")
+		"the brass gizmos are craft-to-acquire, never starters")
 
 func test_default_data_has_v4_island_shape() -> void:
 	var data := SaveSchema.default_data(DEFS)
@@ -98,7 +98,7 @@ func test_migrate_v3_to_v4_adds_island_losslessly() -> void:
 	v3.erase("island")
 	v3["currencies"]["scrap"] = 555
 	var migrated := SaveSchema.migrate(v3, GIZMO_DEFS)
-	assert_eq(int(migrated["version"]), 5)
+	assert_eq(int(migrated["version"]), 6)
 	assert_eq(migrated["island"], {"plots": {}, "build_slots": 1})
 	assert_eq(int(migrated["currencies"]["scrap"]), 555)
 
@@ -107,7 +107,7 @@ func test_migrate_v1_hops_all_the_way_to_v4() -> void:
 	v1["version"] = 1
 	v1["gizmos"] = {}
 	var migrated := SaveSchema.migrate(v1, GIZMO_DEFS)
-	assert_eq(int(migrated["version"]), 5)
+	assert_eq(int(migrated["version"]), 6)
 	assert_has(migrated, "island")
 	assert_has(migrated, "daily_crate")
 
@@ -134,7 +134,7 @@ func test_migrate_4_to_5_adds_ads_and_notifications_losslessly() -> void:
 		"gizmos": {"owned": {"wind_fan": 2}, "loadout": {}},
 	}
 	var out := SaveSchema.migrate(v4)
-	assert_eq(int(out["version"]), 5)
+	assert_eq(int(out["version"]), SaveSchema.CURRENT_VERSION)
 	assert_eq(out["ads"], {"day": 0, "counts": {}})
 	assert_eq(out["notifications"], {"permission_requested": false})
 	assert_eq(int(out["gizmos"]["owned"]["wind_fan"]), 2, "owned levels untouched")
@@ -146,11 +146,24 @@ func test_default_data_has_v5_sections() -> void:
 	assert_false(bool((data["notifications"] as Dictionary)["permission_requested"]))
 
 func test_backfill_heals_missing_keys_on_current_version() -> void:
-	var damaged := {"version": 5, "currencies": {"scrap": 7}}
+	var damaged := {"version": 6, "currencies": {"scrap": 7}}
 	var out := SaveSchema.migrate(damaged, GIZMO_DEFS)
 	assert_eq(int(out["currencies"]["scrap"]), 7, "existing keys untouched")
-	for key in ["fuel", "timers", "island", "trickle", "daily_crate", "gizmos", "ads", "notifications"]:
+	for key in ["fuel", "timers", "island", "trickle", "daily_crate", "gizmos", "ads", "notifications", "expedition"]:
 		assert_has(out, key)
 	assert_eq(int((out["fuel"] as Dictionary)["cap"]), 5, "neutral fuel defaults")
 	assert_eq(out["gizmos"]["owned"], {"wind_fan": 1, "crystal_prism": 1},
 		"backfilled gizmos grant the starting inventory")
+
+func test_migrate_5_to_6_adds_expedition_losslessly() -> void:
+	var v5 := SaveSchema.default_data(DEFS, GIZMO_DEFS)
+	v5["version"] = 5
+	v5.erase("expedition")
+	v5["currencies"]["scrap"] = 777
+	var out := SaveSchema.migrate(v5, GIZMO_DEFS)
+	assert_eq(int(out["version"]), 6)
+	assert_eq(out["expedition"], {"region": "region_1"})
+	assert_eq(int(out["currencies"]["scrap"]), 777, "balances untouched")
+
+func test_default_data_has_expedition_section() -> void:
+	assert_eq(SaveSchema.default_data(DEFS)["expedition"], {"region": "region_1"})
