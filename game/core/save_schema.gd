@@ -39,6 +39,10 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 	return data
 
 
+static func is_future_version(data: Dictionary) -> bool:
+	return int(data.get("version", 0)) > CURRENT_VERSION
+
+
 static func _migrate_1_to_2(data: Dictionary, gizmo_defs: Dictionary) -> Dictionary:
 	if (gizmo_defs.get("starting_inventory", {}) as Dictionary).is_empty():
 		push_warning("Migrating v1 save with no gizmo defs; starting grant will be empty until a later merge-grant hop")

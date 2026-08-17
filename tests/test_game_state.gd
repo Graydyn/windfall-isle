@@ -20,7 +20,7 @@ func after_all() -> void:
 
 func _delete_test_files() -> void:
 	var dir := DirAccess.open("user://")
-	for f in ["test_gamestate.json", "test_gamestate.json.tmp", "test_gamestate.json.bak"]:
+	for f in ["test_gamestate.json", "test_gamestate.json.tmp", "test_gamestate.json.bak", "test_gamestate.json.incompatible"]:
 		if dir.file_exists(f):
 			dir.remove(f)
 
@@ -63,3 +63,28 @@ func test_saves_on_application_pause() -> void:
 	gs.notification(Node.NOTIFICATION_APPLICATION_PAUSED)
 	var raw := SaveIO.new(TEST_PATH).read()
 	assert_eq(int(raw["currencies"]["scrap"]), 777)
+
+func test_future_version_save_is_parked_before_fallback() -> void:
+	var io := SaveIO.new(TEST_PATH)
+	io.write({"version": 99, "currencies": {"scrap": 1}})
+	gs.load_game(DEFS, 7000)
+	assert_eq(int(gs.data["version"]), SaveSchema.CURRENT_VERSION)
+	var parked: Variant = JSON.parse_string(FileAccess.get_file_as_string(TEST_PATH + ".incompatible"))
+	assert_eq(int((parked as Dictionary)["version"]), 99,
+		"a save written by a newer app version is preserved for a future upgrade")
+
+func test_garbage_versions_are_not_parked() -> void:
+	var io := SaveIO.new(TEST_PATH)
+	io.write({"version": 0, "currencies": {"scrap": 1}})
+	gs.load_game(DEFS, 7000)
+	assert_eq(int(gs.data["version"]), SaveSchema.CURRENT_VERSION)
+	assert_false(FileAccess.file_exists(TEST_PATH + ".incompatible"),
+		"unversioned garbage is corruption, not a future save")
+
+func test_ready_persists_the_save_without_waiting_for_pause() -> void:
+	var fresh = GameStateScript.new()
+	fresh._io = SaveIO.new(TEST_PATH)
+	add_child_autofree(fresh)
+	await wait_physics_frames(1)
+	assert_true(FileAccess.file_exists(TEST_PATH),
+		"boot must write the (possibly migrated) save immediately")
