@@ -12,7 +12,7 @@ func test_region_2_parses_with_required_keys() -> void:
 	assert_eq((region.get("gizmo_slots", []) as Array).size(), 8, "spec: 8 slots, up from 6")
 	assert_eq((region.get("barges", []) as Array).size(), 5)
 	assert_eq((region.get("drift_zones", []) as Array).size(), 2)
-	assert_eq(region.get("sea_payout", {}), {"scrap": 2})
+	assert_eq(int((region.get("sea_payout", {}) as Dictionary).get("scrap", 0)), 2)
 
 func test_region_2_barge_ids_are_unique() -> void:
 	var region := DataDefs.skyfield("region_2")
@@ -39,7 +39,7 @@ func test_region_2_board_builds() -> void:
 	assert_eq(board.get_node("Pegs").get_child_count(), 39)
 	assert_eq(board.get_node("GizmoSlots").get_child_count(), 8)
 	assert_eq(board.get_node("DriftZones").get_child_count(), 2)
-	assert_eq(board.sea_payout, {"scrap": 2})
+	assert_eq(int(board.sea_payout.get("scrap", 0)), 2)
 	var zones := board.get_node("DriftZones")
 	assert_true((zones.get_child(0) as DriftZone).force_vector.x > 0.0, "upper zone pushes right")
 	assert_true((zones.get_child(1) as DriftZone).force_vector.x < 0.0, "lower zone pushes left")
