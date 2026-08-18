@@ -95,3 +95,10 @@ func test_out_of_range_contact_consumes_no_charge() -> void:
 	jar._on_body_entered(make_pod())
 	assert_eq(context_stub.bonuses.size(), 1,
 		"charges were never consumed by the empty zaps")
+
+func test_recharge_restores_charges_and_visual() -> void:
+	jar._charges = 0
+	jar.get_node("Visual").modulate.a = 0.25
+	jar.recharge()
+	assert_eq(jar._charges, int(DataDefs.gizmos["defs"]["lightning_jar"]["charges"]))
+	assert_almost_eq(jar.get_node("Visual").modulate.a, 1.0, 0.001)

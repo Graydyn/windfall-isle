@@ -48,3 +48,8 @@ func _release(pod_ref: WeakRef, hold: Timer) -> void:
 	var speed := scaled(float(defs.get("redrop_speed", 420.0)))
 	var direction := 1.0 if global_position.x < float(defs.get("board_center_x", 360.0)) else -1.0
 	pod.linear_velocity = Vector2(cos(angle) * speed * direction, -sin(angle) * speed)
+
+
+func recharge() -> void:
+	_uses_left = int(defs.get("uses", 1))
+	$Visual.modulate.a = 1.0

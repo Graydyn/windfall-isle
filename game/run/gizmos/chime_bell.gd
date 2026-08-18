@@ -34,3 +34,8 @@ func _on_body_entered(body: Node2D) -> void:
 	context.set_next_barge_multiplier(_multiplier)
 	if _uses_left <= 0:
 		$Visual.modulate.a = 0.25
+
+
+func recharge() -> void:
+	_uses_left = int(defs.get("uses_per_run", 2))
+	$Visual.modulate.a = 1.0

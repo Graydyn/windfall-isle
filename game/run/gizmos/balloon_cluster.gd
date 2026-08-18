@@ -30,3 +30,9 @@ func _on_body_entered(body: Node2D) -> void:
 	if _hits_left <= 0:
 		$Visual.modulate.a = 0.25
 		zone.set_deferred("monitoring", false)
+
+
+func recharge() -> void:
+	_hits_left = int(defs.get("max_hits", 3))
+	$Visual.modulate.a = 1.0
+	zone.set_deferred("monitoring", true)

@@ -50,3 +50,10 @@ func test_caught_pod_rings_nothing() -> void:
 	pod.set_meta("caught", true)
 	bell._on_body_entered(pod)
 	assert_eq(context_stub.factors.size(), 0)
+
+func test_recharge_restores_rings_and_visual() -> void:
+	bell._uses_left = 0
+	bell.get_node("Visual").modulate.a = 0.25
+	bell.recharge()
+	assert_eq(bell._uses_left, int(DataDefs.gizmos["defs"]["chime_bell"]["uses_per_run"]))
+	assert_almost_eq(bell.get_node("Visual").modulate.a, 1.0, 0.001)

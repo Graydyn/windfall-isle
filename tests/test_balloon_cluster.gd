@@ -41,3 +41,12 @@ func test_level_scales_impulse() -> void:
 	var strong = add_child_autofree(BalloonScene.instantiate())
 	strong.setup(balloon_defs, 2, self)
 	assert_almost_eq(strong._impulse, 420.0 * 1.25, 0.001)
+
+func test_recharge_restores_hits_and_visual() -> void:
+	balloon._hits_left = 0
+	balloon.get_node("Visual").modulate.a = 0.25
+	balloon.recharge()
+	assert_eq(balloon._hits_left, int(DataDefs.gizmos["defs"]["balloon_cluster"]["max_hits"]))
+	assert_almost_eq(balloon.get_node("Visual").modulate.a, 1.0, 0.001)
+	await wait_physics_frames(1)
+	assert_true(balloon.get_node("Zone").monitoring)

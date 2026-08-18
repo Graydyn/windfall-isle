@@ -47,3 +47,8 @@ func _on_body_entered(body: Node2D) -> void:
 	context.add_bonus({"scrap": _scrap_per_peg * zapped})
 	if _charges <= 0:
 		$Visual.modulate.a = 0.25
+
+
+func recharge() -> void:
+	_charges = int(defs.get("charges", 2))
+	$Visual.modulate.a = 1.0

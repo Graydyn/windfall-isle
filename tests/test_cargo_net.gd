@@ -57,3 +57,10 @@ func test_caught_pod_is_ignored() -> void:
 	net._on_body_entered(pod)
 	await wait_physics_frames(2)
 	assert_false(pod.freeze)
+
+func test_recharge_restores_the_net() -> void:
+	net._uses_left = 0
+	net.get_node("Visual").modulate.a = 0.4
+	net.recharge()
+	assert_eq(net._uses_left, int(DataDefs.gizmos["defs"]["cargo_net"]["uses"]))
+	assert_almost_eq(net.get_node("Visual").modulate.a, 1.0, 0.001)
