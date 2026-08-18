@@ -177,3 +177,59 @@ func test_non_ascending_quota_tiers_warn_but_load() -> void:
 	})
 	assert_push_warning_count(1, "one warning per out-of-order pair")
 	assert_eq(model.tiers.size(), 2, "authoring warning only; rows still load")
+
+
+const BOON_DEFS := {
+	"defs": {
+		"barge_bounty": {"name": "Barge Bounty", "barge_multiplier": 1.5},
+		"rich_seas": {"name": "Rich Seas", "sea_multiplier": 3.0},
+		"spare_pods": {"name": "Spare Pods", "extra_drops": 2},
+		"heavy_loot": {"name": "Heavy Loot", "bonus_scrap_per_catch": 2},
+		"featherfall": {"name": "Featherfall", "bounce_bonus": 0.2},
+		"second_wind": {"name": "Second Wind"},
+	},
+}
+
+
+func test_boon_accessors_default_neutral() -> void:
+	var model := make_model()
+	assert_eq(model.barge_boon_multiplier(), 1.0)
+	assert_eq(model.sea_boon_multiplier(), 1.0)
+	assert_eq(model.bonus_scrap_per_catch(), 0)
+	assert_false(model.has_boon("barge_bounty"))
+
+func test_add_boon_captures_magnitudes() -> void:
+	var model := make_model()
+	model.add_boon("barge_bounty", BOON_DEFS)
+	model.add_boon("rich_seas", BOON_DEFS)
+	model.add_boon("heavy_loot", BOON_DEFS)
+	assert_true(model.has_boon("barge_bounty"))
+	assert_almost_eq(model.barge_boon_multiplier(), 1.5, 0.001)
+	assert_almost_eq(model.sea_boon_multiplier(), 3.0, 0.001)
+	assert_eq(model.bonus_scrap_per_catch(), 2)
+	assert_eq(model.boons, ["barge_bounty", "rich_seas", "heavy_loot"], "pick order preserved")
+
+func test_spare_pods_extends_the_run_immediately() -> void:
+	var model := make_model(3)
+	model.add_boon("spare_pods", BOON_DEFS)
+	assert_eq(model.drops_remaining(), 5)
+
+func test_duplicate_boon_is_a_no_op() -> void:
+	var model := make_model()
+	model.add_boon("heavy_loot", BOON_DEFS)
+	model.add_boon("heavy_loot", BOON_DEFS)
+	assert_eq(model.bonus_scrap_per_catch(), 2, "magnitudes never stack")
+	assert_eq(model.boons.size(), 1)
+
+func test_add_drops_is_negative_safe() -> void:
+	var model := make_model(3)
+	model.add_drops(-5)
+	assert_eq(model.drops_remaining(), 3)
+
+func test_scene_only_boons_record_without_magnitudes() -> void:
+	var model := make_model()
+	model.add_boon("featherfall", BOON_DEFS)
+	model.add_boon("second_wind", BOON_DEFS)
+	assert_true(model.has_boon("featherfall"))
+	assert_true(model.has_boon("second_wind"))
+	assert_eq(model.barge_boon_multiplier(), 1.0, "no payout magnitudes on scene-side boons")

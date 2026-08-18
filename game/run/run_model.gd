@@ -18,6 +18,12 @@ var abandoned := false
 var tiers: Array = []
 var tier := 0
 
+var boons: Array = []
+
+var _barge_boon_multiplier := 1.0
+var _sea_boon_multiplier := 1.0
+var _bonus_scrap_per_catch := 0
+
 var _over_emitted := false
 
 
@@ -81,6 +87,41 @@ func add_split_pod() -> bool:
 		return false
 	pods_in_flight += 1
 	return true
+
+
+func add_boon(boon_id: String, boon_defs: Dictionary) -> void:
+	# Run-scoped modifiers (spec 3.2 step 4). Magnitudes are captured at pick
+	# time so the model stays defs-free afterward; the offer already excludes
+	# taken ids, so the duplicate guard is belt and braces.
+	if boons.has(boon_id):
+		return
+	boons.append(boon_id)
+	var def: Dictionary = (boon_defs.get("defs", {}) as Dictionary).get(boon_id, {})
+	_barge_boon_multiplier = maxf(_barge_boon_multiplier, float(def.get("barge_multiplier", 1.0)))
+	_sea_boon_multiplier = maxf(_sea_boon_multiplier, float(def.get("sea_multiplier", 1.0)))
+	_bonus_scrap_per_catch += int(def.get("bonus_scrap_per_catch", 0))
+	if def.has("extra_drops"):
+		add_drops(int(def["extra_drops"]))
+
+
+func add_drops(count: int) -> void:
+	drops_total += maxi(0, count)
+
+
+func has_boon(boon_id: String) -> bool:
+	return boons.has(boon_id)
+
+
+func barge_boon_multiplier() -> float:
+	return _barge_boon_multiplier
+
+
+func sea_boon_multiplier() -> float:
+	return _sea_boon_multiplier
+
+
+func bonus_scrap_per_catch() -> int:
+	return _bonus_scrap_per_catch
 
 
 func payout_multiplier() -> float:
