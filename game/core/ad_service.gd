@@ -5,7 +5,7 @@ extends RefCounted
 ## AdmobAdService (post-MVP, free build only) shows real rewarded video.
 ## Game code must only ever talk to Ads.service, never to an implementation.
 
-enum Placement { TIMER_SKIP, FUEL_REFILL, PAYOUT_DOUBLE, BONUS_CRATE }
+enum Placement { TIMER_SKIP, FUEL_REFILL, PAYOUT_DOUBLE, BONUS_CRATE, BOON_REROLL }
 
 
 func is_available(_placement: Placement) -> bool:

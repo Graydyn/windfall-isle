@@ -31,3 +31,9 @@ func _configure() -> void:
 func scaled(base: float) -> float:
 	# Upgrade levels (crafted duplicates merge, spec 3.3): +25% per level.
 	return base * (1.0 + 0.25 * float(level - 1))
+
+
+func recharge() -> void:
+	# Second Wind boon (Plan 7): consumable gizmos restore their uses.
+	# Default no-op for always-active gizmos.
+	pass

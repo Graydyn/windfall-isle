@@ -44,3 +44,27 @@ text = "Double payout (ad)"
 
 [node name="ReturnButton" type="Button" parent="UI/Results/VBox"]
 text = "Return to Island"
+
+[node name="BoonOffer" type="PanelContainer" parent="UI"]
+visible = false
+offset_left = 60.0
+offset_top = 360.0
+offset_right = 660.0
+offset_bottom = 780.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/BoonOffer"]
+
+[node name="Title" type="Label" parent="UI/BoonOffer/VBox"]
+text = "The winds favor you. Choose a boon:"
+
+[node name="Pick0" type="Button" parent="UI/BoonOffer/VBox"]
+
+[node name="Pick1" type="Button" parent="UI/BoonOffer/VBox"]
+
+[node name="Pick2" type="Button" parent="UI/BoonOffer/VBox"]
+
+[node name="RerollButton" type="Button" parent="UI/BoonOffer/VBox"]
+text = "Reroll (ad)"
+
+[node name="SkipButton" type="Button" parent="UI/BoonOffer/VBox"]
+text = "Skip"

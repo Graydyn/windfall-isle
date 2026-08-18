@@ -23,3 +23,10 @@ func test_grant_service_grants_immediately() -> void:
 
 func test_ads_autoload_serves_grant_implementation_in_mvp() -> void:
 	assert_true(Ads.service is GrantAdService)
+
+func test_boon_reroll_placement_exists_and_grants() -> void:
+	var svc := GrantAdService.new()
+	assert_true(svc.is_available(AdService.Placement.BOON_REROLL))
+	var granted := [false]
+	svc.request_reward(AdService.Placement.BOON_REROLL, func() -> void: granted[0] = true)
+	assert_true(granted[0])

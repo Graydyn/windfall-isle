@@ -229,3 +229,70 @@ func test_locked_selection_falls_back_to_region_1() -> void:
 	await wait_physics_frames(1)
 	assert_eq(second.get_node("Skyfield/DriftZones").get_child_count(), 0,
 		"no Dock, no Brasswork Reach; the scene falls back, never crashes")
+
+func test_tier_reached_shows_an_offer_and_pauses_drops() -> void:
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	assert_true(scene.get_node("UI/BoonOffer").visible)
+	assert_false(scene.get_node("DropController").enabled, "new drops gate while the offer is up")
+	assert_eq((scene._current_offer as Array).size(), 3)
+
+func test_picking_a_boon_applies_and_resumes() -> void:
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	var picked := String(scene._current_offer[0])
+	scene._on_boon_picked(0)
+	assert_true(scene.model.has_boon(picked))
+	assert_false(scene.get_node("UI/BoonOffer").visible)
+	assert_true(scene.get_node("DropController").enabled)
+
+func test_skip_forfeits_without_applying() -> void:
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	scene._on_boon_skipped()
+	assert_eq((scene.model.boons as Array).size(), 0, "spec: skip forfeits, no banking")
+	assert_false(scene.get_node("UI/BoonOffer").visible)
+	assert_true(scene.get_node("DropController").enabled)
+
+func test_reroll_redraws_disjoint_and_is_once_per_offer() -> void:
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	var before: Array = (scene._current_offer as Array).duplicate()
+	scene._on_reroll_pressed()
+	var after: Array = scene._current_offer
+	for id in after:
+		assert_false(before.has(id), "the reroll never returns the same trio")
+	assert_false(scene.get_node("UI/BoonOffer/VBox/RerollButton").visible, "one reroll per offer")
+	scene._on_reroll_pressed()
+	assert_eq(scene._current_offer, after, "a second reroll is a no-op")
+
+func test_crossing_two_tiers_queues_two_offers() -> void:
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	scene._on_tier_reached(2)
+	scene._on_boon_picked(0)
+	assert_true(scene.get_node("UI/BoonOffer").visible, "the queued second offer serves immediately")
+	assert_false(scene.get_node("DropController").enabled)
+	scene._on_boon_skipped()
+	assert_true(scene.get_node("DropController").enabled)
+	assert_eq((scene.model.boons as Array).size(), 1)
+
+func test_run_over_closes_an_open_offer_unpicked() -> void:
+	scene.model = RunModel.new({"drops_per_run": 1, "max_active_pods": 4})
+	scene.model.run_over.connect(scene._on_run_over)
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(pod, {"scrap": 3})
+	assert_false(scene.get_node("UI/BoonOffer").visible, "run end closes the offer, nothing lost")
+	assert_true(scene.get_node("UI/Results").visible)
+	assert_eq((scene.model.boons as Array).size(), 0)
+
+func test_featherfall_bumps_only_subsequent_pod_defs() -> void:
+	var bounce_before := float(scene.pod_defs.get("bounce", 0.55))
+	scene._current_offer = ["featherfall", "rich_seas", "heavy_loot"]
+	scene._on_boon_picked(0)
+	assert_almost_eq(float(scene.pod_defs["bounce"]), bounce_before + 0.2, 0.001)
+	assert_almost_eq(float((DataDefs.run["pod"] as Dictionary)["bounce"]), bounce_before, 0.001,
+		"the shared defs are never mutated; the scene copies before bumping")

@@ -10,6 +10,10 @@ var model: RunModel
 var pod_defs: Dictionary
 var _next_barge_multiplier := 1.0
 var _payout_doubled := false
+var _rng := RandomNumberGenerator.new()
+var _current_offer: Array = []
+var _offer_rerolled := false
+var _pending_offers := 0
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -35,6 +39,12 @@ func _ready() -> void:
 	board.pod_caught.connect(_on_pod_caught)
 	controller.drop_requested.connect(_on_drop_requested)
 	model.run_over.connect(_on_run_over)
+	model.tier_reached.connect(_on_tier_reached)
+	_rng.seed = TimeUtil.now()
+	for i in 3:
+		($UI/BoonOffer/VBox.get_node("Pick%d" % i) as Button).pressed.connect(_on_boon_picked.bind(i))
+	$UI/BoonOffer/VBox/RerollButton.pressed.connect(_on_reroll_pressed)
+	$UI/BoonOffer/VBox/SkipButton.pressed.connect(_on_boon_skipped)
 	$UI/AbandonButton.pressed.connect(_on_abandon_pressed)
 	$UI/Results/VBox/ReturnButton.pressed.connect(_on_return_pressed)
 	$UI/Results/VBox/DoubleButton.pressed.connect(_on_double_pressed)
@@ -92,6 +102,9 @@ func _on_pod_timeout(pod_ref: WeakRef, watchdog: Timer) -> void:
 
 func _on_run_over() -> void:
 	controller.enabled = false
+	$UI/BoonOffer.visible = false
+	_pending_offers = 0
+	_current_offer = []
 	for pod in get_tree().get_nodes_in_group("pods"):
 		pod.set_meta("caught", true)
 		pod.queue_free()
@@ -200,3 +213,96 @@ func _grant_payout_double() -> void:
 	GameState.save_game()
 	$UI/Results/VBox/Summary.text = _summary_text() + "\nPayout doubled!"
 	$UI/Results/VBox/DoubleButton.disabled = true
+
+
+func _on_tier_reached(_tier: int) -> void:
+	# Spec 3.2 step 4: each tier crossing offers a boon. One rich catch can
+	# cross two tiers; the offers queue and serve one at a time.
+	_pending_offers += 1
+	if not $UI/BoonOffer.visible:
+		_show_next_offer()
+
+
+func _show_next_offer() -> void:
+	if _pending_offers <= 0 or model.is_over():
+		return
+	_pending_offers -= 1
+	_current_offer = BoonModel.offer((DataDefs.boons.get("defs", {}) as Dictionary).keys(), model.boons, _rng)
+	if _current_offer.is_empty():
+		return
+	_offer_rerolled = false
+	controller.enabled = false
+	_render_offer()
+	$UI/BoonOffer.visible = true
+
+
+func _render_offer() -> void:
+	var defs: Dictionary = DataDefs.boons.get("defs", {})
+	for i in 3:
+		var button: Button = $UI/BoonOffer/VBox.get_node("Pick%d" % i)
+		if i < _current_offer.size():
+			var def: Dictionary = defs.get(String(_current_offer[i]), {})
+			button.text = "%s\n%s" % [String(def.get("name", _current_offer[i])), String(def.get("description", ""))]
+			button.visible = true
+		else:
+			button.visible = false
+	$UI/BoonOffer/VBox/RerollButton.visible = Ads.service.is_available(AdService.Placement.BOON_REROLL) \
+		and not _offer_rerolled
+
+
+func _on_boon_picked(index: int) -> void:
+	if index >= _current_offer.size():
+		return
+	var boon_id := String(_current_offer[index])
+	model.add_boon(boon_id, DataDefs.boons)
+	_apply_scene_boon(boon_id)
+	_close_offer()
+
+
+func _apply_scene_boon(boon_id: String) -> void:
+	# Scene-side effects: the model handles payout magnitudes; the scene owns
+	# pod construction (Featherfall) and the live gizmo nodes (Second Wind).
+	var def: Dictionary = (DataDefs.boons.get("defs", {}) as Dictionary).get(boon_id, {})
+	if boon_id == "featherfall":
+		pod_defs = pod_defs.duplicate()
+		pod_defs["bounce"] = minf(1.0, float(pod_defs.get("bounce", 0.55)) + float(def.get("bounce_bonus", 0.2)))
+	elif boon_id == "second_wind":
+		for gizmo in board.get_node("Gizmos").get_children():
+			(gizmo as GizmoBase).recharge()
+
+
+func _on_boon_skipped() -> void:
+	# Spec: skip forfeits the offer; there is no banking.
+	_close_offer()
+
+
+func _close_offer() -> void:
+	$UI/BoonOffer.visible = false
+	_current_offer = []
+	_refresh_hud()
+	if _pending_offers > 0:
+		_show_next_offer()
+		return
+	if not model.is_over():
+		controller.enabled = true
+
+
+func _on_reroll_pressed() -> void:
+	if _offer_rerolled or not Ads.service.is_available(AdService.Placement.BOON_REROLL):
+		return
+	Ads.service.request_reward(AdService.Placement.BOON_REROLL, _grant_reroll)
+
+
+func _grant_reroll() -> void:
+	# One reroll per offer (spec 6 placement 5), granted at reward time. The
+	# current trio joins the exclusions so the redraw is always disjoint;
+	# the exclusion is per-reroll only, never permanent.
+	if _offer_rerolled:
+		return
+	_offer_rerolled = true
+	var exclusions: Array = (model.boons as Array).duplicate()
+	exclusions.append_array(_current_offer)
+	var redraw := BoonModel.offer((DataDefs.boons.get("defs", {}) as Dictionary).keys(), exclusions, _rng)
+	if not redraw.is_empty():
+		_current_offer = redraw
+	_render_offer()
