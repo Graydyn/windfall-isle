@@ -7,12 +7,14 @@ const RUN_PATH := "res://game/data/run.json"
 const GIZMOS_PATH := "res://game/data/gizmos.json"
 const BUILDINGS_PATH := "res://game/data/buildings.json"
 const RETENTION_PATH := "res://game/data/retention.json"
+const BOONS_PATH := "res://game/data/boons.json"
 
 var economy: Dictionary = {}
 var run: Dictionary = {}
 var gizmos: Dictionary = {}
 var buildings: Dictionary = {}
 var retention: Dictionary = {}
+var boons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -21,6 +23,7 @@ func _ready() -> void:
 	gizmos = load_json(GIZMOS_PATH)
 	buildings = load_json(BUILDINGS_PATH)
 	retention = load_json(RETENTION_PATH)
+	boons = load_json(BOONS_PATH)
 
 
 static func load_json(path: String) -> Dictionary:

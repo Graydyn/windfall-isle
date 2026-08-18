@@ -1,0 +1,10 @@
+{
+	"defs": {
+		"barge_bounty": {"name": "Barge Bounty", "description": "Barge payouts +50% this run.", "barge_multiplier": 1.5},
+		"rich_seas": {"name": "Rich Seas", "description": "Cloud-sea payouts tripled this run.", "sea_multiplier": 3.0},
+		"spare_pods": {"name": "Spare Pods", "description": "+2 pod drops this run.", "extra_drops": 2},
+		"heavy_loot": {"name": "Heavy Loot", "description": "+2 scrap on every catch this run.", "bonus_scrap_per_catch": 2},
+		"featherfall": {"name": "Featherfall", "description": "Pods dropped from now on bounce higher.", "bounce_bonus": 0.2},
+		"second_wind": {"name": "Second Wind", "description": "Consumable gizmos regain their uses."}
+	}
+}
