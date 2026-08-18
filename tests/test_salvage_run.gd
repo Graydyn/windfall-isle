@@ -296,3 +296,55 @@ func test_featherfall_bumps_only_subsequent_pod_defs() -> void:
 	assert_almost_eq(float(scene.pod_defs["bounce"]), bounce_before + 0.2, 0.001)
 	assert_almost_eq(float((DataDefs.run["pod"] as Dictionary)["bounce"]), bounce_before, 0.001,
 		"the shared defs are never mutated; the scene copies before bumping")
+
+func test_barge_bounty_boosts_barge_catches() -> void:
+	scene._current_offer = ["barge_bounty", "rich_seas", "heavy_loot"]
+	scene._on_boon_picked(0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"scrap": 10}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before + 15, "10 x 1.5 barge bounty")
+
+func test_barge_bounty_composes_with_the_chime_bell() -> void:
+	scene._current_offer = ["barge_bounty", "rich_seas", "heavy_loot"]
+	scene._on_boon_picked(0)
+	scene.set_next_barge_multiplier(2.0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"scrap": 10}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before + 30, "10 x 1.5 boon x 2.0 bell")
+
+func test_rich_seas_boosts_sea_catches_only() -> void:
+	scene._current_offer = ["rich_seas", "barge_bounty", "heavy_loot"]
+	scene._on_boon_picked(0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"scrap": 2}, "sea")
+	assert_eq(Economy.balance("scrap"), scrap_before + 6, "2 x 3.0 rich seas")
+	scene._on_drop_requested(300.0)
+	var pod2: Node = get_tree().get_nodes_in_group("pods")[0]
+	scene._on_pod_caught(pod2, {"scrap": 10}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before + 6 + 10, "barge catches are untouched by rich seas")
+
+func test_heavy_loot_adds_flat_scrap_after_multipliers() -> void:
+	scene._current_offer = ["heavy_loot", "rich_seas", "barge_bounty"]
+	scene._on_boon_picked(0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"cloudsilk": 1}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before + 2, "the bonus lands even on non-scrap catches")
+	assert_eq(int(scene.model.loot.get("cloudsilk", 0)), 1)
+
+func test_heavy_loot_skips_empty_payouts() -> void:
+	scene._current_offer = ["heavy_loot", "rich_seas", "barge_bounty"]
+	scene._on_boon_picked(0)
+	scene._on_drop_requested(360.0)
+	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
+	pod.set_meta("value_mult", 0.0)
+	var scrap_before := Economy.balance("scrap")
+	scene._on_pod_caught(pod, {"scrap": 1}, "barge")
+	assert_eq(Economy.balance("scrap"), scrap_before, "a zero-value catch stays worth nothing")

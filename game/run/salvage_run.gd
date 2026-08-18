@@ -76,12 +76,29 @@ func _start_watchdog(pod: Pod) -> void:
 
 func _on_pod_caught(pod: Node, payout: Dictionary, source: String = "barge") -> void:
 	payout = _compute_payout(pod, payout)
-	if source == "barge" and _next_barge_multiplier > 1.0:
+	var source_mult := 1.0
+	if source == "barge":
+		source_mult = model.barge_boon_multiplier()
+		if _next_barge_multiplier > 1.0:
+			# Chime Bell: one-shot, consumed only by a barge catch, composing
+			# multiplicatively with the run-long Barge Bounty boon.
+			source_mult *= _next_barge_multiplier
+			_next_barge_multiplier = 1.0
+	elif source == "sea":
+		source_mult = model.sea_boon_multiplier()
+	if not is_equal_approx(source_mult, 1.0):
 		var boosted := {}
 		for currency in payout:
-			boosted[currency] = roundi(float(payout[currency]) * _next_barge_multiplier)
+			var value := roundi(float(payout[currency]) * source_mult)
+			if value > 0:
+				boosted[currency] = value
 		payout = boosted
-		_next_barge_multiplier = 1.0
+	var bonus := model.bonus_scrap_per_catch()
+	if bonus > 0 and not payout.is_empty():
+		# Heavy Loot: flat scrap after all multipliers; empty payouts stay
+		# empty so "nothing salvaged" remains truthful.
+		payout = payout.duplicate()
+		payout["scrap"] = int(payout.get("scrap", 0)) + bonus
 	if is_instance_valid(pod):
 		pod.queue_free()
 	for currency in payout:
