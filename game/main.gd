@@ -92,18 +92,11 @@ func _selected_region() -> String:
 
 
 func _on_region_pressed() -> void:
-	var entries := RegionModel.unlocked_entries(DataDefs.run, GameState.data["island"])
-	if entries.size() <= 1:
+	var next := RegionModel.next_region_id(DataDefs.run, GameState.data["island"], _selected_region())
+	if next == _selected_region():
 		return
-	var current := _selected_region()
-	var index := 0
-	for i in entries.size():
-		if String((entries[i] as Dictionary).get("id", "")) == current:
-			index = i
-			break
 	if not GameState.data.has("expedition"):
 		GameState.data["expedition"] = {"region": RegionModel.FALLBACK_ID}
-	(GameState.data["expedition"] as Dictionary)["region"] = \
-		String((entries[(index + 1) % entries.size()] as Dictionary).get("id", RegionModel.FALLBACK_ID))
+	(GameState.data["expedition"] as Dictionary)["region"] = next
 	GameState.save_game()
 	_refresh()

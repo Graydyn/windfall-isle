@@ -110,4 +110,7 @@ static func _valid_tiers(rows: Variant) -> Array:
 			out.append(row)
 		else:
 			push_warning("Ignoring malformed quota tier row: %s" % [row])
+	for i in range(1, out.size()):
+		if int((out[i] as Dictionary)["scrap_quota"]) <= int((out[i - 1] as Dictionary)["scrap_quota"]):
+			push_warning("Quota tiers are not strictly ascending at index %d" % i)
 	return out

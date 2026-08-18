@@ -34,13 +34,31 @@ static func entry(run_defs: Dictionary, region_id: String) -> Dictionary:
 
 
 static func selected_id(data: Dictionary, run_defs: Dictionary, island: Dictionary) -> String:
-	# A persisted id that is unknown (defs changed) or no longer unlocked
-	# (hand-edited save) falls back silently; nothing rewrites the save.
-	var wanted := String((data.get("expedition", {}) as Dictionary).get("region", FALLBACK_ID))
+	# A persisted id that is unknown (defs changed), no longer unlocked
+	# (hand-edited save), or held in a wrong-typed section falls back
+	# silently; nothing rewrites the save.
+	var expedition: Variant = data.get("expedition", {})
+	if not (expedition is Dictionary):
+		return FALLBACK_ID
+	var wanted := String((expedition as Dictionary).get("region", FALLBACK_ID))
 	var region_entry := entry(run_defs, wanted)
 	if not region_entry.is_empty() and unlocked(region_entry, island):
 		return wanted
 	return FALLBACK_ID
+
+
+static func next_region_id(run_defs: Dictionary, island: Dictionary, current_id: String) -> String:
+	# Cycle helper shared by the launcher and loadout screens: the next
+	# unlocked id in declared order, or current_id when there is no cycle.
+	var entries := unlocked_entries(run_defs, island)
+	if entries.size() <= 1:
+		return current_id
+	var index := 0
+	for i in entries.size():
+		if String((entries[i] as Dictionary).get("id", "")) == current_id:
+			index = i
+			break
+	return String((entries[(index + 1) % entries.size()] as Dictionary).get("id", FALLBACK_ID))
 
 
 static func _entries(run_defs: Dictionary) -> Array:

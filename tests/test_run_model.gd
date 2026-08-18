@@ -166,3 +166,14 @@ func test_malformed_tier_rows_are_dropped_with_a_warning() -> void:
 	model.resolve_pod({"scrap": 5})
 	assert_eq(model.tier, 1)
 	assert_eq(model.payout_multiplier(), 1.5)
+
+func test_non_ascending_quota_tiers_warn_but_load() -> void:
+	var model := RunModel.new({
+		"drops_per_run": 3, "max_active_pods": 4,
+		"quota_tiers": [
+			{"scrap_quota": 80, "payout_multiplier": 2.0},
+			{"scrap_quota": 35, "payout_multiplier": 1.5},
+		],
+	})
+	assert_push_warning_count(1, "one warning per out-of-order pair")
+	assert_eq(model.tiers.size(), 2, "authoring warning only; rows still load")

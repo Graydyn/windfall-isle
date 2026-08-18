@@ -69,3 +69,17 @@ func test_shipped_run_defs_carry_both_regions() -> void:
 	assert_eq(String((regions[1] as Dictionary)["id"]), "region_2")
 	assert_eq(int((regions[1] as Dictionary)["fuel_cost"]), 2)
 	assert_eq(int((regions[1] as Dictionary)["min_dock_level"]), 1)
+
+func test_selected_id_tolerates_a_wrong_typed_expedition_section() -> void:
+	assert_eq(RegionModel.selected_id({"expedition": "region_2"}, RUN_DEFS, island_with_dock(2)), "region_1",
+		"a hand-edited save must fall back, never crash")
+
+func test_next_region_id_cycles_unlocked_regions_in_order() -> void:
+	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(0), "region_1"), "region_1",
+		"nothing to cycle to without a Dock")
+	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_1"), "region_2")
+	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_2"), "region_1", "wraps")
+
+func test_next_region_id_recovers_an_unknown_current() -> void:
+	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_9"), "region_2",
+		"an unknown current id scans as index 0 and steps to the next entry")
