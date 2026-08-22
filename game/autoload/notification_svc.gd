@@ -15,7 +15,7 @@ func _notification(what: int) -> void:
 
 func schedule_all(now: int) -> void:
 	scheduler.cancel_all()
-	for entry in NotificationPlanner.plan(GameState.data, DataDefs.buildings, DataDefs.gizmos, now):
+	for entry in NotificationPlanner.plan(GameState.data, DataDefs.buildings, DataDefs.gizmos, now, DataDefs.islets):
 		scheduler.schedule(String(entry["id"]), String(entry["title"]), String(entry["body"]), int(entry["fire_at"]))
 
 

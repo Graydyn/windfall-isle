@@ -120,3 +120,20 @@ func test_permission_once_heals_a_missing_notifications_section() -> void:
 	assert_true(GameState.data.has("notifications"), "the section is written back, not lost in a detached dict")
 	assert_true(bool(GameState.data["notifications"]["permission_requested"]))
 	assert_eq(rec.permission_calls, 1)
+
+func test_restoration_entry_names_the_islet() -> void:
+	var data := make_data()
+	data["timers"]["restore_lantern_shoal"] = {"kind": "restoration", "ends_at": NOW + 14400, "payload": {"islet": "lantern_shoal"}}
+	var plan := NotificationPlanner.plan(data, DataDefs.buildings, DataDefs.gizmos, NOW, DataDefs.islets)
+	assert_eq(plan.size(), 1)
+	assert_eq(String(plan[0]["id"]), "restore_lantern_shoal")
+	assert_eq(String(plan[0]["title"]), "Bridge restored")
+	assert_string_contains(String(plan[0]["body"]), "Lantern Shoal")
+	assert_eq(int(plan[0]["fire_at"]), NOW + 14400)
+
+func test_restoration_entry_survives_missing_islet_defs() -> void:
+	var data := make_data()
+	data["timers"]["restore_lantern_shoal"] = {"kind": "restoration", "ends_at": NOW + 600, "payload": {"islet": "lantern_shoal"}}
+	var plan := NotificationPlanner.plan(data, DataDefs.buildings, DataDefs.gizmos, NOW)
+	assert_eq(plan.size(), 1, "the default empty islet defs still notify")
+	assert_string_contains(String(plan[0]["body"]), "lantern_shoal", "falls back to the id")

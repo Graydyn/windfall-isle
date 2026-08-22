@@ -1,11 +1,12 @@
 class_name NotificationPlanner
 ## Pure computation of the local notifications to schedule at background time
-## (spec 5): construction complete, craft complete, fuel full, daily crate
-## ready. Reads the persisted timers dict READ-ONLY; nothing here mutates
-## state, which is what makes the plan testable and idempotent.
+## (spec 5): construction complete, craft complete, restoration complete,
+## fuel full, daily crate ready. Reads the persisted timers dict READ-ONLY;
+## nothing here mutates state, which is what makes the plan testable and
+## idempotent.
 
 
-static func plan(data: Dictionary, building_defs: Dictionary, gizmo_defs: Dictionary, now: int) -> Array:
+static func plan(data: Dictionary, building_defs: Dictionary, gizmo_defs: Dictionary, now: int, islet_defs: Dictionary = {}) -> Array:
 	var out: Array = []
 	var timers: Dictionary = data.get("timers", {})
 	for id in timers:
@@ -29,6 +30,14 @@ static func plan(data: Dictionary, building_defs: Dictionary, gizmo_defs: Dictio
 				"id": String(id),
 				"title": "Craft complete",
 				"body": "%s is ready to collect." % String(def.get("name", payload.get("gizmo", "A gizmo"))),
+				"fire_at": fire_at,
+			})
+		elif kind == "restoration":
+			var islet: Dictionary = IsletModel.entry(islet_defs, String(payload.get("islet", "")))
+			out.append({
+				"id": String(id),
+				"title": "Bridge restored",
+				"body": "The way to %s is open." % String(islet.get("name", payload.get("islet", "an islet"))),
 				"fire_at": fire_at,
 			})
 	var fuel: Dictionary = data.get("fuel", {})
