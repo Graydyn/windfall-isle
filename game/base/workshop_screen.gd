@@ -62,7 +62,16 @@ func _gizmo_label_text(gizmo_id: String, now: int) -> String:
 	var timer_id := "craft_" + gizmo_id
 	if TimerService.active_timers().has(timer_id) and not TimerService.is_done(timer_id, now):
 		text += "  (%ds)" % TimerService.remaining(timer_id, now)
+	elif not TimerService.active_timers().has(timer_id):
+		text += "  cost: %s" % _cost_text(CraftModel.effective_cost(def, GameState.data["island"], DataDefs.buildings))
 	return text
+
+
+func _cost_text(cost: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for currency in cost:
+		parts.append("%d %s" % [int(cost[currency]), String(currency)])
+	return ", ".join(parts)
 
 
 func _rebuild() -> void:
@@ -101,7 +110,7 @@ func _rebuild() -> void:
 
 
 func _on_craft_pressed(gizmo_id: String) -> void:
-	if CraftModel.start_craft(GameState.data, DataDefs.gizmos, Economy, TimerService, gizmo_id, TimeUtil.now()):
+	if CraftModel.start_craft(GameState.data, DataDefs.gizmos, Economy, TimerService, gizmo_id, TimeUtil.now(), DataDefs.buildings):
 		GameState.save_game()
 	_rebuild()
 

@@ -86,3 +86,11 @@ func test_unowned_recipe_row_is_labeled_and_craftable() -> void:
 	screen._on_collect_pressed("gyro_damper")
 	assert_eq(int(GameState.data["gizmos"]["owned"]["gyro_damper"]), 1,
 		"first craft grants ownership at level 1")
+
+
+func test_idle_rows_show_the_effective_craft_cost() -> void:
+	var text: String = screen._gizmo_label_text("wind_fan", TimeUtil.now())
+	assert_string_contains(text, "80 scrap", "raw cost without an annex")
+	GameState.data["island"]["plots"]["islet_foundry_0"] = {"building": "foundry_annex", "level": 1}
+	text = screen._gizmo_label_text("wind_fan", TimeUtil.now())
+	assert_string_contains(text, "72 scrap", "the label shows the discounted price the tap will pay")

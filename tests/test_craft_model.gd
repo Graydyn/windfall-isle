@@ -64,3 +64,42 @@ func test_brasswork_gates_the_brass_recipes() -> void:
 		"5000 scrap but zero brasswork: locked")
 	state.data["currencies"]["brasswork"] = 2
 	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"))
+
+
+func with_annex(level: int) -> void:
+	state.data["island"]["plots"]["islet_foundry_0"] = {"building": "foundry_annex", "level": level}
+
+
+func test_effective_cost_is_the_raw_cost_without_an_annex() -> void:
+	var def: Dictionary = DataDefs.gizmos["defs"]["wind_fan"]
+	assert_eq(int(CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)["scrap"]), 80)
+	assert_eq(int(CraftModel.effective_cost(def, state.data["island"], {})["scrap"]), 80,
+		"empty building defs never discount")
+
+func test_effective_cost_discounts_and_ceils() -> void:
+	with_annex(1)
+	var def := {"craft_cost": {"scrap": 85, "brasswork": 3}}
+	var cost := CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)
+	assert_eq(int(cost["scrap"]), 77, "ceil(85 x 0.9) = 77")
+	assert_eq(int(cost["brasswork"]), 3, "ceil(3 x 0.9) = 3")
+	with_annex(2)
+	var cost2 := CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)
+	assert_eq(int(cost2["scrap"]), 68, "ceil(85 x 0.8) = 68")
+
+func test_effective_cost_never_reaches_zero() -> void:
+	with_annex(2)
+	var cost := CraftModel.effective_cost({"craft_cost": {"brasswork": 1}}, state.data["island"], DataDefs.buildings)
+	assert_eq(int(cost["brasswork"]), 1, "no craft is ever free")
+
+func test_start_craft_pays_the_discounted_price_it_checked() -> void:
+	with_annex(1)
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings))
+	assert_eq(econ.balance("scrap"), 5000 - 72, "ceil(80 x 0.9) = 72: pay what was checked")
+
+func test_discount_unlocks_a_craft_at_the_margin() -> void:
+	with_annex(1)
+	state.data["currencies"]["scrap"] = 72
+	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", DataDefs.buildings),
+		"72 scrap affords the discounted 72 price")
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"),
+		"without building defs the raw 80 price applies")
