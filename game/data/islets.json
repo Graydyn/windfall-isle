@@ -1,0 +1,34 @@
+{
+	"islets": [
+		{
+			"id": "lantern_shoal",
+			"name": "Lantern Shoal",
+			"cost": {"scrap": 600, "cloudsilk": 4},
+			"restore_seconds": 14400,
+			"plots": ["islet_lantern_0"],
+			"vignette": {
+				"title": "A letter, wax-sealed against the wind",
+				"lines": [
+					"To whoever relights the shoal: the lanterns were never for us. We hung them so the salvage barges could find their way home through the cloud-wrack, and they did, every one, until the winds changed.",
+					"If you have mended the bridge, then the winds have changed again. Hang the lights. Somebody out there is squinting for them.",
+					"P.S. The lens grinder left her tools in the south workshop. She said whoever came next would need them more than she did."
+				]
+			}
+		},
+		{
+			"id": "foundry_rock",
+			"name": "Foundry Rock",
+			"cost": {"scrap": 1500, "brasswork": 12},
+			"restore_seconds": 28800,
+			"plots": ["islet_foundry_0"],
+			"vignette": {
+				"title": "A foreman's log, brass-bound",
+				"lines": [
+					"Day 412. The Reach sends us more brasswork than we can smelt and the crews sing while they pour. I have stopped correcting the ones who call this rock home.",
+					"Day 415. Orders came to strip the annex and fall back to the mainline isles. I signed the order because a foreman signs. I did not stay to watch the fires go out.",
+					"Day 416, unsent. If the furnaces ever wake, know that we banked the coals on purpose. It is easier to rekindle a fire than to forgive yourself for drowning one."
+				]
+			}
+		}
+	]
+}
