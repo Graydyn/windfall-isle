@@ -37,3 +37,15 @@ func test_drops_per_run_scales_with_balloonworks() -> void:
 	var island := {"plots": {"plot_1": {"building": "balloonworks", "level": 2}}, "build_slots": 1}
 	assert_eq(IslandEffects.drops_per_run({"drops_per_run": 8}, island, DataDefs.buildings), 10)
 	assert_eq(IslandEffects.drops_per_run({"drops_per_run": 8}, {"plots": {}, "build_slots": 1}, DataDefs.buildings), 8)
+
+
+func test_payout_multiplier_is_identity_without_a_lens_array() -> void:
+	assert_eq(IslandEffects.payout_multiplier({"plots": {}, "build_slots": 1}, DataDefs.buildings), 1.0)
+	assert_eq(IslandEffects.payout_multiplier({"plots": {}, "build_slots": 1}, {}), 1.0,
+		"empty defs must never scale payouts")
+
+
+func test_payout_multiplier_scales_with_lens_array_level() -> void:
+	var island := {"plots": {"islet_lantern_0": {"building": "lens_array", "level": 2}}, "build_slots": 1}
+	assert_almost_eq(IslandEffects.payout_multiplier(island, DataDefs.buildings), 1.1, 0.0001,
+		"base 1.0 + 2 levels x 0.05")

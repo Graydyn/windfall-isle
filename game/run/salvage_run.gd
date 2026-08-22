@@ -14,6 +14,7 @@ var _rng := RandomNumberGenerator.new()
 var _current_offer: Array = []
 var _offer_rerolled := false
 var _pending_offers := 0
+var _island_mult := 1.0
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -28,6 +29,8 @@ func _ready() -> void:
 	run_config["drops_per_run"] = IslandEffects.drops_per_run(run_defs, GameState.data["island"], DataDefs.buildings)
 	run_config["quota_tiers"] = region.get("quota_tiers", [])
 	model = RunModel.new(run_config)
+	# Island state cannot change mid-run; read the Lens Array bonus once.
+	_island_mult = IslandEffects.payout_multiplier(GameState.data["island"], DataDefs.buildings)
 	board.build(region, run_defs)
 	var gizmos_state: Dictionary = GameState.data["gizmos"]
 	board.install_gizmos(
@@ -145,7 +148,7 @@ func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 	# Central payout resolution: the run's quota-tier multiplier and the
 	# pod-carried multipliers (Crystal Prism, Splitter Vane) apply here so
 	# every catch path (barge, sea, watchdog) gets identical treatment.
-	var mult := model.payout_multiplier()
+	var mult := model.payout_multiplier() * _island_mult
 	if is_instance_valid(pod) and pod.has_meta("value_mult"):
 		mult *= float(pod.get_meta("value_mult"))
 	if is_equal_approx(mult, 1.0):

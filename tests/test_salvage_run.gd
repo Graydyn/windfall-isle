@@ -348,3 +348,12 @@ func test_heavy_loot_skips_empty_payouts() -> void:
 	var scrap_before := Economy.balance("scrap")
 	scene._on_pod_caught(pod, {"scrap": 1}, "barge")
 	assert_eq(Economy.balance("scrap"), scrap_before, "a zero-value catch stays worth nothing")
+
+
+func test_lens_array_multiplies_every_catch_payout() -> void:
+	GameState.data["island"]["plots"]["islet_lantern_0"] = {"building": "lens_array", "level": 1}
+	var boosted = add_child_autofree(RunScene.instantiate())
+	assert_eq(boosted._compute_payout(null, {"scrap": 20}), {"scrap": 21},
+		"20 scrap x 1.05 lens bonus rounds to 21")
+	assert_eq(scene._compute_payout(null, {"scrap": 20}), {"scrap": 20},
+		"the before_each scene was built without a lens array and stays neutral")

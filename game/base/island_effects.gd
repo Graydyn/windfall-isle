@@ -21,3 +21,9 @@ static func drops_per_run(run_defs: Dictionary, island: Dictionary, building_def
 	var def: Dictionary = (building_defs.get("defs", {}) as Dictionary).get("balloonworks", {})
 	var level := IslandModel.building_level(island, "balloonworks")
 	return int(run_defs.get("drops_per_run", 8)) + level * int(def.get("drops_bonus_per_level", 1))
+
+
+static func payout_multiplier(island: Dictionary, building_defs: Dictionary) -> float:
+	var def: Dictionary = (building_defs.get("defs", {}) as Dictionary).get("lens_array", {})
+	var level := IslandModel.building_level(island, "lens_array")
+	return 1.0 + float(level) * float(def.get("payout_bonus_per_level", 0.0))
