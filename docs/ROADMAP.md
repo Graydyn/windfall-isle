@@ -21,8 +21,8 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - Vendor cengiz-pz notification-scheduler and implement a plugin-backed `NotificationScheduler`; the seam (`schedule/cancel_all/request_permission`), the pure planner, and the permission-once flow are done and tested. Selection at boot mirrors Ads.
 - Small pre-existing gap worth closing then: `NotificationSvc.request_permission_once` and `AdLimits._ads` heal a MISSING save section but not a wrong-typed one.
 
-### Island expansion + story vignettes (spec 4.4)
-- Restored bridges/balloon lines to neighboring islets open new build plots; each islet carries a skippable found-letter vignette. Needs a spec (plot data model, restoration costs/timers, vignette storage); no schema work exists yet.
+### Island expansion + story vignettes (spec 4.4): SHIPPED (Plan 8)
+- Two data-driven islets (islets.json), IsletModel restoration lane, Lens Array and Foundry Annex, letter panel, schema v7. Spec: docs/superpowers/specs/2026-08-22-island-expansion-vignettes-design.md. Islet 3+ is JSON authoring plus one new building effect if desired. Restoration timers are deliberately not ad-skippable yet (revisit after playtest).
 
 ### Gizmo rarities (spec 3.3)
 - Rarity tiers beyond the current flat set; interacts with Workshop levels ("higher levels unlock higher rarities") and the craft-to-acquire flow from Plan 6.
