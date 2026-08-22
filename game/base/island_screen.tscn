@@ -72,3 +72,22 @@ offset_top = 1080.0
 offset_right = 560.0
 offset_bottom = 1160.0
 text = "Back"
+
+[node name="LetterPanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 40.0
+offset_top = 200.0
+offset_right = 680.0
+offset_bottom = 700.0
+
+[node name="VBox" type="VBoxContainer" parent="LetterPanel"]
+
+[node name="LetterTitle" type="Label" parent="LetterPanel/VBox"]
+text = "A letter"
+
+[node name="LetterBody" type="Label" parent="LetterPanel/VBox"]
+custom_minimum_size = Vector2(600, 0)
+autowrap_mode = 3
+
+[node name="LetterClose" type="Button" parent="LetterPanel/VBox"]
+text = "Close"

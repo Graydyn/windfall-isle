@@ -12,6 +12,8 @@ extends Control
 var _selection: Dictionary = {}
 var _last_signature := ""
 var _plot_labels: Dictionary = {}
+var _islet_labels: Dictionary = {}
+var _letter_islet := ""
 
 @onready var rows: VBoxContainer = $Rows
 
@@ -24,6 +26,7 @@ func _ready() -> void:
 	$CrateButton.pressed.connect(_on_crate_pressed)
 	$SlotButton.pressed.connect(_on_slot_pressed)
 	$BonusCrateButton.pressed.connect(_on_bonus_crate_pressed)
+	$LetterPanel/VBox/LetterClose.pressed.connect(_on_letter_close_pressed)
 	_rebuild()
 
 
@@ -31,12 +34,19 @@ func _plot_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for i in int(DataDefs.buildings.get("plot_count", 6)):
 		ids.append("plot_%d" % i)
+	ids.append_array(IsletModel.open_plots(GameState.data, DataDefs.islets))
 	return ids
 
 
-func _unbuilt_ids() -> Array[String]:
+func _unbuilt_ids(plot: String) -> Array[String]:
+	# A home plot offers home buildings; an islet plot offers exactly its
+	# islet's buildings (spec 4.4).
+	var plot_islet := IsletModel.islet_of_plot(DataDefs.islets, plot)
 	var ids: Array[String] = []
 	for id in DataDefs.buildings.get("defs", {}):
+		var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary)[id]
+		if String(def.get("islet", "")) != plot_islet:
+			continue
 		if IslandModel.building_level(GameState.data["island"], String(id)) == 0 \
 				and IslandModel.plot_of(GameState.data["island"], String(id)) == "":
 			ids.append(String(id))
@@ -51,7 +61,20 @@ func _signature(now: int) -> String:
 			parts.append("d" if TimerService.is_done(timer_id, now) else "r")
 		else:
 			parts.append("i")
+	for row_v in IsletModel.islets(DataDefs.islets):
+		parts.append(_islet_state(String((row_v as Dictionary).get("id", "")), now))
 	return ",".join(parts)
+
+
+func _islet_state(islet_id: String, now: int) -> String:
+	# One char per islet: R restored, r restoring, d done-uncollected,
+	# o offered, L locked behind an earlier islet. All five are structural.
+	if IsletModel.is_restored(GameState.data, islet_id):
+		return "R"
+	var timer_id := "restore_" + islet_id
+	if TimerService.active_timers().has(timer_id):
+		return "d" if TimerService.is_done(timer_id, now) else "r"
+	return "o" if IsletModel.next_offered(GameState.data, DataDefs.islets) == islet_id else "L"
 
 
 func _refresh_tick() -> void:
@@ -68,13 +91,19 @@ func _refresh_labels(now: int) -> void:
 		var label: Label = _plot_labels[plot]
 		if is_instance_valid(label):
 			label.text = _row_text(String(plot), island, now)
+	for islet_id in _islet_labels:
+		var islet_label: Label = _islet_labels[islet_id]
+		if is_instance_valid(islet_label):
+			islet_label.text = _islet_row_text(IsletModel.entry(DataDefs.islets, String(islet_id)), now)
 	_refresh_static_controls(now)
 
 
 func _rebuild() -> void:
 	for child in rows.get_children():
+		rows.remove_child(child)
 		child.queue_free()
 	_plot_labels.clear()
+	_islet_labels.clear()
 	var now := TimeUtil.now()
 	_last_signature = _signature(now)
 	var island: Dictionary = GameState.data["island"]
@@ -108,6 +137,33 @@ func _rebuild() -> void:
 			build.pressed.connect(_on_build_pressed.bind(plot))
 			row.add_child(build)
 		rows.add_child(row)
+	for row_v in IsletModel.islets(DataDefs.islets):
+		var islet := row_v as Dictionary
+		var islet_id := String(islet.get("id", ""))
+		var islet_row := HBoxContainer.new()
+		islet_row.custom_minimum_size = Vector2(0, 64)
+		var islet_label := Label.new()
+		islet_label.custom_minimum_size = Vector2(320, 0)
+		islet_label.text = _islet_row_text(islet, now)
+		islet_row.add_child(islet_label)
+		_islet_labels[islet_id] = islet_label
+		match _islet_state(islet_id, now):
+			"o":
+				var restore := Button.new()
+				restore.text = "Restore"
+				restore.pressed.connect(_on_restore_pressed.bind(islet_id))
+				islet_row.add_child(restore)
+			"d":
+				var cross := Button.new()
+				cross.text = "Cross over!"
+				cross.pressed.connect(_on_restore_collect_pressed.bind(islet_id))
+				islet_row.add_child(cross)
+			"R":
+				var read := Button.new()
+				read.text = "Read letter"
+				read.pressed.connect(_on_read_letter_pressed.bind(islet_id))
+				islet_row.add_child(read)
+		rows.add_child(islet_row)
 	_refresh_static_controls(now)
 
 
@@ -151,11 +207,33 @@ func _selection_text(plot: String, island: Dictionary) -> String:
 	return chosen if chosen != "" else "Choose..."
 
 
+func _islet_row_text(islet: Dictionary, now: int) -> String:
+	var islet_id := String(islet.get("id", ""))
+	var islet_name := String(islet.get("name", islet_id))
+	match _islet_state(islet_id, now):
+		"R":
+			return "%s: restored" % islet_name
+		"r":
+			return "%s: restoring (%ds)" % [islet_name, TimerService.remaining("restore_" + islet_id, now)]
+		"d":
+			return "%s: the bridge is ready" % islet_name
+		"o":
+			return "%s: %s" % [islet_name, _cost_text(islet.get("cost", {}))]
+	return "%s: beyond a broken bridge" % islet_name
+
+
+func _cost_text(cost: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for currency in cost:
+		parts.append("%d %s" % [int(cost[currency]), String(currency)])
+	return ", ".join(parts)
+
+
 func _on_select_pressed(plot: String) -> void:
 	var plots: Dictionary = GameState.data["island"]["plots"]
 	if plots.has(plot):
 		return
-	var options := _unbuilt_ids()
+	var options := _unbuilt_ids(plot)
 	if options.is_empty():
 		return
 	var current := String(_selection.get(plot, ""))
@@ -176,11 +254,11 @@ func _on_build_pressed(plot: String) -> void:
 		$StatusLabel.text = "Pick a building for %s first." % plot
 		return
 	var now := TimeUtil.now()
-	var reason := IslandModel.build_rejection(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now)
+	var reason := IslandModel.build_rejection(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {}))
 	if reason != "":
 		$StatusLabel.text = reason
 		return
-	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now):
+	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {})):
 		$StatusLabel.text = ""
 		GameState.save_game()
 	_rebuild()
@@ -198,6 +276,57 @@ func _on_collect_pressed(plot: String) -> void:
 	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
 	GameState.save_game()
 	_rebuild()
+
+
+func _on_restore_pressed(islet_id: String) -> void:
+	var reason := IsletModel.restore_rejection(GameState.data, DataDefs.islets, Economy, TimerService, islet_id)
+	if reason != "":
+		$StatusLabel.text = reason
+		return
+	if IsletModel.start_restore(GameState.data, DataDefs.islets, Economy, TimerService, islet_id, TimeUtil.now()):
+		$StatusLabel.text = ""
+		GameState.save_game()
+	_rebuild()
+
+
+func _on_restore_collect_pressed(islet_id: String) -> void:
+	var payload := TimerService.collect("restore_" + islet_id, TimeUtil.now())
+	if payload.is_empty():
+		return
+	IsletModel.complete_restore(GameState.data, payload)
+	GameState.save_game()
+	_open_letter(islet_id)
+	_rebuild()
+
+
+func _on_read_letter_pressed(islet_id: String) -> void:
+	_open_letter(islet_id)
+
+
+func _open_letter(islet_id: String) -> void:
+	var islet := IsletModel.entry(DataDefs.islets, islet_id)
+	var vignette: Dictionary = islet.get("vignette", {})
+	_letter_islet = islet_id
+	$LetterPanel/VBox/LetterTitle.text = String(vignette.get("title", String(islet.get("name", islet_id))))
+	var lines := PackedStringArray()
+	for line in vignette.get("lines", []):
+		lines.append(String(line))
+	$LetterPanel/VBox/LetterBody.text = "\n\n".join(lines)
+	$LetterPanel.visible = true
+
+
+func _on_letter_close_pressed() -> void:
+	if _letter_islet != "":
+		# Write-back discipline: heal a mangled section before flagging.
+		if not GameState.data.has("islets") or not (GameState.data["islets"] is Dictionary):
+			GameState.data["islets"] = {"restored": {}, "letters_seen": {}}
+		var section: Dictionary = GameState.data["islets"]
+		if not section.has("letters_seen") or not (section["letters_seen"] is Dictionary):
+			section["letters_seen"] = {}
+		(section["letters_seen"] as Dictionary)[_letter_islet] = true
+		GameState.save_game()
+	_letter_islet = ""
+	$LetterPanel.visible = false
 
 
 func _on_workshop_pressed() -> void:

@@ -24,8 +24,10 @@ func after_all() -> void:
 	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings)
 
 
-func test_builds_one_row_per_plot() -> void:
-	assert_eq(screen.get_node("Rows").get_child_count(), int(DataDefs.buildings["plot_count"]))
+func test_builds_one_row_per_plot_plus_one_per_islet() -> void:
+	assert_eq(screen.get_node("Rows").get_child_count(),
+		int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size(),
+		"fresh save: home plots plus one status row per islet, no islet plots open yet")
 
 func test_select_cycles_unbuilt_buildings() -> void:
 	screen._on_select_pressed("plot_0")
@@ -163,3 +165,80 @@ func test_selection_change_clears_stale_status() -> void:
 	screen.get_node("StatusLabel").text = "Not enough resources."
 	screen._on_select_pressed("plot_0")
 	assert_eq(screen.get_node("StatusLabel").text, "", "a stale rejection must not outlive the selection it judged")
+
+func restore_lantern() -> void:
+	(GameState.data["islets"]["restored"] as Dictionary)["lantern_shoal"] = true
+	screen._rebuild()
+
+
+func test_restore_pays_and_starts_the_restoration_timer() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_restore_pressed("lantern_shoal")
+	assert_true(TimerService.active_timers().has("restore_lantern_shoal"))
+	assert_eq(Economy.balance("scrap"), 2000 - 600)
+	assert_eq(screen.get_node("StatusLabel").text, "")
+
+func test_rejected_restore_explains_itself() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._on_restore_pressed("lantern_shoal")
+	assert_false(TimerService.active_timers().has("restore_lantern_shoal"))
+	assert_string_contains(screen.get_node("StatusLabel").text, "Not enough")
+
+func test_out_of_order_restore_is_rejected_with_a_reason() -> void:
+	GameState.data["currencies"]["brasswork"] = 50
+	screen._on_restore_pressed("foundry_rock")
+	assert_false(TimerService.active_timers().has("restore_foundry_rock"))
+	assert_string_contains(screen.get_node("StatusLabel").text, "Another islet")
+
+func test_restore_collect_marks_restored_and_opens_the_letter() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_restore_pressed("lantern_shoal")
+	TimerService._state.data["timers"]["restore_lantern_shoal"]["ends_at"] = 0
+	screen._on_restore_collect_pressed("lantern_shoal")
+	assert_true(IsletModel.is_restored(GameState.data, "lantern_shoal"))
+	assert_true(screen.get_node("LetterPanel").visible)
+	assert_string_contains(String(screen.get_node("LetterPanel/VBox/LetterBody").text), "lanterns were never for us")
+
+func test_letter_close_records_letters_seen() -> void:
+	restore_lantern()
+	screen._on_read_letter_pressed("lantern_shoal")
+	assert_true(screen.get_node("LetterPanel").visible, "letters stay re-readable forever")
+	screen._on_letter_close_pressed()
+	assert_false(screen.get_node("LetterPanel").visible)
+	assert_true(bool((GameState.data["islets"]["letters_seen"] as Dictionary)["lantern_shoal"]))
+
+func test_restored_islet_contributes_its_plot_row() -> void:
+	restore_lantern()
+	assert_eq(screen.get_node("Rows").get_child_count(),
+		int(DataDefs.buildings["plot_count"]) + 1 + IsletModel.islets(DataDefs.islets).size(),
+		"the restored islet's plot joins the list")
+
+func test_islet_plot_offers_only_its_islet_building() -> void:
+	restore_lantern()
+	screen._on_select_pressed("islet_lantern_0")
+	assert_eq(String(screen._selection["islet_lantern_0"]), "lens_array")
+	screen._on_select_pressed("islet_lantern_0")
+	assert_eq(String(screen._selection["islet_lantern_0"]), "lens_array",
+		"the cycle contains exactly the one islet building")
+
+func test_home_plot_never_offers_islet_buildings() -> void:
+	var offered: Array[String] = screen._unbuilt_ids("plot_0")
+	assert_false("lens_array" in offered)
+	assert_false("foundry_annex" in offered)
+
+func test_building_on_an_islet_plot_goes_through_the_model() -> void:
+	restore_lantern()
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_select_pressed("islet_lantern_0")
+	screen._on_build_pressed("islet_lantern_0")
+	assert_true(TimerService.active_timers().has("build_islet_lantern_0"))
+
+func test_finishing_a_restoration_changes_the_signature() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_restore_pressed("lantern_shoal")
+	screen._refresh_tick()
+	var running_signature: String = screen._last_signature
+	TimerService._state.data["timers"]["restore_lantern_shoal"]["ends_at"] = 0
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, running_signature,
+		"done is structural: the collect button must appear")
