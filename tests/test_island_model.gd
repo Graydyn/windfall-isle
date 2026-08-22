@@ -125,3 +125,40 @@ func test_build_rejection_rejects_an_impossible_target() -> void:
 	assert_string_contains(
 		IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "workshop", 1000),
 		"cannot be built")
+
+
+func restored_islets() -> Dictionary:
+	return {"restored": {"lantern_shoal": true, "foundry_rock": true}, "letters_seen": {}}
+
+
+func test_islet_building_rejected_on_a_home_plot() -> void:
+	state.data["currencies"]["cloudsilk"] = 50
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "lens_array", 1000, DataDefs.islets, restored_islets()),
+		"belongs on Lantern Shoal")
+
+func test_home_building_rejected_on_an_islet_plot() -> void:
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "islet_lantern_0", "workshop", 1000, DataDefs.islets, restored_islets()),
+		"awaits its own building")
+
+func test_islet_building_rejected_while_unrestored() -> void:
+	state.data["currencies"]["cloudsilk"] = 50
+	assert_string_contains(
+		IslandModel.build_rejection(island, defs, econ, timers, "islet_lantern_0", "lens_array", 1000, DataDefs.islets, {"restored": {}, "letters_seen": {}}),
+		"Restore the bridge")
+
+func test_islet_building_builds_on_its_restored_plot() -> void:
+	state.data["currencies"]["cloudsilk"] = 50
+	assert_eq(
+		IslandModel.build_rejection(island, defs, econ, timers, "islet_lantern_0", "lens_array", 1000, DataDefs.islets, restored_islets()),
+		"")
+	assert_true(IslandModel.start_build(island, defs, econ, timers, "islet_lantern_0", "lens_array", 1000, DataDefs.islets, restored_islets()))
+	var payload: Dictionary = timers.collect("build_islet_lantern_0", 1000 + 1800)
+	IslandModel.complete_build(island, payload, state.data, 2800)
+	assert_eq(IslandModel.building_level(island, "lens_array"), 1)
+
+func test_islet_building_rejected_everywhere_without_islet_context() -> void:
+	state.data["currencies"]["cloudsilk"] = 50
+	assert_ne(IslandModel.build_rejection(island, defs, econ, timers, "plot_0", "lens_array", 1000), "",
+		"the default empty islet context can never place an islet building")

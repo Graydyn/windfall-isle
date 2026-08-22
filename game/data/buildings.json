@@ -58,6 +58,26 @@
 				{"cost": {"scrap": 360, "cloudsilk": 2}, "build_seconds": 1200},
 				{"cost": {"scrap": 1100, "cloudsilk": 7}, "build_seconds": 4200}
 			]
+		},
+		"lens_array": {
+			"name": "Lens Array",
+			"islet": "lantern_shoal",
+			"max_level": 2,
+			"payout_bonus_per_level": 0.05,
+			"levels": [
+				{"cost": {"scrap": 400, "cloudsilk": 3}, "build_seconds": 1800},
+				{"cost": {"scrap": 1200, "cloudsilk": 8, "crystals": 3}, "build_seconds": 5400}
+			]
+		},
+		"foundry_annex": {
+			"name": "Foundry Annex",
+			"islet": "foundry_rock",
+			"max_level": 2,
+			"craft_discount_per_level": 0.1,
+			"levels": [
+				{"cost": {"scrap": 900, "brasswork": 6}, "build_seconds": 3600},
+				{"cost": {"scrap": 2000, "brasswork": 14}, "build_seconds": 7200}
+			]
 		}
 	}
 }

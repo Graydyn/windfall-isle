@@ -49,13 +49,34 @@ static func _next_level_row(defs: Dictionary, island: Dictionary, plot: String, 
 	return rows[current]
 
 
-static func build_rejection(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> String:
+static func placement_rejection(defs: Dictionary, islet_defs: Dictionary, islets_state: Dictionary, plot: String, building_id: String) -> String:
+	# Islet buildings live only on their islet's restored plots; home buildings
+	# never leave the home island (spec 4.4). "" means placement is fine.
+	var def: Dictionary = (defs.get("defs", {}) as Dictionary).get(building_id, {})
+	var home_islet := String(def.get("islet", ""))
+	var plot_islet := IsletModel.islet_of_plot(islet_defs, plot)
+	if home_islet == "" and plot_islet == "":
+		return ""
+	if home_islet == "":
+		return "This plot awaits its own building."
+	if plot_islet != home_islet:
+		var islet_name := String(IsletModel.entry(islet_defs, home_islet).get("name", home_islet))
+		return "%s belongs on %s." % [String(def.get("name", building_id)), islet_name]
+	if not bool((islets_state.get("restored", {}) as Dictionary).get(home_islet, false)):
+		return "Restore the bridge first."
+	return ""
+
+
+static func build_rejection(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int, islet_defs: Dictionary = {}, islets_state: Dictionary = {}) -> String:
 	# "" means buildable; anything else is a short player-facing reason
 	# (Plan 5 polish: a rejected Build tap must say why).
 	if timers.active_timers().has("build_" + plot):
 		return "This plot is already under construction."
 	if active_constructions(timers, now) >= int(island.get("build_slots", 1)):
 		return "All build slots are busy."
+	var placement := placement_rejection(defs, islet_defs, islets_state, plot, building_id)
+	if placement != "":
+		return placement
 	var row := _next_level_row(defs, island, plot, building_id)
 	if row.is_empty():
 		return "%s cannot be built here." % building_id
@@ -64,12 +85,12 @@ static func build_rejection(island: Dictionary, defs: Dictionary, economy: Node,
 	return ""
 
 
-static func can_start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> bool:
-	return build_rejection(island, defs, economy, timers, plot, building_id, now) == ""
+static func can_start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int, islet_defs: Dictionary = {}, islets_state: Dictionary = {}) -> bool:
+	return build_rejection(island, defs, economy, timers, plot, building_id, now, islet_defs, islets_state) == ""
 
 
-static func start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int) -> bool:
-	if not can_start_build(island, defs, economy, timers, plot, building_id, now):
+static func start_build(island: Dictionary, defs: Dictionary, economy: Node, timers: Node, plot: String, building_id: String, now: int, islet_defs: Dictionary = {}, islets_state: Dictionary = {}) -> bool:
+	if not can_start_build(island, defs, economy, timers, plot, building_id, now, islet_defs, islets_state):
 		return false
 	var row := _next_level_row(defs, island, plot, building_id)
 	if not economy.pay(row.get("cost", {})):
