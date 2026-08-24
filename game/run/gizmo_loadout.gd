@@ -44,12 +44,3 @@ static func place(gizmos_state: Dictionary, region_id: String, slot: String, giz
 		if other_slot != slot and String(region[other_slot]) == gizmo_id:
 			region.erase(other_slot)
 	return set_slot(gizmos_state, region_id, slot, gizmo_id)
-
-
-static func next_choice(current: String, owned_ids: Array, used_elsewhere: Array) -> String:
-	var options: Array = [""]
-	for id in owned_ids:
-		if id == current or not used_elsewhere.has(id):
-			options.append(id)
-	var index := options.find(current)
-	return options[(index + 1) % options.size()]

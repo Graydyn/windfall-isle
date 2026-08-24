@@ -1,7 +1,7 @@
 extends Control
 ## Island home screen placeholder: balances readout plus the expedition
-## launcher. Fuel is spent HERE, before the run scene loads, so the run scene
-## never touches fuel (spec 3.2 step 1). Plan 4 grows this into the island.
+## launcher. Fuel is spent by the run scene's Start button (drag-drop setup spec);
+## this screen gates the Launch button on affordability. Plan 4 grows this into the island.
 
 @onready var debug_label: Label = $DebugLabel
 @onready var launch_button: Button = $LaunchButton
@@ -10,7 +10,6 @@ extends Control
 func _ready() -> void:
 	Economy.balance_changed.connect(_on_balance_changed)
 	launch_button.pressed.connect(_on_launch_pressed)
-	$GizmosButton.pressed.connect(_on_gizmos_pressed)
 	$IslandButton.pressed.connect(_on_island_pressed)
 	$RefillButton.pressed.connect(_on_refill_pressed)
 	$RegionButton.pressed.connect(_on_region_pressed)
@@ -47,10 +46,6 @@ func _on_launch_pressed() -> void:
 	# spec); this button only gates on affordability via _refresh.
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/run/salvage_run.tscn")
-
-
-func _on_gizmos_pressed() -> void:
-	get_tree().change_scene_to_file("res://game/ui/loadout_screen.tscn")
 
 
 func _on_island_pressed() -> void:

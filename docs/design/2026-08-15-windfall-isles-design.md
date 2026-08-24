@@ -57,7 +57,7 @@ A **skyfield** is a single-screen portrait peg board representing a stretch of c
 
 ### 3.2 A run ("salvage expedition")
 
-1. Player spends **fuel** (energy) to launch an expedition on a chosen skyfield.
+1. Player spends **fuel** (energy) to launch an expedition on a chosen skyfield. (Amended 2026-08-24 by the drag-drop gizmo setup spec: fuel is now spent by the Start button inside the run scene's setup phase; the launcher still gates on affordability, and backing out of setup costs nothing.)
 2. The run grants a fixed number of **pod drops** (8-12, upgradeable).
 3. Per drop: tap or drag along the top edge to set the drop point, release, watch the physics cascade, collect the payout. Pure tap/drag input.
 4. **Quota tiers:** reaching the salvage quota mid-run lifts the airship to a richer tier of the same skyfield (denser loot, nastier hazards) and offers a **boon**: pick 1 of 3 temporary run-scoped modifiers (e.g., pods split once, barge payouts +50%, gizmo triggers fire twice). Light roguelite spice; post-MVP.

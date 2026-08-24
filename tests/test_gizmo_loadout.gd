@@ -34,17 +34,6 @@ func test_clear_slot() -> void:
 	assert_true(GizmoLoadout.set_slot(state, "region_1", "slot_0", ""))
 	assert_eq(GizmoLoadout.loadout_for(state, "region_1"), {})
 
-func test_next_choice_cycles_and_skips_used() -> void:
-	var owned_ids := ["wind_fan", "balloon_cluster", "crystal_prism"]
-	assert_eq(GizmoLoadout.next_choice("", owned_ids, []), "wind_fan")
-	assert_eq(GizmoLoadout.next_choice("wind_fan", owned_ids, []), "balloon_cluster")
-	assert_eq(GizmoLoadout.next_choice("crystal_prism", owned_ids, []), "")
-	assert_eq(GizmoLoadout.next_choice("", owned_ids, ["wind_fan"]), "balloon_cluster",
-		"ids used in other slots are skipped")
-	assert_eq(GizmoLoadout.next_choice("wind_fan", owned_ids, ["balloon_cluster", "crystal_prism"]), "",
-		"current id cycles out even when everything else is used")
-
-
 func test_place_seats_into_an_empty_slot() -> void:
 	var state := fresh_state()
 	assert_true(GizmoLoadout.place(state, "region_1", "slot_0", "wind_fan"))

@@ -37,8 +37,9 @@ func test_launch_disabled_when_fuel_empty() -> void:
 	main._refresh()
 	assert_true(main.get_node("LaunchButton").disabled)
 
-func test_gizmos_button_exists() -> void:
-	assert_not_null(main.get_node_or_null("GizmosButton"))
+func test_gizmos_button_is_gone() -> void:
+	assert_null(main.get_node_or_null("GizmosButton"),
+		"placement lives in the run scene's setup phase now")
 
 func test_island_button_exists() -> void:
 	assert_not_null(main.get_node_or_null("IslandButton"))
