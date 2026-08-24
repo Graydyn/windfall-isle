@@ -59,6 +59,7 @@ func test_splitter_through_the_real_scene_credits_two_half_pods() -> void:
 	GameState._io = SaveIO.new("user://test_gizmo_integration.json")
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	var scene = add_child_autofree(preload("res://game/run/salvage_run.tscn").instantiate())
+	scene._on_start_pressed()
 	var scrap_before := Economy.balance("scrap")
 	scene._on_drop_requested(360.0)
 	var pod: Node = get_tree().get_nodes_in_group("pods")[0]
@@ -82,6 +83,7 @@ func test_splitter_splits_on_real_contact_without_errors() -> void:
 	GameState._io = SaveIO.new("user://test_gizmo_integration.json")
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	var scene = add_child_autofree(preload("res://game/run/salvage_run.tscn").instantiate())
+	scene._on_start_pressed()
 	var vane = preload("res://game/run/gizmos/splitter_vane.tscn").instantiate()
 	# x=130 sits 30-35px from every real peg column in region_1 (peg+pod
 	# radii sum to 26), clearing a straight fall; x=360 lands dead-center on

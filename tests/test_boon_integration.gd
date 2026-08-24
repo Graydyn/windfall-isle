@@ -18,6 +18,7 @@ func before_each() -> void:
 	GameState.data["created_at"] = 1000
 	GameState.data["fuel"]["updated_at"] = 1000
 	scene = add_child_autofree(RunScene.instantiate())
+	scene._on_start_pressed()
 	scene._rng.seed = 20260818
 
 func after_all() -> void:

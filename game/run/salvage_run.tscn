@@ -68,3 +68,47 @@ text = "Reroll (ad)"
 
 [node name="SkipButton" type="Button" parent="UI/BoonOffer/VBox"]
 text = "Skip"
+
+[node name="SetupUI" type="Control" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="SlotTargets" type="Control" parent="UI/SetupUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="TrayPanel" type="PanelContainer" parent="UI/SetupUI"]
+offset_left = 10.0
+offset_top = 930.0
+offset_right = 710.0
+offset_bottom = 1120.0
+
+[node name="TrayFlow" type="HFlowContainer" parent="UI/SetupUI/TrayPanel"]
+
+[node name="StartButton" type="Button" parent="UI/SetupUI"]
+offset_left = 380.0
+offset_top = 1140.0
+offset_right = 700.0
+offset_bottom = 1210.0
+text = "Start"
+
+[node name="BackButton" type="Button" parent="UI/SetupUI"]
+offset_left = 20.0
+offset_top = 1140.0
+offset_right = 340.0
+offset_bottom = 1210.0
+text = "Back"
+
+[node name="SetupStatus" type="Label" parent="UI/SetupUI"]
+offset_left = 20.0
+offset_top = 1220.0
+offset_right = 700.0
+offset_bottom = 1260.0
+
+[node name="SetupRefreshTimer" type="Timer" parent="UI/SetupUI"]
+wait_time = 1.0
+autostart = true

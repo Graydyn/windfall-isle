@@ -1,8 +1,9 @@
 extends Node2D
-## Glue for one expedition: DropController -> RunModel -> Pod physics ->
-## Skyfield catchers -> Economy. Fuel was already spent by the launcher
-## (main.gd); this scene only runs the drops. Loot is credited per catch, so
-## abandoning or being killed by the OS never loses anything (spec 3.2).
+## Glue for one expedition: a SETUP phase over the built board (drag gizmos
+## into slots, fuel unspent), then Start spends fuel, installs gizmos, and
+## runs the drops. Loot is credited per catch, so abandoning or being killed
+## by the OS never loses anything (spec 3.2; fuel-on-Start amended by the
+## 2026-08-23 drag-drop setup spec).
 
 const PodScene := preload("res://game/run/pod.tscn")
 
@@ -16,6 +17,10 @@ var _offer_rerolled := false
 var _pending_offers := 0
 var _island_mult := 1.0
 
+enum Phase { SETUP, RUNNING, OVER }
+var _phase := Phase.SETUP
+var _region_id := ""
+
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
 
@@ -23,8 +28,8 @@ var _island_mult := 1.0
 func _ready() -> void:
 	var run_defs: Dictionary = DataDefs.run
 	pod_defs = run_defs.get("pod", {})
-	var region_id := RegionModel.selected_id(GameState.data, run_defs, GameState.data["island"])
-	var region: Dictionary = DataDefs.skyfield(region_id)
+	_region_id = RegionModel.selected_id(GameState.data, run_defs, GameState.data["island"])
+	var region: Dictionary = DataDefs.skyfield(_region_id)
 	var run_config: Dictionary = run_defs.duplicate()
 	run_config["drops_per_run"] = IslandEffects.drops_per_run(run_defs, GameState.data["island"], DataDefs.buildings)
 	run_config["quota_tiers"] = region.get("quota_tiers", [])
@@ -32,12 +37,6 @@ func _ready() -> void:
 	# Island state cannot change mid-run; read the Lens Array bonus once.
 	_island_mult = IslandEffects.payout_multiplier(GameState.data["island"], DataDefs.buildings)
 	board.build(region, run_defs)
-	var gizmos_state: Dictionary = GameState.data["gizmos"]
-	board.install_gizmos(
-		GizmoLoadout.loadout_for(gizmos_state, region_id),
-		DataDefs.gizmos,
-		GizmoLoadout.owned(gizmos_state),
-		self)
 	controller.configure(region.get("board", {}), float(pod_defs.get("radius", 12.0)))
 	board.pod_caught.connect(_on_pod_caught)
 	controller.drop_requested.connect(_on_drop_requested)
@@ -51,10 +50,18 @@ func _ready() -> void:
 	$UI/AbandonButton.pressed.connect(_on_abandon_pressed)
 	$UI/Results/VBox/ReturnButton.pressed.connect(_on_return_pressed)
 	$UI/Results/VBox/DoubleButton.pressed.connect(_on_double_pressed)
+	controller.enabled = false
+	$UI/AbandonButton.visible = false
+	$UI/SetupUI/StartButton.pressed.connect(_on_start_pressed)
+	$UI/SetupUI/BackButton.pressed.connect(_on_setup_back_pressed)
+	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)
+	_setup_tick()
 	_refresh_hud()
 
 
 func _on_drop_requested(x: float) -> void:
+	if _phase != Phase.RUNNING:
+		return
 	if not model.begin_drop():
 		return
 	var pod: Pod = PodScene.instantiate()
@@ -121,6 +128,7 @@ func _on_pod_timeout(pod_ref: WeakRef, watchdog: Timer) -> void:
 
 
 func _on_run_over() -> void:
+	_phase = Phase.OVER
 	controller.enabled = false
 	$UI/BoonOffer.visible = false
 	_pending_offers = 0
@@ -144,6 +152,42 @@ func _on_return_pressed() -> void:
 	get_tree().change_scene_to_file("res://game/main.tscn")
 
 
+func _on_start_pressed() -> void:
+	# The single commit point (spec: fuel-on-Start). Back before this is free.
+	if _phase != Phase.SETUP:
+		return
+	var cost := RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, _region_id), GameState.data["island"])
+	if not FuelModel.spend(GameState.data["fuel"], cost, TimeUtil.now()):
+		$UI/SetupUI/SetupStatus.text = "Not enough fuel."
+		return
+	GameState.save_game()
+	var gizmos_state: Dictionary = GameState.data["gizmos"]
+	board.install_gizmos(
+		GizmoLoadout.loadout_for(gizmos_state, _region_id),
+		DataDefs.gizmos,
+		GizmoLoadout.owned(gizmos_state),
+		self)
+	_phase = Phase.RUNNING
+	$UI/SetupUI.visible = false
+	$UI/AbandonButton.visible = true
+	controller.enabled = true
+	_refresh_hud()
+
+
+func _on_setup_back_pressed() -> void:
+	# Free exit: nothing was spent, placements already saved per drop.
+	GameState.save_game()
+	get_tree().change_scene_to_file("res://game/main.tscn")
+
+
+func _setup_tick() -> void:
+	if _phase != Phase.SETUP:
+		return
+	var cost := RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, _region_id), GameState.data["island"])
+	$UI/SetupUI/StartButton.text = "Start (%d fuel)" % cost
+	$UI/SetupUI/StartButton.disabled = FuelModel.current(GameState.data["fuel"], TimeUtil.now()) < cost
+
+
 func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 	# Central payout resolution: the run's quota-tier multiplier and the
 	# pod-carried multipliers (Crystal Prism, Splitter Vane) apply here so
@@ -162,6 +206,9 @@ func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 
 
 func _refresh_hud() -> void:
+	if _phase == Phase.SETUP:
+		$UI/HudLabel.text = "Place your gizmos, then press Start."
+		return
 	var parts := PackedStringArray()
 	for currency in model.loot:
 		parts.append("%s +%d" % [currency, int(model.loot[currency])])
@@ -303,7 +350,7 @@ func _close_offer() -> void:
 	if _pending_offers > 0:
 		_show_next_offer()
 		return
-	if not model.is_over():
+	if not model.is_over() and _phase == Phase.RUNNING:
 		controller.enabled = true
 
 

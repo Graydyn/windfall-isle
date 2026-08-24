@@ -43,11 +43,8 @@ func _refresh() -> void:
 
 
 func _on_launch_pressed() -> void:
-	var region_entry := RegionModel.entry(DataDefs.run, _selected_region())
-	var cost := RegionModel.fuel_cost(region_entry, GameState.data["island"])
-	if not FuelModel.spend(GameState.data["fuel"], cost, TimeUtil.now()):
-		_refresh()
-		return
+	# Fuel is spent by the run scene's Start button now (drag-drop setup
+	# spec); this button only gates on affordability via _refresh.
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/run/salvage_run.tscn")
 
