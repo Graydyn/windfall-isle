@@ -13,7 +13,11 @@ func setup(id: String, display: String, source_slot: String) -> void:
 	gizmo_id = id
 	from_slot = source_slot
 	text = display
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# PASS, not STOP: a chip must receive the drag press itself, yet let a
+	# DROP released over it fall through Godot's ancestor walk to the
+	# SlotTarget or tray beneath (STOP would terminate the walk and block
+	# replacing an occupied slot or removing over a tray chip).
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 func set_dimmed(dimmed: bool) -> void:

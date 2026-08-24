@@ -22,8 +22,8 @@ func test_dimmed_chip_does_not_drag() -> void:
 
 func test_chip_receives_mouse() -> void:
 	var chip := make_chip("wind_fan", "")
-	assert_eq(chip.mouse_filter, Control.MOUSE_FILTER_STOP,
-		"Labels default to IGNORE; a chip must receive the drag press")
+	assert_eq(chip.mouse_filter, Control.MOUSE_FILTER_PASS,
+		"PASS receives the drag press yet lets drops fall through to the target beneath")
 
 func test_slot_target_accepts_gizmo_payloads_only() -> void:
 	var target: SlotTarget = autofree(SlotTarget.new())

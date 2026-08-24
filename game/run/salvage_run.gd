@@ -147,6 +147,8 @@ func _on_run_over() -> void:
 
 
 func _on_abandon_pressed() -> void:
+	if _phase != Phase.RUNNING:
+		return
 	model.abandon()
 
 
@@ -171,6 +173,7 @@ func _on_start_pressed() -> void:
 		self)
 	_phase = Phase.RUNNING
 	$UI/SetupUI.visible = false
+	$UI/SetupUI/SetupRefreshTimer.stop()
 	$UI/AbandonButton.visible = true
 	controller.enabled = true
 	_refresh_hud()
@@ -201,6 +204,8 @@ func _build_setup_ui(region: Dictionary) -> void:
 		$UI/SetupUI/SlotTargets.add_child(target)
 	# The tray panel doubles as the removal target: same script, empty slot id,
 	# so a token dragged home falls through Godot's ancestor walk onto it.
+	# set_script also installs SlotTarget._draw on the panel; slot_id "" keeps
+	# it from painting a slot outline over the tray.
 	$UI/SetupUI/TrayPanel.set_script(SlotTargetScript)
 	($UI/SetupUI/TrayPanel as SlotTarget).setup("", _on_gizmo_dropped)
 	_refresh_setup_ui()
