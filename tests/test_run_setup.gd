@@ -88,3 +88,86 @@ func test_back_button_exists_and_hud_returns_to_normal_after_start() -> void:
 	assert_not_null(scene.get_node_or_null("UI/SetupUI/BackButton"))
 	scene._on_start_pressed()
 	assert_string_contains(String(scene.get_node("UI/HudLabel").text), "Drops left:")
+
+func slot_target(index: int) -> SlotTarget:
+	return scene.get_node("UI/SetupUI/SlotTargets").get_child(index) as SlotTarget
+
+
+func tray_chips() -> Array:
+	return scene.get_node("UI/SetupUI/TrayPanel/TrayFlow").get_children()
+
+
+func chip_for(gizmo_id: String) -> GizmoChip:
+	for chip in tray_chips():
+		if (chip as GizmoChip).gizmo_id == gizmo_id:
+			return chip as GizmoChip
+	return null
+
+
+func test_setup_builds_a_target_per_slot_and_a_chip_per_owned() -> void:
+	var region: Dictionary = DataDefs.skyfield("region_1")
+	assert_eq(scene.get_node("UI/SetupUI/SlotTargets").get_child_count(),
+		(region.get("gizmo_slots", []) as Array).size())
+	assert_eq(tray_chips().size(), (GameState.data["gizmos"]["owned"] as Dictionary).size(),
+		"every owned gizmo shows in the tray")
+	assert_eq(slot_target(0).slot_id, "slot_0")
+
+func test_slot_targets_sit_on_the_slot_coordinates() -> void:
+	var slots: Array = DataDefs.skyfield("region_1").get("gizmo_slots", [])
+	var first := slot_target(0)
+	assert_almost_eq(first.position.x + first.size.x / 2.0, float((slots[0] as Dictionary)["x"]), 0.5)
+	assert_almost_eq(first.position.y + first.size.y / 2.0, float((slots[0] as Dictionary)["y"]), 0.5)
+
+func test_drop_from_tray_places_saves_and_dims() -> void:
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_0")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {"slot_0": "wind_fan"})
+	assert_false(chip_for("wind_fan").draggable, "the placed gizmo's tray chip dims")
+	assert_eq(slot_target(0).get_child_count(), 1, "the slot shows a token")
+	var saved := SaveIO.new(TEST_SAVE).read()
+	assert_eq((saved["gizmos"]["loadout"] as Dictionary).get("region_1"), {"slot_0": "wind_fan"},
+		"every drop persists immediately")
+
+func test_drop_onto_occupied_slot_returns_the_displaced_to_the_tray() -> void:
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_0")
+	scene._on_gizmo_dropped({"gizmo": "balloon_cluster", "from_slot": ""}, "slot_0")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {"slot_0": "balloon_cluster"})
+	assert_true(chip_for("wind_fan").draggable, "the displaced gizmo un-dims")
+
+func test_slot_to_slot_move_via_token_payload() -> void:
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_0")
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": "slot_0"}, "slot_1")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {"slot_1": "wind_fan"})
+	assert_eq(slot_target(0).get_child_count(), 0)
+	assert_eq(slot_target(1).get_child_count(), 1)
+
+func test_drop_on_tray_removes() -> void:
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_0")
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": "slot_0"}, "")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {})
+	assert_true(chip_for("wind_fan").draggable)
+
+func test_unowned_drop_is_rejected() -> void:
+	scene._on_gizmo_dropped({"gizmo": "not_owned_gizmo", "from_slot": ""}, "slot_0")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {})
+
+func test_drops_after_start_are_ignored() -> void:
+	scene._on_start_pressed()
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_0")
+	assert_eq(GizmoLoadout.loadout_for(GameState.data["gizmos"], "region_1"), {},
+		"placement is frozen once the run begins")
+
+func test_tray_panel_is_the_removal_target() -> void:
+	var tray: SlotTarget = scene.get_node("UI/SetupUI/TrayPanel") as SlotTarget
+	assert_not_null(tray, "the tray panel carries the SlotTarget script")
+	assert_eq(tray.slot_id, "")
+
+func test_slot_token_carries_its_source_slot() -> void:
+	scene._on_gizmo_dropped({"gizmo": "wind_fan", "from_slot": ""}, "slot_2")
+	var token := slot_target(2).get_child(0) as GizmoChip
+	assert_eq(token._get_drag_data(Vector2.ZERO), {"gizmo": "wind_fan", "from_slot": "slot_2"})
+
+func test_saved_loadout_prefills_the_board() -> void:
+	GizmoLoadout.set_slot(GameState.data["gizmos"], "region_1", "slot_3", "chime_bell")
+	var second = add_child_autofree(RunScene.instantiate())
+	var target := second.get_node("UI/SetupUI/SlotTargets").get_child(3) as SlotTarget
+	assert_eq(target.get_child_count(), 1, "setup opens pre-filled with the region's last placement")

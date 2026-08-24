@@ -6,6 +6,7 @@ extends Node2D
 ## 2026-08-23 drag-drop setup spec).
 
 const PodScene := preload("res://game/run/pod.tscn")
+const SlotTargetScript := preload("res://game/run/slot_target.gd")
 
 var model: RunModel
 var pod_defs: Dictionary
@@ -56,6 +57,7 @@ func _ready() -> void:
 	$UI/SetupUI/BackButton.pressed.connect(_on_setup_back_pressed)
 	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)
 	_setup_tick()
+	_build_setup_ui(region)
 	_refresh_hud()
 
 
@@ -186,6 +188,73 @@ func _setup_tick() -> void:
 	var cost := RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, _region_id), GameState.data["island"])
 	$UI/SetupUI/StartButton.text = "Start (%d fuel)" % cost
 	$UI/SetupUI/StartButton.disabled = FuelModel.current(GameState.data["fuel"], TimeUtil.now()) < cost
+
+
+func _build_setup_ui(region: Dictionary) -> void:
+	var slots: Array = region.get("gizmo_slots", [])
+	for i in slots.size():
+		var target := SlotTarget.new()
+		var center := Vector2(float((slots[i] as Dictionary)["x"]), float((slots[i] as Dictionary)["y"]))
+		target.position = center - Vector2(48.0, 48.0)
+		target.size = Vector2(96.0, 96.0)
+		target.setup("slot_%d" % i, _on_gizmo_dropped)
+		$UI/SetupUI/SlotTargets.add_child(target)
+	# The tray panel doubles as the removal target: same script, empty slot id,
+	# so a token dragged home falls through Godot's ancestor walk onto it.
+	$UI/SetupUI/TrayPanel.set_script(SlotTargetScript)
+	($UI/SetupUI/TrayPanel as SlotTarget).setup("", _on_gizmo_dropped)
+	_refresh_setup_ui()
+
+
+func _on_gizmo_dropped(payload: Dictionary, slot: String) -> void:
+	# The single mutation path for every drag (spec: one callback). slot ""
+	# is the tray: remove the gizmo from the slot it came from.
+	if _phase != Phase.SETUP:
+		return
+	var gizmos_state: Dictionary = GameState.data["gizmos"]
+	if slot == "":
+		var from_slot := String(payload.get("from_slot", ""))
+		if from_slot == "":
+			return
+		GizmoLoadout.set_slot(gizmos_state, _region_id, from_slot, "")
+	elif not GizmoLoadout.place(gizmos_state, _region_id, slot, String(payload.get("gizmo", ""))):
+		return
+	# Persist per drop: Android may kill the app at any moment (save-anywhere).
+	GameState.save_game()
+	_refresh_setup_ui()
+
+
+func _refresh_setup_ui() -> void:
+	var gizmos_state: Dictionary = GameState.data["gizmos"]
+	var loadout := GizmoLoadout.loadout_for(gizmos_state, _region_id)
+	var placed: Array = loadout.values()
+	for target_node in $UI/SetupUI/SlotTargets.get_children():
+		var target := target_node as SlotTarget
+		for child in target.get_children():
+			target.remove_child(child)
+			child.queue_free()
+		var held := String(loadout.get(target.slot_id, ""))
+		if held != "":
+			var token := GizmoChip.new()
+			token.setup(held, _chip_text(held), target.slot_id)
+			token.set_anchors_preset(Control.PRESET_FULL_RECT)
+			target.add_child(token)
+	var flow: HFlowContainer = $UI/SetupUI/TrayPanel/TrayFlow
+	for child in flow.get_children():
+		flow.remove_child(child)
+		child.queue_free()
+	for id in GizmoLoadout.owned(gizmos_state):
+		var chip := GizmoChip.new()
+		chip.setup(String(id), _chip_text(String(id)), "")
+		chip.custom_minimum_size = Vector2(164.0, 56.0)
+		chip.set_dimmed(placed.has(id))
+		flow.add_child(chip)
+
+
+func _chip_text(gizmo_id: String) -> String:
+	var def: Dictionary = (DataDefs.gizmos.get("defs", {}) as Dictionary).get(gizmo_id, {})
+	var level := int(GizmoLoadout.owned(GameState.data["gizmos"]).get(gizmo_id, 1))
+	return "%s\nLv %d" % [String(def.get("name", gizmo_id)), level]
 
 
 func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
