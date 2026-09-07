@@ -1,0 +1,30 @@
+{
+	"generalist_bonus": 1.25,
+	"workable": ["gardens", "workshop", "wind_still", "balloonworks", "foundry_annex"],
+	"survivor": {
+		"chance_per_run": 0.25,
+		"spawn_delay_min": 2.0,
+		"spawn_delay_max": 8.0,
+		"drift_speed": 60.0,
+		"drift_y": 480.0,
+		"radius": 26.0
+	},
+	"crew": [
+		{"id": "maren", "name": "Maren", "specialty": "workshop", "bonus": 1.5,
+			"line": "You found my tools on the shoal? Then let's put them to work."},
+		{"id": "halvard", "name": "Halvard", "specialty": "foundry_annex", "bonus": 1.5,
+			"line": "Day 417. The coals were banked on purpose. I said someone would come."},
+		{"id": "odo", "name": "Odo", "specialty": "gardens", "bonus": 1.5,
+			"line": "Soil remembers. So do I."},
+		{"id": "brisa", "name": "Brisa", "specialty": "wind_still", "bonus": 1.5,
+			"line": "That still of yours whistles flat. I can fix that."},
+		{"id": "petch", "name": "Petch", "specialty": "balloonworks", "bonus": 1.5,
+			"line": "Silk holds if you tie it like you mean it."},
+		{"id": "suno", "name": "Suno", "specialty": "gardens", "bonus": 1.5,
+			"line": "Rain is just sky-sea. I speak both."},
+		{"id": "immel", "name": "Immel", "specialty": "workshop", "bonus": 1.5,
+			"line": "Half these gizmos were mine once, you know. The good halves."},
+		{"id": "reya", "name": "Reya", "specialty": "balloonworks", "bonus": 1.5,
+			"line": "Ditched at sea twice already. The third time buys the drinks."}
+	]
+}
