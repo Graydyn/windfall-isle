@@ -1,13 +1,44 @@
 # Windfall Isles: Pending Work
 
-**As of:** 2026-08-18, main at 143cf42, 369/369 GUT tests green.
-**State:** MVP complete (Plans 1-5) plus Region 2 "Brasswork Reach" (Plan 6) and Boons (Plan 7). Both loops work and cross-feed: two regions, ten gizmos, six boons, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
+**As of:** 2026-09-07, main at 20b8820, 438/438 GUT tests green.
+**State:** Plans 1-9 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
 
-The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
+The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md) (section 3.2's launch-time fuel spend carries a Plan 9 errata). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
+
+**Sequencing decision (owner, 2026-09-07):** finish the actual game mechanics first (Phase A, in order below), then do all release work (Phase B: sound, art, AdMob, submission) at the very end.
 
 ---
 
-## 1. Major pending features (spec section 8 "Out" items, in rough value order)
+## Phase A: game mechanics
+
+### Island mechanic rework (new, owner priority)
+- The owner finds the island loop as it stands not interesting enough; it needs to become much more engaging than build-wait-collect rows. Direction is undecided: needs a brainstorm with the owner, then a spec. Raw material already in place: six home buildings plus two islet buildings, timed constructions on slot-capped plots, the trickle/crate/build-slot retention hooks, two restored islets with re-readable letters, and the two design-doc open questions below are natural inputs to the same conversation.
+
+### Gizmo rarities (spec 3.3)
+- Rarity tiers beyond the current flat set; interacts with Workshop levels ("higher levels unlock higher rarities") and the craft-to-acquire flow from Plan 6.
+- Rider for any gizmo-balance work: the Cargo Net is the weakest gizmo (assessed 2026-08-26): one use per run, and its relaunch aims at board center, which in region 1 is the lowest-paying barge; its real value is an incidental second pass through the peg field. Candidate fixes: aim at the highest-value barge, scale uses (not speed) with level, or lean into the second-pass identity.
+
+### Regions 3+
+- Now data-driven: a new `game/data/skyfields/region_N.json` plus a `regions` entry, and at most one new hazard implementation (storm pegs and ice pegs from spec 3.4 are unbuilt; drift currents exist). Dock max_level currently 2; a third region needs a Dock level or another unlock.
+- **Tripwire before any region ships 3+ quota tiers or the boon pool grows past six** (latent bugs, unreachable with shipped data, found by Plan 7's final review):
+  - `salvage_run._show_next_offer`'s empty-draw return leaves `controller.enabled` false when a queued offer finds the pool exhausted; re-enable when not over.
+  - `RunModel.add_boon`'s `maxf` composition of same-type multipliers is untested (only one barge and one sea booster exist today).
+- Region-authoring guards already in place: barge-id uniqueness validation, quota-tier row validation, ascending-quota warning, islet plot-id uniqueness.
+
+### Design-doc open questions (fold into the island rework brainstorm)
+- Boon persistence as a late-game "expedition perks" tree (open question 1).
+- Second build slot: permanent unlock vs per-use (open question 3; currently permanent).
+- Islet 3+ authoring is pure JSON plus one building effect if desired; restoration timers are deliberately not ad-skippable yet (revisit after playtest).
+
+## Phase B: release work (only after Phase A is done)
+
+### Sound design
+- Nothing researched (design doc open question 2). Needs direction before any implementation.
+
+### Art pass (external image-agent pipeline)
+- The complete image-agent brief is `docs/art/placeholder-graphics-audit.md` (NOTE: currently untracked in git; commit it or keep it wherever the art pipeline lives). Written against the MVP; before running the pipeline, extend it with: region 2 visuals (gear-ring pegs, drift-zone haze, brass barges), the Gyro Damper and Piston Kicker sprites, boon offer icons, BoonOffer panel theming, Plan 8's islet and letter-panel visuals, and Plan 9's setup-phase chrome (slot outlines, tray chips, drag preview). Whatever Phase A adds extends it further.
+- Wiring delivered art into scenes (Polygon2D to Sprite2D swaps, backgrounds, UI theme) is a separate code plan once assets exist.
+- Small UI polish parked for this pass (Plan 8 final review): LetterPanel body needs a ScrollContainer for long letters; locked islet rows should render dimmed; maxed gizmos still show a craft cost in the workshop.
 
 ### Real AdMob integration (explicitly deferred by owner: do not start without their go-ahead)
 - Vendor the cengiz-pz AdMob plugin (free build only) and implement `AdmobAdService`.
@@ -21,43 +52,19 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - Vendor cengiz-pz notification-scheduler and implement a plugin-backed `NotificationScheduler`; the seam (`schedule/cancel_all/request_permission`), the pure planner, and the permission-once flow are done and tested. Selection at boot mirrors Ads.
 - Small pre-existing gap worth closing then: `NotificationSvc.request_permission_once` and `AdLimits._ads` heal a MISSING save section but not a wrong-typed one.
 
-### Island expansion + story vignettes (spec 4.4): SHIPPED (Plan 8)
-- Two data-driven islets (islets.json), IsletModel restoration lane, Lens Array and Foundry Annex, letter panel, schema v7. Spec: docs/superpowers/specs/2026-08-22-island-expansion-vignettes-design.md. Islet 3+ is JSON authoring plus one new building effect if desired. Restoration timers are deliberately not ad-skippable yet (revisit after playtest).
-
-### Gizmo rarities (spec 3.3)
-- Rarity tiers beyond the current flat set; interacts with Workshop levels ("higher levels unlock higher rarities") and the craft-to-acquire flow from Plan 6.
-
-### Regions 3+
-- Now data-driven: a new `game/data/skyfields/region_N.json` plus a `regions` entry, and at most one new hazard implementation (storm pegs and ice pegs from spec 3.4 are unbuilt; drift currents exist). Dock max_level currently 2; a third region needs a Dock level or another unlock.
-- **Tripwire before any region ships 3+ quota tiers or the boon pool grows past six** (latent bugs, unreachable with shipped data, found by Plan 7's final review):
-  - `salvage_run._show_next_offer`'s empty-draw return leaves `controller.enabled` false when a queued offer finds the pool exhausted; re-enable when not over.
-  - `RunModel.add_boon`'s `maxf` composition of same-type multipliers is untested (only one barge and one sea booster exist today).
-- Region-authoring guards already in place: barge-id uniqueness validation, quota-tier row validation, ascending-quota warning.
-
-### Sound design
-- Nothing researched (design doc open question 2). Needs direction before any implementation.
-
-### Art pass (external image-agent pipeline)
-- The complete image-agent brief is `docs/art/placeholder-graphics-audit.md` (NOTE: currently untracked in git; commit it or keep it wherever the art pipeline lives). Written against the MVP; before running the pipeline, extend it with: region 2 visuals (gear-ring pegs, drift-zone haze, brass barges), the Gyro Damper and Piston Kicker sprites, boon offer icons, and the BoonOffer panel theming.
-- Wiring delivered art into scenes (Polygon2D to Sprite2D swaps, backgrounds, UI theme) is a separate code plan once assets exist.
-
 ### Play Pass submission
 - Blocked on the free/ads build existing (AdMob) and the final art pass; the GrantAdService binary is already the Play Pass behavior.
 
-### Design-doc open questions (decide when relevant)
-- Boon persistence as a late-game "expedition perks" tree (open question 1).
-- Second build slot: permanent unlock vs per-use (open question 3; currently permanent).
+## Verification notes
 
-## 2. Verification debt
-
-- **On-device / windowed smoke testing has never run.** Every plan's manual smoke steps were waived in the non-interactive environment; all 369 tests are headless. Before any release work: run the game in the editor and on an Android device, feel the physics (pod bounce, drift zones, piston kick), check the per-second UI refresh on real hardware, and exercise the notification permission flow on Android 13+.
-- **Flywheel tuning playtest** (spec 8's MVP success question): after the first hour, does the player return unprompted to check a timer and immediately spend the result on another run? All balance numbers are designer-tunable JSON (`game/data/*.json`), tuned so far by reasoning only, never by play.
+- Smoke testing runs throughout development on the owner's side (windowed/on-device); it is an ongoing practice, not a parked debt. Remaining hardware-specific checks worth a deliberate pass before release: the Android 13+ notification permission flow, and drag feel for the Plan 9 setup phase on touch.
+- **Flywheel tuning playtest** (spec 8's MVP success question): after the first hour, does the player return unprompted to check a timer and immediately spend the result on another run? All balance numbers are designer-tunable JSON (`game/data/*.json`), tuned so far by reasoning only, never by play. The island rework brainstorm should draw on how the current loop actually feels.
 - The two wall-clock ad-limit tests retain a milliseconds-wide UTC-midnight flake window (accepted residual, documented in the Plan 6 spec).
 
-## 3. Environment and process (for whoever picks this up)
+## Environment and process (for whoever picks this up)
 
 - Godot binary: `/Applications/Godot-4.6.app/Contents/MacOS/Godot` (4.6.3; brew ships 4.7 which GUT 9.6.1 does not support; never use `/Applications/Godot.app`).
 - Test command (must exit 0): `$GODOT --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit`
 - Run `$GODOT --headless --import` after adding files; commit `.gd.uid` sidecars (and `.import` files for assets).
-- Repo disciplines that repeatedly mattered: raw JSON floats with `int()`/`float()` casts at use and assert sites (never normalize in DataDefs); injected clocks (`now: int`) and injected RNG (seeded `RandomNumberGenerator`); mass-respecting forces only; `has_meta("caught")` early returns in contact gizmos; `add_child.call_deferred` inside physics flushes; UI tests call handlers directly and never press scene-changing buttons.
+- Repo disciplines that repeatedly mattered: raw JSON floats with `int()`/`float()` casts at use and assert sites (never normalize in DataDefs); injected clocks (`now: int`) and injected RNG (seeded `RandomNumberGenerator`); mass-respecting forces only; `has_meta("caught")` early returns in contact gizmos; `add_child.call_deferred` inside physics flushes; UI tests call handlers directly and never press scene-changing buttons; Control drag-and-drop chips need `MOUSE_FILTER_PASS` (STOP blocks the drop-target ancestor walk, and headless direct-handler tests cannot see it).
 - Session memory for the AI-assisted workflow lives outside the repo (auto-memory); this file is the repo-resident source of truth for pending work.
