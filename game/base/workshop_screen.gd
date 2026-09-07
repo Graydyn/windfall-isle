@@ -110,7 +110,7 @@ func _rebuild() -> void:
 
 
 func _on_craft_pressed(gizmo_id: String) -> void:
-	if CraftModel.start_craft(GameState.data, DataDefs.gizmos, Economy, TimerService, gizmo_id, TimeUtil.now(), DataDefs.buildings):
+	if CraftModel.start_craft(GameState.data, DataDefs.gizmos, Economy, TimerService, gizmo_id, TimeUtil.now(), DataDefs.buildings, DataDefs.crew):
 		GameState.save_game()
 	_rebuild()
 

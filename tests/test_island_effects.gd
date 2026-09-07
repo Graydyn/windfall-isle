@@ -49,3 +49,31 @@ func test_payout_multiplier_scales_with_lens_array_level() -> void:
 	var island := {"plots": {"islet_lantern_0": {"building": "lens_array", "level": 2}}, "build_slots": 1}
 	assert_almost_eq(IslandEffects.payout_multiplier(island, DataDefs.buildings), 1.1, 0.0001,
 		"base 1.0 + 2 levels x 0.05")
+
+
+func test_crewed_wind_still_regenerates_faster() -> void:
+	var data := data_with_wind_still(1)
+	CrewModel.rescue(data, "brisa")
+	(data["crew"]["assignments"] as Dictionary)["wind_still"] = "brisa"
+	IslandEffects.apply_fuel(data, ECON_DEFS, DataDefs.buildings, DataDefs.crew)
+	assert_eq(int(data["fuel"]["regen_seconds"]), 720,
+		"(1200 - 120) / 1.5 specialist bonus")
+	IslandEffects.apply_fuel(data, ECON_DEFS, DataDefs.buildings, DataDefs.crew)
+	assert_eq(int(data["fuel"]["regen_seconds"]), 720, "idempotent re-application")
+
+
+func test_regen_floor_survives_crew() -> void:
+	var data := data_with_wind_still(3)
+	CrewModel.rescue(data, "brisa")
+	(data["crew"]["assignments"] as Dictionary)["wind_still"] = "brisa"
+	IslandEffects.apply_fuel(data, ECON_DEFS, DataDefs.buildings, DataDefs.crew)
+	assert_eq(int(data["fuel"]["regen_seconds"]), 560,
+		"(1200 - 360) / 1.5 stays above the 300 floor here; the floor clamps deeper stacks")
+
+
+func test_apply_fuel_without_crew_defs_is_baseline() -> void:
+	var data := data_with_wind_still(1)
+	CrewModel.rescue(data, "brisa")
+	(data["crew"]["assignments"] as Dictionary)["wind_still"] = "brisa"
+	IslandEffects.apply_fuel(data, ECON_DEFS, DataDefs.buildings)
+	assert_eq(int(data["fuel"]["regen_seconds"]), 1080, "no crew defs, no crew effect")

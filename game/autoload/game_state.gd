@@ -9,14 +9,14 @@ var _io: SaveIO = SaveIO.new()
 
 
 func _ready() -> void:
-	load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings)
+	load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings, DataDefs.crew)
 	# Persist immediately: headless runs and first-session crashes never fire
 	# the pause/close notifications, and a completed migration must not wait
 	# for one to become durable.
 	save_game()
 
 
-func load_game(defs: Dictionary, now: int, gizmo_defs: Dictionary = {}, building_defs: Dictionary = {}) -> void:
+func load_game(defs: Dictionary, now: int, gizmo_defs: Dictionary = {}, building_defs: Dictionary = {}, crew_defs: Dictionary = {}) -> void:
 	var raw := _io.read()
 	var migrated: Dictionary = SaveSchema.migrate(raw, gizmo_defs) if not raw.is_empty() else {}
 	if migrated.is_empty():
@@ -27,7 +27,7 @@ func load_game(defs: Dictionary, now: int, gizmo_defs: Dictionary = {}, building
 		migrated["fuel"]["updated_at"] = now
 	data = migrated
 	if not building_defs.is_empty():
-		IslandEffects.apply_fuel(data, defs, building_defs)
+		IslandEffects.apply_fuel(data, defs, building_defs, crew_defs)
 	loaded.emit()
 
 

@@ -49,13 +49,17 @@ static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, t
 	return economy.can_afford(effective_cost(def, data.get("island", {}), building_defs))
 
 
-static func start_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String, now: int, building_defs: Dictionary = {}) -> bool:
+static func start_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String, now: int, building_defs: Dictionary = {}, crew_defs: Dictionary = {}) -> bool:
 	if not can_craft(data, gizmo_defs, economy, timers, gizmo_id, building_defs):
 		return false
 	var def: Dictionary = (gizmo_defs.get("defs", {}) as Dictionary).get(gizmo_id, {})
 	if not economy.pay(effective_cost(def, data.get("island", {}), building_defs)):
 		return false
-	return timers.start("craft_" + gizmo_id, "craft", int(def.get("craft_seconds", 120)), now, {"gizmo": gizmo_id})
+	# The worker's speed is priced into the duration at START and locked in
+	# the timer's ends_at; reassignment never retimes a running craft
+	# (crew spec section 5).
+	var duration := maxi(1, ceili(float(def.get("craft_seconds", 120)) / CrewModel.multiplier_for(data, crew_defs, "workshop")))
+	return timers.start("craft_" + gizmo_id, "craft", duration, now, {"gizmo": gizmo_id})
 
 
 static func complete_craft(data: Dictionary, payload: Dictionary) -> void:

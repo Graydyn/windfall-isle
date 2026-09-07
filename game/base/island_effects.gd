@@ -6,14 +6,15 @@ class_name IslandEffects
 const MIN_REGEN_SECONDS := 300
 
 
-static func apply_fuel(data: Dictionary, economy_defs: Dictionary, building_defs: Dictionary) -> void:
+static func apply_fuel(data: Dictionary, economy_defs: Dictionary, building_defs: Dictionary, crew_defs: Dictionary = {}) -> void:
 	var base: Dictionary = economy_defs.get("fuel", {})
 	var def: Dictionary = (building_defs.get("defs", {}) as Dictionary).get("wind_still", {})
 	var level := IslandModel.building_level(data.get("island", {}), "wind_still")
 	var fuel: Dictionary = data.get("fuel", {})
 	fuel["cap"] = int(base.get("cap", 5)) + level * int(def.get("fuel_cap_bonus_per_level", 1))
+	var crew_mult := CrewModel.multiplier_for(data, crew_defs, "wind_still")
 	fuel["regen_seconds"] = maxi(MIN_REGEN_SECONDS,
-		int(base.get("regen_seconds", 1200)) + level * int(def.get("regen_delta_per_level", -120.0)))
+		roundi((float(base.get("regen_seconds", 1200)) + float(level) * float(def.get("regen_delta_per_level", -120.0))) / crew_mult))
 	fuel["amount"] = mini(int(fuel.get("amount", 0)), int(fuel["cap"]))
 
 

@@ -103,3 +103,19 @@ func test_discount_unlocks_a_craft_at_the_margin() -> void:
 		"72 scrap affords the discounted 72 price")
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"),
 		"without building defs the raw 80 price applies")
+
+
+func test_crewed_workshop_crafts_faster_and_locks_at_start() -> void:
+	CrewModel.rescue(state.data, "maren")
+	(state.data["crew"]["assignments"] as Dictionary)["workshop"] = "maren"
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings, DataDefs.crew))
+	assert_eq(timers.remaining("craft_wind_fan", 1000), 80,
+		"120s divided by Maren's 1.5 specialist bonus")
+	(state.data["crew"]["assignments"] as Dictionary).erase("workshop")
+	assert_eq(timers.remaining("craft_wind_fan", 1000), 80,
+		"the duration locked at start; reassignment does not stretch a running craft")
+
+
+func test_uncrewed_craft_duration_is_baseline() -> void:
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings, DataDefs.crew))
+	assert_eq(timers.remaining("craft_wind_fan", 1000), 120)
