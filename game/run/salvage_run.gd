@@ -21,6 +21,8 @@ var _island_mult := 1.0
 enum Phase { SETUP, RUNNING, OVER }
 var _phase := Phase.SETUP
 var _region_id := ""
+var _survivor_id := ""
+var _survivor_from_left := true
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -138,6 +140,8 @@ func _on_run_over() -> void:
 	for pod in get_tree().get_nodes_in_group("pods"):
 		pod.set_meta("caught", true)
 		pod.queue_free()
+	for survivor in get_tree().get_nodes_in_group("survivors"):
+		survivor.queue_free()
 	GameState.save_game()
 	$UI/Results/VBox/Summary.text = _summary_text()
 	$UI/Results/VBox/DoubleButton.visible = Ads.service.is_available(AdService.Placement.PAYOUT_DOUBLE) \
@@ -176,6 +180,7 @@ func _on_start_pressed() -> void:
 	$UI/SetupUI/SetupRefreshTimer.stop()
 	$UI/AbandonButton.visible = true
 	controller.enabled = true
+	_maybe_schedule_survivor()
 	_refresh_hud()
 
 
@@ -191,6 +196,57 @@ func _setup_tick() -> void:
 	var cost := RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, _region_id), GameState.data["island"])
 	$UI/SetupUI/StartButton.text = "Start (%d fuel)" % cost
 	$UI/SetupUI/StartButton.disabled = FuelModel.current(GameState.data["fuel"], TimeUtil.now()) < cost
+
+
+func _maybe_schedule_survivor() -> void:
+	# Crew spec section 6: at most one survivor per run, drawn on the scene's
+	# injected rng, only while someone is still out there.
+	var pool := CrewModel.unrescued_ids(GameState.data, DataDefs.crew)
+	if pool.is_empty():
+		return
+	var survivor_defs: Dictionary = DataDefs.crew.get("survivor", {})
+	if _rng.randf() >= float(survivor_defs.get("chance_per_run", 0.25)):
+		return
+	_survivor_id = String(pool[_rng.randi_range(0, pool.size() - 1)])
+	_survivor_from_left = _rng.randf() < 0.5
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = _rng.randf_range(float(survivor_defs.get("spawn_delay_min", 2.0)), float(survivor_defs.get("spawn_delay_max", 8.0)))
+	add_child(timer)
+	timer.timeout.connect(_spawn_survivor.bind(timer))
+	timer.start()
+
+
+func _spawn_survivor(timer: Timer) -> void:
+	timer.queue_free()
+	if _phase != Phase.RUNNING or _survivor_id == "":
+		return
+	var survivor := Survivor.new()
+	var board_rect: Dictionary = DataDefs.skyfield(_region_id).get("board", {})
+	survivor.setup(_survivor_id, DataDefs.crew.get("survivor", {}), _survivor_from_left, board_rect)
+	survivor.rescued.connect(_on_survivor_rescued)
+	board.add_child(survivor)
+
+
+func _on_survivor_rescued(crew_id: String) -> void:
+	if not CrewModel.rescue(GameState.data, crew_id):
+		return
+	# Persist instantly: a rescue must survive an OS kill (save-anywhere).
+	GameState.save_game()
+	var member := CrewModel.entry(DataDefs.crew, crew_id)
+	$UI/RescueBanner.text = "Rescued %s! \"%s\"" % [String(member.get("name", crew_id)), String(member.get("line", ""))]
+	$UI/RescueBanner.visible = true
+	var hide := Timer.new()
+	hide.one_shot = true
+	hide.wait_time = 4.0
+	add_child(hide)
+	hide.timeout.connect(_hide_banner.bind(hide))
+	hide.start()
+
+
+func _hide_banner(timer: Timer) -> void:
+	timer.queue_free()
+	$UI/RescueBanner.visible = false
 
 
 func _build_setup_ui(region: Dictionary) -> void:
