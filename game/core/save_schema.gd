@@ -2,7 +2,7 @@ class_name SaveSchema
 ## Versioned save schema (spec 7.3). One dict is the whole save.
 ## "island" and "gizmos" are reserved for the base-builder and gizmo plans.
 
-const CURRENT_VERSION := 7
+const CURRENT_VERSION := 8
 
 
 static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary:
@@ -27,6 +27,7 @@ static func default_data(defs: Dictionary, gizmo_defs: Dictionary = {}) -> Dicti
 		"notifications": _fresh_notifications(),
 		"expedition": _fresh_expedition(),
 		"islets": _fresh_islets(),
+		"crew": _fresh_crew(),
 	}
 
 
@@ -46,6 +47,8 @@ static func migrate(data: Dictionary, gizmo_defs: Dictionary = {}) -> Dictionary
 		data = _migrate_5_to_6(data)
 	if int(data["version"]) == 6:
 		data = _migrate_6_to_7(data)
+	if int(data["version"]) == 7:
+		data = _migrate_7_to_8(data)
 	_backfill_missing_keys(data, gizmo_defs)
 	return data
 
@@ -141,6 +144,18 @@ static func _migrate_6_to_7(data: Dictionary) -> Dictionary:
 
 static func _fresh_islets() -> Dictionary:
 	return {"restored": {}, "letters_seen": {}}
+
+
+static func _migrate_7_to_8(data: Dictionary) -> Dictionary:
+	# The crew arrive: rescued survivors and their building assignments
+	# (crew spec section 3).
+	data["crew"] = _fresh_crew()
+	data["version"] = 8
+	return data
+
+
+static func _fresh_crew() -> Dictionary:
+	return {"rescued": {}, "assignments": {}}
 
 
 static func _backfill_missing_keys(data: Dictionary, gizmo_defs: Dictionary) -> void:
