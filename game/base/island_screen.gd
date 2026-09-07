@@ -63,6 +63,12 @@ func _signature(now: int) -> String:
 			parts.append("i")
 	for row_v in IsletModel.islets(DataDefs.islets):
 		parts.append(_islet_state(String((row_v as Dictionary).get("id", "")), now))
+	for row_v in CrewModel.members(DataDefs.crew):
+		var crew_id := String((row_v as Dictionary).get("id", ""))
+		if not CrewModel.is_rescued(GameState.data, crew_id):
+			parts.append("u")
+		else:
+			parts.append("@" + CrewModel.building_of(GameState.data, crew_id))
 	return ",".join(parts)
 
 
@@ -164,11 +170,28 @@ func _rebuild() -> void:
 				read.pressed.connect(_on_read_letter_pressed.bind(islet_id))
 				islet_row.add_child(read)
 		rows.add_child(islet_row)
+	for row_v in CrewModel.members(DataDefs.crew):
+		var member := row_v as Dictionary
+		var member_id := String(member.get("id", ""))
+		var crew_row := HBoxContainer.new()
+		crew_row.custom_minimum_size = Vector2(0, 56)
+		var crew_label := Label.new()
+		crew_label.custom_minimum_size = Vector2(320, 0)
+		crew_label.text = _crew_row_text(member)
+		crew_row.add_child(crew_label)
+		if CrewModel.is_rescued(GameState.data, member_id):
+			var assign_button := Button.new()
+			assign_button.text = _assign_text(member_id)
+			assign_button.pressed.connect(_on_assign_pressed.bind(member_id))
+			crew_row.add_child(assign_button)
+		else:
+			crew_label.modulate.a = 0.5
+		rows.add_child(crew_row)
 	_refresh_static_controls(now)
 
 
 func _refresh_static_controls(now: int) -> void:
-	var pending := TrickleModel.pending(GameState.data, DataDefs.buildings, now)
+	var pending := TrickleModel.pending(GameState.data, DataDefs.buildings, now, DataDefs.crew)
 	$GardensButton.text = "Collect trickle (%d scrap)" % pending
 	$GardensButton.disabled = pending <= 0
 	$CrateButton.disabled = not DailyCrate.can_claim(GameState.data, now)
@@ -193,6 +216,9 @@ func _row_text(plot: String, island: Dictionary, now: int) -> String:
 		var entry: Dictionary = plots[plot]
 		var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary).get(String(entry["building"]), {})
 		var text := "%s: %s Lv %d" % [plot, String(def.get("name", entry["building"])), int(entry["level"])]
+		var worker := CrewModel.crew_at(GameState.data, String(entry["building"]))
+		if worker != "":
+			text += ", %s working" % String(CrewModel.entry(DataDefs.crew, worker).get("name", worker))
 		if String(entry["building"]) == "observatory" and int(entry["level"]) >= 1:
 			text += "\n    %s" % String(def.get("teaser", ""))
 		return text
@@ -227,6 +253,40 @@ func _cost_text(cost: Dictionary) -> String:
 	for currency in cost:
 		parts.append("%d %s" % [int(cost[currency]), String(currency)])
 	return ", ".join(parts)
+
+
+func _crew_row_text(member: Dictionary) -> String:
+	var member_id := String(member.get("id", ""))
+	if not CrewModel.is_rescued(GameState.data, member_id):
+		return "Someone is still out there..."
+	var specialty := String(member.get("specialty", ""))
+	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(specialty, {})
+	return "%s (knows the %s)" % [String(member.get("name", member_id)), String(def.get("name", specialty))]
+
+
+func _assign_text(crew_id: String) -> String:
+	var building := CrewModel.building_of(GameState.data, crew_id)
+	if building == "":
+		return "Assign: (idle)"
+	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {})
+	return "Assign: %s" % String(def.get("name", building))
+
+
+func _on_assign_pressed(crew_id: String) -> void:
+	var options: Array = CrewModel.workable(DataDefs.crew)
+	var now := TimeUtil.now()
+	var current := CrewModel.building_of(GameState.data, crew_id)
+	var next_index := options.find(current) + 1
+	# Bank fuel accrued at the old regen rate before the rate can change.
+	FuelModel.materialize(GameState.data["fuel"], now)
+	if next_index >= options.size():
+		if current != "":
+			CrewModel.unassign(GameState.data, DataDefs.crew, current, DataDefs.buildings, now)
+	else:
+		CrewModel.assign(GameState.data, DataDefs.crew, String(options[next_index]), crew_id, DataDefs.buildings, now)
+	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings, DataDefs.crew)
+	GameState.save_game()
+	_rebuild()
 
 
 func _on_select_pressed(plot: String) -> void:
@@ -269,11 +329,11 @@ func _on_collect_pressed(plot: String) -> void:
 	var payload := TimerService.collect("build_" + plot, now)
 	if payload.is_empty():
 		return
-	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now, DataDefs.buildings)
+	IslandModel.complete_build(GameState.data["island"], payload, GameState.data, now, DataDefs.buildings, DataDefs.crew)
 	NotificationSvc.request_permission_once()
 	# Idempotent re-application self-heals fuel cap/regen after ANY completion,
 	# not just the Wind Still: a mangled save heals at the next collect too.
-	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings)
+	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings, DataDefs.crew)
 	GameState.save_game()
 	_rebuild()
 
@@ -340,7 +400,7 @@ func _on_back_pressed() -> void:
 
 
 func _on_gardens_pressed() -> void:
-	var amount := TrickleModel.collect(GameState.data, DataDefs.buildings, TimeUtil.now())
+	var amount := TrickleModel.collect(GameState.data, DataDefs.buildings, TimeUtil.now(), DataDefs.crew)
 	if amount > 0:
 		Economy.add("scrap", amount)
 		GameState.save_game()

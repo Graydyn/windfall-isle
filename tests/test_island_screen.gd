@@ -24,10 +24,11 @@ func after_all() -> void:
 	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings)
 
 
-func test_builds_one_row_per_plot_plus_one_per_islet() -> void:
+func test_builds_one_row_per_plot_plus_islets_plus_crew() -> void:
 	assert_eq(screen.get_node("Rows").get_child_count(),
-		int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size(),
-		"fresh save: home plots plus one status row per islet, no islet plots open yet")
+		int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size()
+			+ CrewModel.members(DataDefs.crew).size(),
+		"fresh save: home plots, one status row per islet, one row per crew def")
 
 func test_select_cycles_unbuilt_buildings() -> void:
 	screen._on_select_pressed("plot_0")
@@ -210,7 +211,8 @@ func test_letter_close_records_letters_seen() -> void:
 func test_restored_islet_contributes_its_plot_row() -> void:
 	restore_lantern()
 	assert_eq(screen.get_node("Rows").get_child_count(),
-		int(DataDefs.buildings["plot_count"]) + 1 + IsletModel.islets(DataDefs.islets).size(),
+		int(DataDefs.buildings["plot_count"]) + 1 + IsletModel.islets(DataDefs.islets).size()
+			+ CrewModel.members(DataDefs.crew).size(),
 		"the restored islet's plot joins the list")
 
 func test_islet_plot_offers_only_its_islet_building() -> void:
@@ -242,3 +244,85 @@ func test_finishing_a_restoration_changes_the_signature() -> void:
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, running_signature,
 		"done is structural: the collect button must appear")
+
+
+func rescue_and_rebuild(ids: Array) -> void:
+	for id in ids:
+		CrewModel.rescue(GameState.data, String(id))
+	screen._rebuild()
+
+
+func crew_row_count() -> int:
+	return screen.get_node("Rows").get_child_count()
+
+
+func test_crew_rows_exist_for_the_whole_cast() -> void:
+	var base := int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size()
+	assert_eq(crew_row_count(), base + CrewModel.members(DataDefs.crew).size(),
+		"every crew def gets a row, rescued or not")
+
+func test_unrescued_crew_show_as_silhouettes() -> void:
+	assert_string_contains(screen._crew_row_text(CrewModel.entry(DataDefs.crew, "odo")),
+		"still out there")
+
+func test_rescued_crew_show_name_and_specialty() -> void:
+	rescue_and_rebuild(["odo"])
+	var text: String = screen._crew_row_text(CrewModel.entry(DataDefs.crew, "odo"))
+	assert_string_contains(text, "Odo")
+	assert_string_contains(text, "Gardens")
+
+func test_assign_cycle_walks_workable_then_idle() -> void:
+	rescue_and_rebuild(["odo"])
+	screen._on_assign_pressed("odo")
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "gardens", "first workable")
+	screen._on_assign_pressed("odo")
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "workshop")
+	for i in 3:
+		screen._on_assign_pressed("odo")
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "foundry_annex", "last workable")
+	screen._on_assign_pressed("odo")
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "", "then back to idle")
+
+func test_assignment_persists() -> void:
+	rescue_and_rebuild(["odo"])
+	screen._on_assign_pressed("odo")
+	var saved := SaveIO.new(TEST_SAVE).read()
+	assert_eq(String((saved["crew"]["assignments"] as Dictionary).get("gardens", "")), "odo")
+
+func test_wind_still_assignment_reapplies_fuel_effects() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "wind_still", "level": 1}
+	rescue_and_rebuild(["brisa"])
+	screen._on_assign_pressed("brisa")
+	screen._on_assign_pressed("brisa")
+	screen._on_assign_pressed("brisa")
+	assert_eq(CrewModel.building_of(GameState.data, "brisa"), "wind_still")
+	assert_eq(int(GameState.data["fuel"]["regen_seconds"]), 720,
+		"(1200 - 120) / 1.5: the handler re-applies fuel effects")
+
+func test_worker_suffix_on_building_rows() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	rescue_and_rebuild(["odo"])
+	screen._on_assign_pressed("odo")
+	assert_string_contains(screen._row_text("plot_2", GameState.data["island"], TimeUtil.now()),
+		"Odo working")
+
+func test_rescue_and_assignment_are_structural_signature_changes() -> void:
+	screen._refresh_tick()
+	var before: String = screen._last_signature
+	CrewModel.rescue(GameState.data, "odo")
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, before, "a rescue rebuilds the rows")
+	var mid: String = screen._last_signature
+	screen._on_assign_pressed("odo")
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, mid, "an assignment rebuilds too")
+
+func test_gardens_collect_pays_the_crewed_rate() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	rescue_and_rebuild(["odo"])
+	var now := TimeUtil.now()
+	CrewModel.assign(GameState.data, DataDefs.crew, "gardens", "odo", DataDefs.buildings, now - 3600)
+	GameState.data["trickle"]["last_collect"] = now - 3600
+	var scrap_before := Economy.balance("scrap")
+	screen._on_gardens_pressed()
+	assert_eq(Economy.balance("scrap"), scrap_before + 30, "20/hour x 1.5 specialist")
