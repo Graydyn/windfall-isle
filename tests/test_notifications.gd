@@ -137,3 +137,13 @@ func test_restoration_entry_survives_missing_islet_defs() -> void:
 	var plan := NotificationPlanner.plan(data, DataDefs.buildings, DataDefs.gizmos, NOW)
 	assert_eq(plan.size(), 1, "the default empty islet defs still notify")
 	assert_string_contains(String(plan[0]["body"]), "lantern_shoal", "falls back to the id")
+
+func test_convert_entry_names_the_building() -> void:
+	var data := make_data()
+	data["timers"]["convert_smeltery"] = {"kind": "convert", "ends_at": NOW + 600, "payload": {"building": "smeltery"}}
+	var plan := NotificationPlanner.plan(data, DataDefs.buildings, DataDefs.gizmos, NOW)
+	assert_eq(plan.size(), 1)
+	assert_eq(String(plan[0]["id"]), "convert_smeltery")
+	assert_eq(String(plan[0]["title"]), "Batch complete")
+	assert_string_contains(String(plan[0]["body"]), "Smeltery")
+	assert_eq(int(plan[0]["fire_at"]), NOW + 600)
