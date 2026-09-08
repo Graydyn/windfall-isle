@@ -104,3 +104,7 @@ func test_launch_disabled_when_fuel_below_region_cost() -> void:
 
 func test_debug_label_shows_brasswork() -> void:
 	assert_string_contains(main.get_node("DebugLabel").text, "Brasswork: ")
+
+func test_debug_label_shows_parts_and_provisions() -> void:
+	assert_string_contains(main.get_node("DebugLabel").text, "Parts: ")
+	assert_string_contains(main.get_node("DebugLabel").text, "Provisions: ")

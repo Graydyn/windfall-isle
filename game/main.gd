@@ -24,11 +24,13 @@ func _on_balance_changed(_currency: String, _amount: int) -> void:
 func _refresh() -> void:
 	var now := TimeUtil.now()
 	var fuel: Dictionary = GameState.data["fuel"]
-	debug_label.text = "Scrap: %d\nCloudsilk: %d\nBrasswork: %d\nCrystals: %d\nFuel: %d/%d" % [
+	debug_label.text = "Scrap: %d\nCloudsilk: %d\nBrasswork: %d\nCrystals: %d\nParts: %d\nProvisions: %d\nFuel: %d/%d" % [
 		Economy.balance("scrap"),
 		Economy.balance("cloudsilk"),
 		Economy.balance("brasswork"),
 		Economy.balance("crystals"),
+		Economy.balance("parts"),
+		Economy.balance("provisions"),
 		FuelModel.current(fuel, now),
 		int(fuel["cap"]),
 	]

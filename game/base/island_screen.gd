@@ -69,6 +69,14 @@ func _signature(now: int) -> String:
 			parts.append("u")
 		else:
 			parts.append("@" + CrewModel.building_of(GameState.data, crew_id))
+	for id in DataDefs.buildings.get("defs", {}):
+		if not ((DataDefs.buildings["defs"] as Dictionary)[id] as Dictionary).has("recipe"):
+			continue
+		var convert_id := "convert_" + String(id)
+		if TimerService.active_timers().has(convert_id):
+			parts.append("cd" if TimerService.is_done(convert_id, now) else "cr")
+		else:
+			parts.append("ci")
 	return ",".join(parts)
 
 
@@ -142,6 +150,23 @@ func _rebuild() -> void:
 			build.text = "Build"
 			build.pressed.connect(_on_build_pressed.bind(plot))
 			row.add_child(build)
+		var occupant := ""
+		if island.get("plots", {}).has(plot):
+			occupant = String((island["plots"][plot] as Dictionary).get("building", ""))
+		if occupant != "" and not ConvertModel.recipe(DataDefs.buildings, occupant).is_empty():
+			var convert_id := "convert_" + occupant
+			if TimerService.active_timers().has(convert_id):
+				if TimerService.is_done(convert_id, now):
+					var batch := Button.new()
+					batch.text = "Collect (%s)" % _cost_text(ConvertModel.outputs_for(DataDefs.buildings, island, occupant))
+					batch.pressed.connect(_on_batch_collect_pressed.bind(occupant))
+					row.add_child(batch)
+			else:
+				var start_batch := Button.new()
+				start_batch.text = _batch_button_text(occupant)
+				start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, occupant)
+				start_batch.pressed.connect(_on_batch_start_pressed.bind(occupant))
+				row.add_child(start_batch)
 		rows.add_child(row)
 	for row_v in IsletModel.islets(DataDefs.islets):
 		var islet := row_v as Dictionary
@@ -219,6 +244,9 @@ func _row_text(plot: String, island: Dictionary, now: int) -> String:
 		var worker := CrewModel.crew_at(GameState.data, String(entry["building"]))
 		if worker != "":
 			text += ", %s working" % String(CrewModel.entry(DataDefs.crew, worker).get("name", worker))
+		var convert_id := "convert_" + String(entry["building"])
+		if TimerService.active_timers().has(convert_id) and not TimerService.is_done(convert_id, now):
+			text += "  (batch %ds)" % TimerService.remaining(convert_id, now)
 		if String(entry["building"]) == "observatory" and int(entry["level"]) >= 1:
 			text += "\n    %s" % String(def.get("teaser", ""))
 		return text
@@ -270,6 +298,30 @@ func _assign_text(crew_id: String) -> String:
 		return "Assign: (idle)"
 	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {})
 	return "Assign: %s" % String(def.get("name", building))
+
+
+func _batch_button_text(building_id: String) -> String:
+	var conversion := ConvertModel.recipe(DataDefs.buildings, building_id)
+	var inputs: Dictionary = conversion.get("inputs", {})
+	var display := String(conversion.get("name", building_id))
+	if inputs.is_empty():
+		return display
+	return "%s (%s)" % [display, _cost_text(inputs)]
+
+
+func _on_batch_start_pressed(building_id: String) -> void:
+	if ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, building_id, TimeUtil.now(), DataDefs.crew):
+		GameState.save_game()
+	_rebuild()
+
+
+func _on_batch_collect_pressed(building_id: String) -> void:
+	var payload := TimerService.collect("convert_" + building_id, TimeUtil.now())
+	if payload.is_empty():
+		return
+	ConvertModel.complete_batch(GameState.data, DataDefs.buildings, Economy, payload)
+	GameState.save_game()
+	_rebuild()
 
 
 func _on_assign_pressed(crew_id: String) -> void:

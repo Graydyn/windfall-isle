@@ -326,3 +326,51 @@ func test_gardens_collect_pays_the_crewed_rate() -> void:
 	var scrap_before := Economy.balance("scrap")
 	screen._on_gardens_pressed()
 	assert_eq(Economy.balance("scrap"), scrap_before + 30, "20/hour x 1.5 specialist")
+
+func with_smeltery(level: int) -> void:
+	GameState.data["island"]["plots"]["plot_1"] = {"building": "smeltery", "level": level}
+	GameState.data["currencies"]["scrap"] = 2000
+	screen._rebuild()
+
+
+func test_batch_start_pays_and_starts() -> void:
+	with_smeltery(1)
+	screen._on_batch_start_pressed("smeltery")
+	assert_true(TimerService.active_timers().has("convert_smeltery"))
+	assert_eq(Economy.balance("scrap"), 2000 - 40)
+
+func test_batch_collect_credits_scaled_outputs() -> void:
+	with_smeltery(2)
+	screen._on_batch_start_pressed("smeltery")
+	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
+	screen._on_batch_collect_pressed("smeltery")
+	assert_eq(Economy.balance("parts"), 2, "level 2 pays double")
+	assert_false(TimerService.active_timers().has("convert_smeltery"))
+
+func test_batch_start_persists() -> void:
+	with_smeltery(1)
+	screen._on_batch_start_pressed("smeltery")
+	var saved := SaveIO.new(TEST_SAVE).read()
+	assert_true((saved["timers"] as Dictionary).has("convert_smeltery"),
+		"a paid batch must survive an OS kill")
+
+func test_running_batch_joins_the_signature_and_row_text() -> void:
+	with_smeltery(1)
+	screen._refresh_tick()
+	var idle_signature: String = screen._last_signature
+	screen._on_batch_start_pressed("smeltery")
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, idle_signature, "a starting batch is structural")
+	var running_signature: String = screen._last_signature
+	assert_string_contains(screen._row_text("plot_1", GameState.data["island"], TimeUtil.now()), "batch",
+		"the countdown rides the row label")
+	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, running_signature, "done is structural: Collect must appear")
+
+func test_zero_input_gardens_batch_starts_broke() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["currencies"]["scrap"] = 0
+	screen._rebuild()
+	screen._on_batch_start_pressed("gardens")
+	assert_true(TimerService.active_timers().has("convert_gardens"))
