@@ -12,7 +12,7 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 ## Phase A: game mechanics
 
 ### Island mechanic rework (owner priority): crew + chains + run kit
-- Direction settled 2026-09-07 (spec: docs/superpowers/specs/2026-09-07-crew-system-design.md, section 0): a closed bidirectional economy in three plans. Plan 10 (crew: rescued survivors staff buildings, rate seam CrewModel.multiplier_for): SHIPPED. Plan 11 (production chains: worked parts and provisions, conversion recipes, gizmo component costs): next, needs its spec. Plan 12 (run kit: setup-phase consumables and expedition provisioning): after 11.
+- Direction settled 2026-09-07 (spec: docs/superpowers/specs/2026-09-07-crew-system-design.md, section 0): a closed bidirectional economy in three plans. Plan 10 (crew: rescued survivors staff buildings, rate seam CrewModel.multiplier_for): SHIPPED. Plan 11 (production chains): SHIPPED (spec: docs/superpowers/specs/2026-09-08-production-chains-design.md; parts and provisions currencies, Smeltery + Annex + Gardens batch recipes on the "convert" timer kind, all gizmo crafts repriced to parts, Annex discount retired). Plan 12 (run kit: setup-phase consumables and expedition provisioning): next, needs its spec.
 
 ### Gizmo rarities (spec 3.3)
 - Rarity tiers beyond the current flat set; interacts with Workshop levels ("higher levels unlock higher rarities") and the craft-to-acquire flow from Plan 6.
