@@ -28,3 +28,16 @@ static func collect(data: Dictionary, building_defs: Dictionary, now: int, crew_
 	var amount := pending(data, building_defs, now, crew_defs)
 	(data.get("trickle", {}) as Dictionary)["last_collect"] = now
 	return amount
+
+
+static func rebase_preserving(data: Dictionary, building_defs: Dictionary, crew_defs: Dictionary, now: int, pending_before: int) -> void:
+	# Relocates last_collect so pending_before is preserved at the CURRENT
+	# rate (never re-rated). Pending stays subject to the cap window at the
+	# new rate: a downward rate change may clamp excess (owner ruling,
+	# 2026-09-08). No-op when the rate is zero or defs are missing.
+	if building_defs.is_empty():
+		return
+	var rate := rate_per_hour(data, building_defs, crew_defs)
+	if rate <= 0.0:
+		return
+	(data.get("trickle", {}) as Dictionary)["last_collect"] = now - int(float(pending_before) * 3600.0 / rate)

@@ -117,15 +117,12 @@ static func complete_build(island: Dictionary, payload: Dictionary, data: Dictio
 			plots[plot]["level"] = to_level
 			(data.get("trickle", {}) as Dictionary)["last_collect"] = now
 		elif not building_defs.is_empty():
-			# Rebase last_collect at the new rate so the pending VALUE carries
-			# over unchanged instead of being re-rated retroactively (spec
-			# 4.1 retention finding), pricing at the CREWED rate when crew
-			# defs are provided.
+			# Rebase at the new rate so the pending VALUE carries over (spec
+			# 4.1 retention finding), priced at the crewed rate when crew defs
+			# are provided; the shared helper owns the relocation math.
 			var pending_old := TrickleModel.pending(data, building_defs, now, crew_defs)
 			plots[plot]["level"] = to_level
-			var new_rate := TrickleModel.rate_per_hour(data, building_defs, crew_defs)
-			if new_rate > 0.0:
-				(data.get("trickle", {}) as Dictionary)["last_collect"] = now - int(float(pending_old) * 3600.0 / new_rate)
+			TrickleModel.rebase_preserving(data, building_defs, crew_defs, now, pending_old)
 		else:
 			plots[plot]["level"] = to_level
 	else:

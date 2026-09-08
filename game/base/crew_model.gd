@@ -118,14 +118,10 @@ static func multiplier_for(data: Dictionary, defs: Dictionary, building_id: Stri
 
 
 static func _rebase_trickle(data: Dictionary, defs: Dictionary, building_defs: Dictionary, now: int, pending_before: int, mult_before: float) -> void:
-	# An assignment flip must not re-rate scrap already accrued (same rule as
-	# the gardens-upgrade rebase in IslandModel.complete_build). Only a real
-	# gardens-rate change rebases, so unrelated moves leave the clock alone.
+	# An assignment flip must not re-rate scrap already accrued. Only a real
+	# gardens-rate change rebases; the shared helper owns the relocation math.
 	if building_defs.is_empty():
 		return
 	if is_equal_approx(multiplier_for(data, defs, "gardens"), mult_before):
 		return
-	var rate := TrickleModel.rate_per_hour(data, building_defs, defs)
-	if rate <= 0.0:
-		return
-	(data.get("trickle", {}) as Dictionary)["last_collect"] = now - int(float(pending_before) * 3600.0 / rate)
+	TrickleModel.rebase_preserving(data, building_defs, defs, now, pending_before)

@@ -49,3 +49,11 @@ func test_upgrade_rebase_respects_the_crew_rate() -> void:
 		{"plot": "plot_2", "building": "gardens", "to_level": 2}, data, now, DataDefs.buildings, DataDefs.crew)
 	assert_eq(TrickleModel.pending(data, DataDefs.buildings, now, DataDefs.crew), pending_before,
 		"the upgrade rebase must price the carried value at the crewed rate")
+
+func test_rebase_preserving_relocates_the_clock() -> void:
+	var data := make_data(1, 10000)
+	var now := 10000 + 1800
+	TrickleModel.rebase_preserving(data, DataDefs.buildings, {}, now, 10)
+	assert_eq(TrickleModel.pending(data, DataDefs.buildings, now), 10, "value preserved at the current rate")
+	TrickleModel.rebase_preserving(data, {}, {}, now, 999)
+	assert_eq(TrickleModel.pending(data, DataDefs.buildings, now), 10, "empty defs is a no-op")

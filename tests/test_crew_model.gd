@@ -100,3 +100,13 @@ func test_non_gardens_assignment_does_not_touch_the_trickle_clock() -> void:
 	CrewModel.assign(data, DataDefs.crew, "workshop", "maren", DataDefs.buildings, 99999)
 	assert_eq(int(data["trickle"]["last_collect"]), stamp,
 		"only a gardens-rate change rebases the clock")
+
+func test_downward_rebase_clamps_to_the_new_cap_window() -> void:
+	var data := fresh_data()
+	rescue_all(data)
+	CrewModel.assign(data, DataDefs.crew, "gardens", "odo", DataDefs.buildings, 10000)
+	var now := 10000 + 3600 * 20
+	assert_eq(TrickleModel.pending(data, DataDefs.buildings, now, DataDefs.crew), 240, "8h cap at 30/hour")
+	CrewModel.unassign(data, DataDefs.crew, "gardens", DataDefs.buildings, now)
+	assert_eq(TrickleModel.pending(data, DataDefs.buildings, now, DataDefs.crew), 160,
+		"owner ruling 2026-09-08: pending clamps to the new rate's cap window (8h x 20)")
