@@ -44,7 +44,7 @@ A building def may carry a single `recipe` dict: `{"id", "inputs" (currency dict
 }
 ```
 
-- **Foundry Annex** keeps its craft discount and gains the efficient late-game recipe:
+- **Foundry Annex** gains the efficient late-game recipe and LOSES its percent craft discount (owner amendment, 2026-09-08: with parts costs of 2-5, ceil rounding makes a 10-20% discount vestigial; the Annex's identity is now its recipe plus Halvard's specialty). `CraftModel.effective_cost` and the `craft_discount_per_level` def key are removed; `can_craft`/`start_craft` price raw `craft_cost` again and drop their `building_defs` parameter (`start_craft` keeps `crew_defs` as its trailing optional):
 
 ```json
 	"recipe": {"id": "brass_smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600}
@@ -75,7 +75,7 @@ Every `craft_cost` in gizmos.json converts at roughly 40 scrap per part; cloudsi
 | piston_kicker | 180 scrap + 1 brasswork | 4 parts + 1 brasswork |
 | gyro_damper | 200 scrap + 2 brasswork | 5 parts + 2 brasswork |
 
-The Foundry Annex discount continues to apply through `CraftModel.effective_cost` to the new costs (ceil, floor 1, unchanged). Progression note: all eight starter gizmos are owned at level 1, so a fresh save is never blocked from playing; crafting (upgrades and the two brass recipes) now requires standing up the Smeltery first, which is the chain working as intended. Existing saves need no migration: costs live in defs.
+There is no craft discount anymore (see section 3's Annex amendment); prices are exactly the table. Progression note: all eight starter gizmos are owned at level 1, so a fresh save is never blocked from playing; crafting (upgrades and the two brass recipes) now requires standing up the Smeltery first, which is the chain working as intended. Existing saves need no migration: costs live in defs.
 
 ## 5. Crew
 
@@ -114,7 +114,7 @@ Headless GUT, repo conventions.
 - **ConvertModel:** built-gate, unknown-building no-op, pay-then-timer (including the zero-input Gardens recipe paying nothing), one batch per building, output scaling at levels 1-3, crew-divided duration locked at start, complete_batch credits at collect-time level, idempotent no-op on junk payloads.
 - **Clamp pinning test (owner ruling):** a downward gardens rebase clamps pending to the new rate's cap window (240 pending at 30/hour becomes 160 at 20/hour after unassignment with more than the cap window accrued).
 - **Rebase fold:** existing rebase tests keep passing through the shared helper; one direct helper test.
-- **Repricing:** craft-cost assertions updated to the table; Annex discount over parts costs; check/pay agreement untouched.
+- **Repricing:** craft-cost assertions updated to the table; the discount tests are deleted with effective_cost; check/pay agreement holds trivially (both read raw craft_cost).
 - **Economy defaults:** `balance("parts")` is 0 on a pre-parts save dict; first `add` creates the key.
 - **Screen tests** via direct handlers: start batch pays and starts, countdown joins the signature, collect credits scaled outputs, zero-input recipe startable at zero scrap.
 - **Notifications:** convert entry names the building; past-deadline excluded (inherited).
@@ -124,6 +124,6 @@ Headless GUT, repo conventions.
 
 - **Repricing is a hard cutover:** after this plan, scrap crafts nothing. Any test asserting old scrap costs must be updated in the same task as the data change or the suite breaks mid-plan; the plan enumerates them (test_craft_model's 80/72 assertions, workshop label test, region-2/retention integration tests that craft).
 - **collect-time output leveling** means upgrading a building mid-batch changes what the batch pays (upward only in practice). Deliberate and stated; the alternative (lock outputs at start) needs payload plumbing for no player-visible benefit.
-- **Foundry Annex now has three roles** (craft discount, brass recipe, Halvard's specialty): the recipe and discount are independent code paths; the plan keeps them separate.
+- **Foundry Annex's role narrows to two things** (brass recipe, Halvard's specialty); removing `effective_cost` changes `can_craft`/`start_craft` signatures, and every caller and discount test must update in the same task.
 - **Reya's specialty change** edits shipped authored data; acceptable pre-release, and no save state references specialties (they live in defs).
 - **Convert timers on islet buildings** (Foundry Annex) work unchanged because timers are building-id keyed, not plot-keyed; the signature char covers it like any recipe building.
