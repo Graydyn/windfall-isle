@@ -100,7 +100,7 @@ The duplicated trickle-rebase logic (in `CrewModel._rebase_trickle` and `IslandM
 - Building rows for built, recipe-carrying buildings gain the conversion affordance: idle shows a start button labeled from the recipe ("Smelt (40 scrap)", "Put up provisions"); running shows the countdown appended to the row label (in-place per tick); done shows "Collect (N parts)" / "Collect (N provisions)" from `outputs_for`.
 - Convert timers join the island refresh signature with the same absent/running/done chars as build timers, one char per recipe-carrying building def.
 - The main screen's balance readout adds Parts and Provisions lines.
-- The workshop screen needs no code change: `effective_cost` renders parts prices via the existing cost label.
+- The workshop screen's cost label reads raw `craft_cost` directly (effective_cost died with the Annex discount amendment) and renders the parts prices.
 
 ## 9. Notifications
 

@@ -46,3 +46,24 @@ func test_smeltery_def_shape() -> void:
 	assert_eq(int(def.get("max_level", 0)), 3)
 	assert_eq((def.get("levels", []) as Array).size(), 3)
 	assert_eq(int(DataDefs.buildings.get("plot_count", 0)), 7, "seventh plot: no softlock")
+
+func test_gizmo_repricing_table_is_pinned() -> void:
+	var expected := {
+		"wind_fan": {"parts": 2},
+		"balloon_cluster": {"parts": 2},
+		"cargo_net": {"parts": 2},
+		"magnet_buoy": {"parts": 3},
+		"chime_bell": {"parts": 3},
+		"lightning_jar": {"parts": 3, "cloudsilk": 1},
+		"crystal_prism": {"parts": 3, "cloudsilk": 1},
+		"splitter_vane": {"parts": 4, "cloudsilk": 2},
+		"piston_kicker": {"parts": 4, "brasswork": 1},
+		"gyro_damper": {"parts": 5, "brasswork": 2},
+	}
+	for gizmo_id in expected:
+		var cost: Dictionary = ((DataDefs.gizmos.get("defs", {}) as Dictionary)[gizmo_id] as Dictionary).get("craft_cost", {})
+		var want: Dictionary = expected[gizmo_id]
+		assert_eq(cost.size(), want.size(), "cost shape drifted: %s" % gizmo_id)
+		for currency in want:
+			assert_eq(int(cost.get(currency, -1)), int(want[currency]),
+				"repricing table drifted (chains spec section 4): %s %s" % [gizmo_id, currency])
