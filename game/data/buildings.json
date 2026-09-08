@@ -84,7 +84,6 @@
 			"name": "Foundry Annex",
 			"islet": "foundry_rock",
 			"max_level": 2,
-			"craft_discount_per_level": 0.1,
 			"recipe": {"id": "brass_smelt", "name": "Brass smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600},
 			"levels": [
 				{"cost": {"scrap": 900, "brasswork": 6}, "build_seconds": 3600},

@@ -24,6 +24,7 @@ func before_each() -> void:
 	state.data["created_at"] = T0
 	state.data["fuel"]["updated_at"] = T0
 	state.data["currencies"]["scrap"] = 5000
+	state.data["currencies"]["parts"] = 10
 	econ = autofree(EconomyScript.new())
 	econ.setup(state)
 	timers = autofree(TimerServiceScript.new())

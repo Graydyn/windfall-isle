@@ -14,6 +14,7 @@ func before_each() -> void:
 	state.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	state.data["currencies"]["scrap"] = 5000
 	state.data["currencies"]["cloudsilk"] = 50
+	state.data["currencies"]["parts"] = 50
 	state.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
 	econ = autofree(EconomyScript.new())
 	econ.setup(state)
@@ -27,7 +28,7 @@ func test_no_workshop_no_crafting() -> void:
 
 func test_start_craft_pays_and_starts_timer() -> void:
 	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000))
-	assert_eq(econ.balance("scrap"), 5000 - 80)
+	assert_eq(econ.balance("parts"), 50 - 2)
 	assert_eq(timers.remaining("craft_wind_fan", 1000), 120)
 
 func test_complete_craft_merges_into_level() -> void:
@@ -61,54 +62,15 @@ func test_unknown_gizmo_id_cannot_be_crafted() -> void:
 
 func test_brasswork_gates_the_brass_recipes() -> void:
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"),
-		"5000 scrap but zero brasswork: locked")
+		"50 parts but zero brasswork: locked")
 	state.data["currencies"]["brasswork"] = 2
 	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"))
-
-
-func with_annex(level: int) -> void:
-	state.data["island"]["plots"]["islet_foundry_0"] = {"building": "foundry_annex", "level": level}
-
-
-func test_effective_cost_is_the_raw_cost_without_an_annex() -> void:
-	var def: Dictionary = DataDefs.gizmos["defs"]["wind_fan"]
-	assert_eq(int(CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)["scrap"]), 80)
-	assert_eq(int(CraftModel.effective_cost(def, state.data["island"], {})["scrap"]), 80,
-		"empty building defs never discount")
-
-func test_effective_cost_discounts_and_ceils() -> void:
-	with_annex(1)
-	var def := {"craft_cost": {"scrap": 85, "brasswork": 3}}
-	var cost := CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)
-	assert_eq(int(cost["scrap"]), 77, "ceil(85 x 0.9) = 77")
-	assert_eq(int(cost["brasswork"]), 3, "ceil(3 x 0.9) = 3")
-	with_annex(2)
-	var cost2 := CraftModel.effective_cost(def, state.data["island"], DataDefs.buildings)
-	assert_eq(int(cost2["scrap"]), 68, "ceil(85 x 0.8) = 68")
-
-func test_effective_cost_never_reaches_zero() -> void:
-	with_annex(2)
-	var cost := CraftModel.effective_cost({"craft_cost": {"brasswork": 1}}, state.data["island"], DataDefs.buildings)
-	assert_eq(int(cost["brasswork"]), 1, "no craft is ever free")
-
-func test_start_craft_pays_the_discounted_price_it_checked() -> void:
-	with_annex(1)
-	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings))
-	assert_eq(econ.balance("scrap"), 5000 - 72, "ceil(80 x 0.9) = 72: pay what was checked")
-
-func test_discount_unlocks_a_craft_at_the_margin() -> void:
-	with_annex(1)
-	state.data["currencies"]["scrap"] = 72
-	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", DataDefs.buildings),
-		"72 scrap affords the discounted 72 price")
-	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"),
-		"without building defs the raw 80 price applies")
 
 
 func test_crewed_workshop_crafts_faster_and_locks_at_start() -> void:
 	CrewModel.rescue(state.data, "maren")
 	(state.data["crew"]["assignments"] as Dictionary)["workshop"] = "maren"
-	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings, DataDefs.crew))
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.crew))
 	assert_eq(timers.remaining("craft_wind_fan", 1000), 80,
 		"120s divided by Maren's 1.5 specialist bonus")
 	(state.data["crew"]["assignments"] as Dictionary).erase("workshop")
@@ -117,5 +79,13 @@ func test_crewed_workshop_crafts_faster_and_locks_at_start() -> void:
 
 
 func test_uncrewed_craft_duration_is_baseline() -> void:
-	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.buildings, DataDefs.crew))
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000, DataDefs.crew))
 	assert_eq(timers.remaining("craft_wind_fan", 1000), 120)
+
+
+func test_crafts_cost_parts_not_scrap() -> void:
+	state.data["currencies"]["parts"] = 0
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"),
+		"5000 scrap buys nothing at the workshop anymore")
+	state.data["currencies"]["parts"] = 2
+	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"))

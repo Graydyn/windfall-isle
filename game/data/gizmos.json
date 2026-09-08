@@ -18,7 +18,7 @@
 			"direction": 1.0,
 			"column_width": 90.0,
 			"column_height": 420.0,
-			"craft_cost": {"scrap": 80},
+			"craft_cost": {"parts": 2},
 			"craft_seconds": 120
 		},
 		"balloon_cluster": {
@@ -27,7 +27,7 @@
 			"impulse": 420.0,
 			"max_hits": 3,
 			"radius": 26.0,
-			"craft_cost": {"scrap": 90},
+			"craft_cost": {"parts": 2},
 			"craft_seconds": 150
 		},
 		"crystal_prism": {
@@ -35,7 +35,7 @@
 			"scene": "res://game/run/gizmos/crystal_prism.tscn",
 			"multiplier": 1.5,
 			"radius": 30.0,
-			"craft_cost": {"scrap": 150, "cloudsilk": 1},
+			"craft_cost": {"parts": 3, "cloudsilk": 1},
 			"craft_seconds": 300
 		},
 		"lightning_jar": {
@@ -46,7 +46,7 @@
 			"pegs_zapped": 3,
 			"scrap_per_peg": 2,
 			"charges": 2,
-			"craft_cost": {"scrap": 140, "cloudsilk": 1},
+			"craft_cost": {"parts": 3, "cloudsilk": 1},
 			"craft_seconds": 240
 		},
 		"chime_bell": {
@@ -55,7 +55,7 @@
 			"radius": 26.0,
 			"barge_multiplier": 2.0,
 			"uses_per_run": 2,
-			"craft_cost": {"scrap": 120},
+			"craft_cost": {"parts": 3},
 			"craft_seconds": 200
 		},
 		"magnet_buoy": {
@@ -63,7 +63,7 @@
 			"scene": "res://game/run/gizmos/magnet_buoy.tscn",
 			"radius": 160.0,
 			"force": 240.0,
-			"craft_cost": {"scrap": 110},
+			"craft_cost": {"parts": 3},
 			"craft_seconds": 180
 		},
 		"cargo_net": {
@@ -75,7 +75,7 @@
 			"redrop_speed": 420.0,
 			"board_center_x": 360.0,
 			"uses": 1,
-			"craft_cost": {"scrap": 100},
+			"craft_cost": {"parts": 2},
 			"craft_seconds": 160
 		},
 		"splitter_vane": {
@@ -83,14 +83,14 @@
 			"scene": "res://game/run/gizmos/splitter_vane.tscn",
 			"radius": 24.0,
 			"value_multiplier": 0.5,
-			"craft_cost": {"scrap": 160, "cloudsilk": 2},
+			"craft_cost": {"parts": 4, "cloudsilk": 2},
 			"craft_seconds": 360
 		},
 		"gyro_damper": {
 			"name": "Gyro Damper",
 			"scene": "res://game/run/gizmos/gyro_damper.tscn",
 			"field_radius": 140.0,
-			"craft_cost": {"scrap": 200, "brasswork": 2},
+			"craft_cost": {"parts": 5, "brasswork": 2},
 			"craft_seconds": 420
 		},
 		"piston_kicker": {
@@ -99,7 +99,7 @@
 			"force": 520.0,
 			"direction": 1.0,
 			"radius": 24.0,
-			"craft_cost": {"scrap": 180, "brasswork": 1},
+			"craft_cost": {"parts": 4, "brasswork": 1},
 			"craft_seconds": 300
 		}
 	}

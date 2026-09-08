@@ -59,6 +59,7 @@ func test_dock_unlock_to_brass_craft_flywheel() -> void:
 	assert_eq(model.tier, 1, "region 2's first quota lifts at 35 scrap")
 	econ.add("scrap", 35)
 	econ.add("brasswork", 2)
+	econ.add("parts", 5)
 	# Build the Workshop, then craft the Gyro Damper with the brasswork.
 	assert_true(IslandModel.start_build(state.data["island"], DataDefs.buildings, econ, timers, "plot_1", "workshop", T0 + 300))
 	IslandModel.complete_build(state.data["island"], timers.collect("build_plot_1", T0 + 361), state.data, T0 + 361, DataDefs.buildings)

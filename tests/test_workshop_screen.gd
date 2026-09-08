@@ -10,6 +10,7 @@ func before_each() -> void:
 	GameState._io = SaveIO.new(TEST_SAVE)
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	GameState.data["currencies"]["scrap"] = 5000
+	GameState.data["currencies"]["parts"] = 50
 	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
 	screen = add_child_autofree(WorkshopScene.instantiate())
 	await wait_physics_frames(1)
@@ -30,7 +31,7 @@ func test_one_row_per_recipe() -> void:
 func test_craft_starts_through_model() -> void:
 	screen._on_craft_pressed("wind_fan")
 	assert_true(TimerService.active_timers().has("craft_wind_fan"))
-	assert_eq(Economy.balance("scrap"), 5000 - 80)
+	assert_eq(Economy.balance("parts"), 50 - 2)
 
 func test_collect_merges_level() -> void:
 	screen._on_craft_pressed("wind_fan")
@@ -88,9 +89,6 @@ func test_unowned_recipe_row_is_labeled_and_craftable() -> void:
 		"first craft grants ownership at level 1")
 
 
-func test_idle_rows_show_the_effective_craft_cost() -> void:
+func test_idle_rows_show_the_parts_cost() -> void:
 	var text: String = screen._gizmo_label_text("wind_fan", TimeUtil.now())
-	assert_string_contains(text, "80 scrap", "raw cost without an annex")
-	GameState.data["island"]["plots"]["islet_foundry_0"] = {"building": "foundry_annex", "level": 1}
-	text = screen._gizmo_label_text("wind_fan", TimeUtil.now())
-	assert_string_contains(text, "72 scrap", "the label shows the discounted price the tap will pay")
+	assert_string_contains(text, "2 parts", "the label shows the price the tap will pay")

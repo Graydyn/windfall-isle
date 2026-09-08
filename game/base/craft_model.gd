@@ -15,23 +15,7 @@ static func active_crafts(timers: Node) -> int:
 	return count
 
 
-static func effective_cost(def: Dictionary, island: Dictionary, building_defs: Dictionary) -> Dictionary:
-	# Foundry Annex discount (spec 4.4): ceil keeps every price a positive int
-	# and the 1 floor keeps crafts from ever becoming free. can_craft and
-	# start_craft must BOTH price through here so check and pay agree.
-	var annex: Dictionary = (building_defs.get("defs", {}) as Dictionary).get("foundry_annex", {})
-	var level := IslandModel.building_level(island, "foundry_annex")
-	var discount := float(level) * float(annex.get("craft_discount_per_level", 0.0))
-	var base: Dictionary = def.get("craft_cost", {})
-	if discount <= 0.0:
-		return base.duplicate()
-	var out := {}
-	for currency in base:
-		out[currency] = maxi(1, ceili(float(base[currency]) * (1.0 - discount)))
-	return out
-
-
-static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String, building_defs: Dictionary = {}) -> bool:
+static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String) -> bool:
 	if craft_slots(data.get("island", {})) <= 0:
 		return false
 	if active_crafts(timers) >= craft_slots(data.get("island", {})):
@@ -42,18 +26,20 @@ static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, t
 	if def.is_empty():
 		return false
 	# Craft-to-acquire (spec 3.3): unowned recipes craft at level 0 -> 1;
-	# resources (regional materials) are the gate, not ownership.
+	# resources (worked parts and regional materials) are the gate, not
+	# ownership. Prices are raw craft_cost: the Annex discount died with the
+	# parts repricing (chains spec section 3 amendment).
 	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
 	if int(owned.get(gizmo_id, 0)) >= int(gizmo_defs.get("craft_max_level", 5)):
 		return false
-	return economy.can_afford(effective_cost(def, data.get("island", {}), building_defs))
+	return economy.can_afford(def.get("craft_cost", {}))
 
 
-static func start_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String, now: int, building_defs: Dictionary = {}, crew_defs: Dictionary = {}) -> bool:
-	if not can_craft(data, gizmo_defs, economy, timers, gizmo_id, building_defs):
+static func start_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String, now: int, crew_defs: Dictionary = {}) -> bool:
+	if not can_craft(data, gizmo_defs, economy, timers, gizmo_id):
 		return false
 	var def: Dictionary = (gizmo_defs.get("defs", {}) as Dictionary).get(gizmo_id, {})
-	if not economy.pay(effective_cost(def, data.get("island", {}), building_defs)):
+	if not economy.pay(def.get("craft_cost", {})):
 		return false
 	# The worker's speed is priced into the duration at START and locked in
 	# the timer's ends_at; reassignment never retimes a running craft

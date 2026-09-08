@@ -15,6 +15,7 @@ func before_each() -> void:
 	state.data["currencies"]["scrap"] = 5000
 	state.data["currencies"]["cloudsilk"] = 50
 	state.data["currencies"]["crystals"] = 40
+	state.data["currencies"]["parts"] = 20
 	econ = autofree(EconomyScript.new())
 	econ.setup(state)
 	timers = autofree(TimerServiceScript.new())
