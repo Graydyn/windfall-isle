@@ -1,6 +1,6 @@
 {
 	"generalist_bonus": 1.25,
-	"workable": ["gardens", "workshop", "wind_still", "balloonworks", "foundry_annex"],
+	"workable": ["gardens", "workshop", "wind_still", "balloonworks", "foundry_annex", "smeltery"],
 	"survivor": {
 		"chance_per_run": 0.25,
 		"spawn_delay_min": 2.0,
@@ -24,7 +24,7 @@
 			"line": "Rain is just sky-sea. I speak both."},
 		{"id": "immel", "name": "Immel", "specialty": "workshop", "bonus": 1.5,
 			"line": "Half these gizmos were mine once, you know. The good halves."},
-		{"id": "reya", "name": "Reya", "specialty": "balloonworks", "bonus": 1.5,
+		{"id": "reya", "name": "Reya", "specialty": "smeltery", "bonus": 1.5,
 			"line": "Ditched at sea twice already. The third time buys the drinks."}
 	]
 }

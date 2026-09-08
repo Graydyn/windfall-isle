@@ -277,9 +277,9 @@ func test_assign_cycle_walks_workable_then_idle() -> void:
 	assert_eq(CrewModel.building_of(GameState.data, "odo"), "gardens", "first workable")
 	screen._on_assign_pressed("odo")
 	assert_eq(CrewModel.building_of(GameState.data, "odo"), "workshop")
-	for i in 3:
+	for i in 4:
 		screen._on_assign_pressed("odo")
-	assert_eq(CrewModel.building_of(GameState.data, "odo"), "foundry_annex", "last workable")
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "smeltery", "last workable")
 	screen._on_assign_pressed("odo")
 	assert_eq(CrewModel.building_of(GameState.data, "odo"), "", "then back to idle")
 

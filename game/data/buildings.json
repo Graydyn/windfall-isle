@@ -1,6 +1,6 @@
 {
 	"build_slots": {"free": 1, "max": 2, "second_slot_crystal_cost": 20},
-	"plot_count": 6,
+	"plot_count": 7,
 	"defs": {
 		"workshop": {
 			"name": "Workshop",
@@ -53,11 +53,22 @@
 			"max_level": 3,
 			"scrap_per_hour_per_level": 20,
 			"cap_hours": 8.0,
+			"recipe": {"id": "put_up_provisions", "name": "Put up provisions", "inputs": {}, "outputs": {"provisions": 2}, "seconds": 3600},
 			"levels": [
 				{"cost": {"scrap": 90}, "build_seconds": 120},
 				{"cost": {"scrap": 360, "cloudsilk": 2}, "build_seconds": 1200},
 				{"cost": {"scrap": 1100, "cloudsilk": 7}, "build_seconds": 4200}
 			]
+		},
+		"smeltery": {
+			"name": "Smeltery",
+			"max_level": 3,
+			"levels": [
+				{"cost": {"scrap": 120}, "build_seconds": 180},
+				{"cost": {"scrap": 480, "cloudsilk": 3}, "build_seconds": 1800},
+				{"cost": {"scrap": 1400, "cloudsilk": 9}, "build_seconds": 5400}
+			],
+			"recipe": {"id": "smelt", "name": "Smelt", "inputs": {"scrap": 40}, "outputs": {"parts": 1}, "seconds": 600}
 		},
 		"lens_array": {
 			"name": "Lens Array",
@@ -74,6 +85,7 @@
 			"islet": "foundry_rock",
 			"max_level": 2,
 			"craft_discount_per_level": 0.1,
+			"recipe": {"id": "brass_smelt", "name": "Brass smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600},
 			"levels": [
 				{"cost": {"scrap": 900, "brasswork": 6}, "build_seconds": 3600},
 				{"cost": {"scrap": 2000, "brasswork": 14}, "build_seconds": 7200}
