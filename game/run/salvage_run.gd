@@ -213,7 +213,7 @@ func _build_kit_panel() -> void:
 		var chip := Button.new()
 		chip.toggle_mode = true
 		chip.name = "Kit_" + kit_id
-		chip.custom_minimum_size = Vector2(164.0, 56.0)
+		chip.custom_minimum_size = Vector2(190.0, 38.0)
 		# PASS, not STOP: the chip still takes its press, but a drag-drop
 		# released over the kit area falls through to any slot target beneath
 		# (region 2's lowest slots overlap this rect; Plan 9 drop-walk lesson).

@@ -832,3 +832,4 @@ git commit -m "test: prove the run kit closes the economy loop"
 3. Elect Ballast + provisioning, Start: fuel and kit debit together; the HUD shows +2 drops; catches pay visibly more.
 4. Hit a quota tier with a Wind Charm banked: the reroll button reads "Reroll (free)" and consumes no ad; the next offer's reroll is back to "(ad)".
 5. Back out during setup with elections toggled: nothing is spent.
+6. In region 2, drag a gizmo onto both bottom-corner slots; placement must land cleanly with the kit panel present.

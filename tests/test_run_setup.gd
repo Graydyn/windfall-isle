@@ -248,8 +248,9 @@ func test_wind_charm_grants_a_free_reroll_before_the_ad_path() -> void:
 	assert_eq(scene._free_rerolls, 0, "the charm was spent")
 	for id in scene._current_offer:
 		assert_false(before.has(id), "the free reroll redraws disjointly")
+	var after_first: Array = (scene._current_offer as Array).duplicate()
 	scene._on_reroll_pressed()
-	assert_eq(scene._current_offer, scene._current_offer, "still once per offer")
+	assert_eq(scene._current_offer, after_first, "still once per offer")
 
 func test_elections_reset_on_a_fresh_scene() -> void:
 	grant_kit({"ballast": 1})
@@ -263,3 +264,14 @@ func test_kit_panel_is_mouse_transparent_for_drops() -> void:
 	assert_eq(scene.get_node("UI/SetupUI/KitPanel/KitFlow").mouse_filter, Control.MOUSE_FILTER_IGNORE)
 	assert_eq(kit_chip("ballast").mouse_filter, Control.MOUSE_FILTER_PASS,
 		"chips take presses yet let drops fall through (Plan 9 lesson)")
+
+func test_kit_panel_intersects_no_slot_target_in_any_region() -> void:
+	var panel: Control = scene.get_node("UI/SetupUI/KitPanel")
+	var panel_rect := Rect2(panel.position, panel.size)
+	for region_id in ["region_1", "region_2"]:
+		var slots: Array = DataDefs.skyfield(region_id).get("gizmo_slots", [])
+		for slot_v in slots:
+			var slot := slot_v as Dictionary
+			var target := Rect2(float(slot["x"]) - 48.0, float(slot["y"]) - 48.0, 96.0, 96.0)
+			assert_false(panel_rect.intersects(target),
+				"kit panel overlaps a %s slot target at (%s, %s): drops would be occluded" % [region_id, slot["x"], slot["y"]])
