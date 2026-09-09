@@ -386,3 +386,11 @@ func test_balloonworks_row_offers_all_three_recipes() -> void:
 	screen._on_batch_start_pressed("balloonworks", "storm_oil")
 	assert_true(TimerService.active_timers().has("convert_balloonworks"))
 	assert_eq(Economy.balance("parts"), 5 - 2)
+
+func test_legacy_batch_payload_still_offers_a_plain_collect() -> void:
+	with_smeltery(1)
+	TimerService.start("convert_smeltery", "convert", 10, 1000, {"building": "smeltery"})
+	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
+	screen._rebuild()
+	screen._on_batch_collect_pressed("smeltery")
+	assert_eq(Economy.balance("parts"), 1, "the legacy fallback credits through the screen")

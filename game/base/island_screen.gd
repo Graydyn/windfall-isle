@@ -158,8 +158,9 @@ func _rebuild() -> void:
 			if TimerService.active_timers().has(convert_id):
 				if TimerService.is_done(convert_id, now):
 					var done_payload: Dictionary = (TimerService.active_timers()[convert_id] as Dictionary).get("payload", {})
+					var done_outputs := ConvertModel.outputs_for(DataDefs.buildings, island, occupant, String(done_payload.get("recipe", "")))
 					var batch := Button.new()
-					batch.text = "Collect (%s)" % _cost_text(ConvertModel.outputs_for(DataDefs.buildings, island, occupant, String(done_payload.get("recipe", ""))))
+					batch.text = "Collect (%s)" % _cost_text(done_outputs) if not done_outputs.is_empty() else "Collect"
 					batch.pressed.connect(_on_batch_collect_pressed.bind(occupant))
 					row.add_child(batch)
 			else:
