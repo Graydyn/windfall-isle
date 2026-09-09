@@ -15,5 +15,11 @@
 	},
 	"sea_payout": {
 		"scrap": 1
+	},
+	"kit": {
+		"ballast": {"name": "Charged Ballast", "drops_bonus": 2},
+		"wind_charm": {"name": "Wind Charm", "free_rerolls": 1},
+		"storm_oil": {"name": "Storm Oil", "bounce_bonus": 0.15},
+		"provision": {"name": "Provision run", "cost": 3, "payout_multiplier": 1.15}
 	}
 }
