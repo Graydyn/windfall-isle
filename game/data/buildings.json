@@ -34,6 +34,11 @@
 			"name": "Balloonworks",
 			"max_level": 3,
 			"drops_bonus_per_level": 1,
+			"recipes": [
+				{"id": "charged_ballast", "name": "Charged Ballast", "inputs": {"cloudsilk": 1, "parts": 1}, "outputs": {"ballast": 1}, "seconds": 900},
+				{"id": "wind_charm", "name": "Wind Charm", "inputs": {"cloudsilk": 2, "parts": 1}, "outputs": {"wind_charm": 1}, "seconds": 1200},
+				{"id": "storm_oil", "name": "Storm Oil", "inputs": {"cloudsilk": 1, "parts": 2}, "outputs": {"storm_oil": 1}, "seconds": 900}
+			],
 			"levels": [
 				{"cost": {"scrap": 100}, "build_seconds": 150},
 				{"cost": {"scrap": 400, "cloudsilk": 3}, "build_seconds": 1500},
@@ -53,7 +58,7 @@
 			"max_level": 3,
 			"scrap_per_hour_per_level": 20,
 			"cap_hours": 8.0,
-			"recipe": {"id": "put_up_provisions", "name": "Put up provisions", "inputs": {}, "outputs": {"provisions": 2}, "seconds": 3600},
+			"recipes": [{"id": "put_up_provisions", "name": "Put up provisions", "inputs": {}, "outputs": {"provisions": 2}, "seconds": 3600}],
 			"levels": [
 				{"cost": {"scrap": 90}, "build_seconds": 120},
 				{"cost": {"scrap": 360, "cloudsilk": 2}, "build_seconds": 1200},
@@ -68,7 +73,7 @@
 				{"cost": {"scrap": 480, "cloudsilk": 3}, "build_seconds": 1800},
 				{"cost": {"scrap": 1400, "cloudsilk": 9}, "build_seconds": 5400}
 			],
-			"recipe": {"id": "smelt", "name": "Smelt", "inputs": {"scrap": 40}, "outputs": {"parts": 1}, "seconds": 600}
+			"recipes": [{"id": "smelt", "name": "Smelt", "inputs": {"scrap": 40}, "outputs": {"parts": 1}, "seconds": 600}]
 		},
 		"lens_array": {
 			"name": "Lens Array",
@@ -84,7 +89,7 @@
 			"name": "Foundry Annex",
 			"islet": "foundry_rock",
 			"max_level": 2,
-			"recipe": {"id": "brass_smelt", "name": "Brass smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600},
+			"recipes": [{"id": "brass_smelt", "name": "Brass smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600}],
 			"levels": [
 				{"cost": {"scrap": 900, "brasswork": 6}, "build_seconds": 3600},
 				{"cost": {"scrap": 2000, "brasswork": 14}, "build_seconds": 7200}

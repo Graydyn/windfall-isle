@@ -5,7 +5,10 @@
 		"brasswork": 0,
 		"crystals": 10,
 		"parts": 0,
-		"provisions": 0
+		"provisions": 0,
+		"ballast": 0,
+		"wind_charm": 0,
+		"storm_oil": 0
 	},
 	"fuel": {
 		"starting": 5,

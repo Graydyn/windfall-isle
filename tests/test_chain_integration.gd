@@ -29,7 +29,7 @@ func test_smelt_then_craft_end_to_end() -> void:
 	# 1. Reya works the Smeltery: the batch runs at the specialist rate.
 	CrewModel.rescue(GameState.data, "reya")
 	assert_true(CrewModel.assign(GameState.data, DataDefs.crew, "smeltery", "reya", DataDefs.buildings, T0))
-	assert_true(ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, "smeltery", T0, DataDefs.crew))
+	assert_true(ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, "smeltery", "smelt", T0, DataDefs.crew))
 	assert_eq(Economy.balance("scrap"), 500 - 40)
 	assert_eq(TimerService.remaining("convert_smeltery", T0), 400, "600s / 1.5 specialist")
 	# 2. Collect the parts.
@@ -47,6 +47,6 @@ func test_smelt_then_craft_end_to_end() -> void:
 
 func test_provisions_accumulate_for_plan_12() -> void:
 	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
-	assert_true(ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, "gardens", T0))
+	assert_true(ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, "gardens", "put_up_provisions", T0))
 	ConvertModel.complete_batch(GameState.data, DataDefs.buildings, Economy, TimerService.collect("convert_gardens", T0 + 3600))
 	assert_eq(Economy.balance("provisions"), 2, "the stock builds ahead of the run kit")

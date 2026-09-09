@@ -335,13 +335,13 @@ func with_smeltery(level: int) -> void:
 
 func test_batch_start_pays_and_starts() -> void:
 	with_smeltery(1)
-	screen._on_batch_start_pressed("smeltery")
+	screen._on_batch_start_pressed("smeltery", "smelt")
 	assert_true(TimerService.active_timers().has("convert_smeltery"))
 	assert_eq(Economy.balance("scrap"), 2000 - 40)
 
 func test_batch_collect_credits_scaled_outputs() -> void:
 	with_smeltery(2)
-	screen._on_batch_start_pressed("smeltery")
+	screen._on_batch_start_pressed("smeltery", "smelt")
 	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
 	screen._on_batch_collect_pressed("smeltery")
 	assert_eq(Economy.balance("parts"), 2, "level 2 pays double")
@@ -349,7 +349,7 @@ func test_batch_collect_credits_scaled_outputs() -> void:
 
 func test_batch_start_persists() -> void:
 	with_smeltery(1)
-	screen._on_batch_start_pressed("smeltery")
+	screen._on_batch_start_pressed("smeltery", "smelt")
 	var saved := SaveIO.new(TEST_SAVE).read()
 	assert_true((saved["timers"] as Dictionary).has("convert_smeltery"),
 		"a paid batch must survive an OS kill")
@@ -358,7 +358,7 @@ func test_running_batch_joins_the_signature_and_row_text() -> void:
 	with_smeltery(1)
 	screen._refresh_tick()
 	var idle_signature: String = screen._last_signature
-	screen._on_batch_start_pressed("smeltery")
+	screen._on_batch_start_pressed("smeltery", "smelt")
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, idle_signature, "a starting batch is structural")
 	var running_signature: String = screen._last_signature
@@ -372,5 +372,17 @@ func test_zero_input_gardens_batch_starts_broke() -> void:
 	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
 	GameState.data["currencies"]["scrap"] = 0
 	screen._rebuild()
-	screen._on_batch_start_pressed("gardens")
+	screen._on_batch_start_pressed("gardens", "put_up_provisions")
 	assert_true(TimerService.active_timers().has("convert_gardens"))
+
+func test_balloonworks_row_offers_all_three_recipes() -> void:
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "balloonworks", "level": 1}
+	screen._rebuild()
+	assert_string_contains(screen._batch_button_text("balloonworks", "charged_ballast"), "Charged Ballast (")
+	assert_string_contains(screen._batch_button_text("balloonworks", "wind_charm"), "Wind Charm (")
+	assert_string_contains(screen._batch_button_text("balloonworks", "storm_oil"), "Storm Oil (")
+	GameState.data["currencies"]["cloudsilk"] = 5
+	GameState.data["currencies"]["parts"] = 5
+	screen._on_batch_start_pressed("balloonworks", "storm_oil")
+	assert_true(TimerService.active_timers().has("convert_balloonworks"))
+	assert_eq(Economy.balance("parts"), 5 - 2)

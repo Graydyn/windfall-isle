@@ -23,36 +23,37 @@ func before_each() -> void:
 
 func test_unbuilt_building_cannot_convert() -> void:
 	state.data["island"]["plots"].clear()
-	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "smeltery"))
-	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery"), {})
+	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt"))
+	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery", "smelt"), {})
 
 func test_recipe_less_building_cannot_convert() -> void:
 	state.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
-	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "workshop"))
+	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "workshop", "smelt"))
 
 func test_start_batch_pays_and_starts_the_convert_timer() -> void:
-	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", 1000))
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt", 1000))
 	assert_eq(econ.balance("scrap"), 1000 - 40)
 	assert_eq(timers.remaining("convert_smeltery", 1000), 600)
 	assert_eq(String((timers.active_timers()["convert_smeltery"] as Dictionary)["kind"]), "convert")
+	assert_eq(String(((timers.active_timers()["convert_smeltery"] as Dictionary)["payload"] as Dictionary)["recipe"]), "smelt")
 
 func test_one_batch_per_building() -> void:
-	ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", 1000)
-	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "smeltery"))
+	ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt", 1000)
+	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt"))
 
 func test_zero_input_recipe_starts_for_free() -> void:
 	state.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
 	state.data["currencies"]["scrap"] = 0
-	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "gardens", 1000))
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "gardens", "put_up_provisions", 1000))
 	assert_eq(timers.remaining("convert_gardens", 1000), 3600)
 
 func test_outputs_scale_with_building_level() -> void:
-	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery"), {"parts": 1})
+	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery", "smelt"), {"parts": 1})
 	state.data["island"]["plots"]["plot_1"]["level"] = 3
-	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery"), {"parts": 3})
+	assert_eq(ConvertModel.outputs_for(DataDefs.buildings, state.data["island"], "smeltery", "smelt"), {"parts": 3})
 
 func test_complete_batch_credits_at_collect_time_level() -> void:
-	ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", 1000)
+	ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt", 1000)
 	state.data["island"]["plots"]["plot_1"]["level"] = 2
 	var payload: Dictionary = timers.collect("convert_smeltery", 1000 + 600)
 	ConvertModel.complete_batch(state.data, DataDefs.buildings, econ, payload)
@@ -67,7 +68,7 @@ func test_complete_batch_ignores_junk_payloads() -> void:
 func test_crew_divides_the_duration_and_locks_at_start() -> void:
 	CrewModel.rescue(state.data, "reya")
 	(state.data["crew"]["assignments"] as Dictionary)["smeltery"] = "reya"
-	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", 1000, DataDefs.crew))
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", "smelt", 1000, DataDefs.crew))
 	assert_eq(timers.remaining("convert_smeltery", 1000), 400, "600s / Reya's 1.5 specialist bonus")
 	(state.data["crew"]["assignments"] as Dictionary).erase("smeltery")
 	assert_eq(timers.remaining("convert_smeltery", 1000), 400, "duration locked at start")
@@ -80,8 +81,39 @@ func test_missing_currency_key_defaults_to_zero_and_add_creates() -> void:
 
 func test_brass_smelt_consumes_both_inputs() -> void:
 	state.data["island"]["plots"]["islet_foundry_0"] = {"building": "foundry_annex", "level": 1}
-	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "foundry_annex", 1000))
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "foundry_annex", "brass_smelt", 1000))
 	assert_eq(econ.balance("scrap"), 1000 - 30)
 	assert_eq(econ.balance("brasswork"), 10 - 1)
 	ConvertModel.complete_batch(state.data, DataDefs.buildings, econ, timers.collect("convert_foundry_annex", 1000 + 600))
 	assert_eq(econ.balance("parts"), 2, "the efficient late-game converter")
+
+func test_balloonworks_recipes_are_pickable() -> void:
+	state.data["island"]["plots"]["plot_3"] = {"building": "balloonworks", "level": 1}
+	state.data["currencies"]["cloudsilk"] = 10
+	state.data["currencies"]["parts"] = 10
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "balloonworks", "wind_charm", 1000))
+	assert_eq(econ.balance("cloudsilk"), 10 - 2)
+	assert_eq(econ.balance("parts"), 10 - 1)
+	ConvertModel.complete_batch(state.data, DataDefs.buildings, econ, timers.collect("convert_balloonworks", 1000 + 1200))
+	assert_eq(econ.balance("wind_charm"), 1, "the picked recipe's output, not another's")
+	assert_eq(econ.balance("ballast"), 0)
+
+func test_one_batch_per_building_across_recipes() -> void:
+	state.data["island"]["plots"]["plot_3"] = {"building": "balloonworks", "level": 1}
+	state.data["currencies"]["cloudsilk"] = 10
+	state.data["currencies"]["parts"] = 10
+	assert_true(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "balloonworks", "charged_ballast", 1000))
+	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "balloonworks", "storm_oil"),
+		"one batch per building regardless of recipe")
+
+func test_junk_recipe_id_is_rejected() -> void:
+	assert_false(ConvertModel.can_start(state.data, DataDefs.buildings, econ, timers, "smeltery", "no_such_recipe"))
+	assert_false(ConvertModel.start_batch(state.data, DataDefs.buildings, econ, timers, "smeltery", "no_such_recipe", 1000))
+
+func test_legacy_payload_credits_single_recipe_buildings_only() -> void:
+	ConvertModel.complete_batch(state.data, DataDefs.buildings, econ, {"building": "smeltery"})
+	assert_eq(econ.balance("parts"), 1, "a Plan 11 in-flight batch still credits: one recipe is unambiguous")
+	state.data["island"]["plots"]["plot_3"] = {"building": "balloonworks", "level": 1}
+	ConvertModel.complete_batch(state.data, DataDefs.buildings, econ, {"building": "balloonworks"})
+	assert_eq(econ.balance("ballast"), 0, "recipe-less payload on a multi-recipe building stays a no-op")
+	assert_eq(econ.balance("wind_charm"), 0)

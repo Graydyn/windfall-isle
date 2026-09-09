@@ -1,39 +1,50 @@
 extends GutTest
-## Authoring guards for conversion recipes (chains spec sections 2-5).
+## Authoring guards for conversion recipes (chains spec sections 2-5; recipes
+## arrays per the run-kit spec section 2).
 
 
 func recipe_buildings() -> Dictionary:
 	var out := {}
 	for id in DataDefs.buildings.get("defs", {}):
 		var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary)[id]
-		if def.has("recipe"):
-			out[String(id)] = def["recipe"]
+		if def.has("recipes"):
+			out[String(id)] = def["recipes"]
 	return out
 
 
-func test_exactly_the_three_recipe_buildings() -> void:
+func test_exactly_the_four_recipe_buildings() -> void:
 	var found := recipe_buildings()
-	assert_eq(found.size(), 3)
-	for id in ["smeltery", "foundry_annex", "gardens"]:
+	assert_eq(found.size(), 4)
+	for id in ["smeltery", "foundry_annex", "gardens", "balloonworks"]:
 		assert_has(found, id)
+	assert_eq((found["balloonworks"] as Array).size(), 3, "the run-kit consumables")
 
 func test_recipes_are_well_formed() -> void:
 	var known: Array = (DataDefs.economy.get("starting_balances", {}) as Dictionary).keys()
 	for id in recipe_buildings():
-		var conversion: Dictionary = recipe_buildings()[id]
-		assert_true(String(conversion.get("id", "")) != "", "recipe id missing: %s" % id)
-		assert_true(String(conversion.get("name", "")) != "", "recipe display name missing: %s" % id)
-		assert_true(float(conversion.get("seconds", 0)) > 0.0, "recipe seconds missing: %s" % id)
-		assert_true((conversion.get("outputs", {}) as Dictionary).size() > 0, "recipe outputs empty: %s" % id)
-		for currency in conversion.get("inputs", {}):
-			assert_true(known.has(String(currency)), "unknown input currency %s: %s" % [currency, id])
-		for currency in conversion.get("outputs", {}):
-			assert_true(known.has(String(currency)), "unknown output currency %s: %s" % [currency, id])
+		for row_v in recipe_buildings()[id]:
+			var conversion := row_v as Dictionary
+			assert_true(String(conversion.get("id", "")) != "", "recipe id missing: %s" % id)
+			assert_true(String(conversion.get("name", "")) != "", "recipe display name missing: %s" % id)
+			assert_true(float(conversion.get("seconds", 0)) > 0.0, "recipe seconds missing: %s" % id)
+			assert_true((conversion.get("outputs", {}) as Dictionary).size() > 0, "recipe outputs empty: %s" % id)
+			for currency in conversion.get("inputs", {}):
+				assert_true(known.has(String(currency)), "unknown input currency %s: %s" % [currency, id])
+			for currency in conversion.get("outputs", {}):
+				assert_true(known.has(String(currency)), "unknown output currency %s: %s" % [currency, id])
+
+func test_recipe_ids_are_globally_unique() -> void:
+	var seen := {}
+	for id in recipe_buildings():
+		for row_v in recipe_buildings()[id]:
+			var recipe_id := String((row_v as Dictionary).get("id", ""))
+			assert_false(seen.has(recipe_id), "duplicate recipe id: %s" % recipe_id)
+			seen[recipe_id] = true
 
 func test_new_currencies_start_at_zero() -> void:
 	var balances: Dictionary = DataDefs.economy.get("starting_balances", {})
-	assert_eq(int(balances.get("parts", -1)), 0)
-	assert_eq(int(balances.get("provisions", -1)), 0)
+	for currency in ["parts", "provisions", "ballast", "wind_charm", "storm_oil"]:
+		assert_eq(int(balances.get(currency, -1)), 0, "missing starting balance: %s" % currency)
 
 func test_smeltery_is_workable_and_reya_specializes() -> void:
 	assert_true((DataDefs.crew.get("workable", []) as Array).has("smeltery"))

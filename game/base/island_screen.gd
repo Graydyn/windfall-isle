@@ -70,7 +70,7 @@ func _signature(now: int) -> String:
 		else:
 			parts.append("@" + CrewModel.building_of(GameState.data, crew_id))
 	for id in DataDefs.buildings.get("defs", {}):
-		if not ((DataDefs.buildings["defs"] as Dictionary)[id] as Dictionary).has("recipe"):
+		if not ((DataDefs.buildings["defs"] as Dictionary)[id] as Dictionary).has("recipes"):
 			continue
 		var convert_id := "convert_" + String(id)
 		if TimerService.active_timers().has(convert_id):
@@ -153,20 +153,23 @@ func _rebuild() -> void:
 		var occupant := ""
 		if island.get("plots", {}).has(plot):
 			occupant = String((island["plots"][plot] as Dictionary).get("building", ""))
-		if occupant != "" and not ConvertModel.recipe(DataDefs.buildings, occupant).is_empty():
+		if occupant != "" and not ConvertModel.recipes(DataDefs.buildings, occupant).is_empty():
 			var convert_id := "convert_" + occupant
 			if TimerService.active_timers().has(convert_id):
 				if TimerService.is_done(convert_id, now):
+					var done_payload: Dictionary = (TimerService.active_timers()[convert_id] as Dictionary).get("payload", {})
 					var batch := Button.new()
-					batch.text = "Collect (%s)" % _cost_text(ConvertModel.outputs_for(DataDefs.buildings, island, occupant))
+					batch.text = "Collect (%s)" % _cost_text(ConvertModel.outputs_for(DataDefs.buildings, island, occupant, String(done_payload.get("recipe", ""))))
 					batch.pressed.connect(_on_batch_collect_pressed.bind(occupant))
 					row.add_child(batch)
 			else:
-				var start_batch := Button.new()
-				start_batch.text = _batch_button_text(occupant)
-				start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, occupant)
-				start_batch.pressed.connect(_on_batch_start_pressed.bind(occupant))
-				row.add_child(start_batch)
+				for recipe_v in ConvertModel.recipes(DataDefs.buildings, occupant):
+					var recipe_id := String((recipe_v as Dictionary).get("id", ""))
+					var start_batch := Button.new()
+					start_batch.text = _batch_button_text(occupant, recipe_id)
+					start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, occupant, recipe_id)
+					start_batch.pressed.connect(_on_batch_start_pressed.bind(occupant, recipe_id))
+					row.add_child(start_batch)
 		rows.add_child(row)
 	for row_v in IsletModel.islets(DataDefs.islets):
 		var islet := row_v as Dictionary
@@ -300,17 +303,17 @@ func _assign_text(crew_id: String) -> String:
 	return "Assign: %s" % String(def.get("name", building))
 
 
-func _batch_button_text(building_id: String) -> String:
-	var conversion := ConvertModel.recipe(DataDefs.buildings, building_id)
+func _batch_button_text(building_id: String, recipe_id: String) -> String:
+	var conversion := ConvertModel.recipe_by_id(DataDefs.buildings, building_id, recipe_id)
 	var inputs: Dictionary = conversion.get("inputs", {})
-	var display := String(conversion.get("name", building_id))
+	var display := String(conversion.get("name", recipe_id))
 	if inputs.is_empty():
 		return display
 	return "%s (%s)" % [display, _cost_text(inputs)]
 
 
-func _on_batch_start_pressed(building_id: String) -> void:
-	if ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, building_id, TimeUtil.now(), DataDefs.crew):
+func _on_batch_start_pressed(building_id: String, recipe_id: String) -> void:
+	if ConvertModel.start_batch(GameState.data, DataDefs.buildings, Economy, TimerService, building_id, recipe_id, TimeUtil.now(), DataDefs.crew):
 		GameState.save_game()
 	_rebuild()
 
