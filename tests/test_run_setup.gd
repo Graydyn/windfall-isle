@@ -171,3 +171,88 @@ func test_saved_loadout_prefills_the_board() -> void:
 	var second = add_child_autofree(RunScene.instantiate())
 	var target := second.get_node("UI/SetupUI/SlotTargets").get_child(3) as SlotTarget
 	assert_eq(target.get_child_count(), 1, "setup opens pre-filled with the region's last placement")
+
+func grant_kit(counts: Dictionary) -> void:
+	for currency in counts:
+		GameState.data["currencies"][currency] = counts[currency]
+	scene._refresh_kit_panel()
+
+
+func kit_chip(kit_id: String) -> Button:
+	return scene.get_node("UI/SetupUI/KitPanel/KitFlow/Kit_" + kit_id) as Button
+
+
+func test_kit_panel_builds_four_chips() -> void:
+	assert_eq(scene.get_node("UI/SetupUI/KitPanel/KitFlow").get_child_count(), 4)
+	assert_true(kit_chip("ballast").disabled, "zero count disables the chip")
+	assert_true(kit_chip("provision").disabled, "zero provisions disables provisioning")
+
+func test_chip_counts_show_and_enable() -> void:
+	grant_kit({"ballast": 2, "provisions": 5})
+	assert_false(kit_chip("ballast").disabled)
+	assert_string_contains(kit_chip("ballast").text, "x2")
+	assert_false(kit_chip("provision").disabled)
+
+func test_start_consumes_elected_kit_exactly_once() -> void:
+	grant_kit({"ballast": 2, "provisions": 5})
+	scene._on_kit_toggled(true, "ballast")
+	scene._on_kit_toggled(true, "provision")
+	var base_drops: int = scene.model.drops_remaining()
+	scene._on_start_pressed()
+	assert_eq(Economy.balance("ballast"), 1, "one ballast consumed")
+	assert_eq(Economy.balance("provisions"), 2, "three provisions consumed")
+	assert_eq(scene.model.drops_remaining(), base_drops + 2, "the ballast landed")
+	assert_almost_eq(scene._provision_mult, 1.15, 0.001)
+
+func test_failed_start_consumes_nothing() -> void:
+	grant_kit({"ballast": 1})
+	scene._on_kit_toggled(true, "ballast")
+	GameState.data["fuel"]["amount"] = 0
+	GameState.data["fuel"]["updated_at"] = TimeUtil.now()
+	scene._on_start_pressed()
+	assert_eq(Economy.balance("ballast"), 1, "no fuel, no kit spend")
+
+func test_unaffordable_election_is_silently_dropped() -> void:
+	grant_kit({"ballast": 1})
+	scene._on_kit_toggled(true, "ballast")
+	GameState.data["currencies"]["ballast"] = 0
+	var base_drops: int = scene.model.drops_remaining()
+	scene._on_start_pressed()
+	assert_eq(scene._phase, scene.Phase.RUNNING, "the run proceeds")
+	assert_eq(scene.model.drops_remaining(), base_drops, "the dropped election has no effect")
+
+func test_provision_multiplies_payouts() -> void:
+	grant_kit({"provisions": 5})
+	scene._on_kit_toggled(true, "provision")
+	scene._on_start_pressed()
+	assert_eq(scene._compute_payout(null, {"scrap": 20}), {"scrap": 23}, "20 x 1.15 rounds to 23")
+
+func test_storm_oil_bumps_pod_bounce_without_touching_shared_defs() -> void:
+	grant_kit({"storm_oil": 1})
+	scene._on_kit_toggled(true, "storm_oil")
+	var shared_before := float((DataDefs.run["pod"] as Dictionary).get("bounce", 0.55))
+	scene._on_start_pressed()
+	assert_almost_eq(float(scene.pod_defs["bounce"]), shared_before + 0.15, 0.001)
+	assert_almost_eq(float((DataDefs.run["pod"] as Dictionary).get("bounce", 0.55)), shared_before, 0.001,
+		"the shared defs are never mutated (Featherfall pattern)")
+
+func test_wind_charm_grants_a_free_reroll_before_the_ad_path() -> void:
+	grant_kit({"wind_charm": 1})
+	scene._on_kit_toggled(true, "wind_charm")
+	scene._on_start_pressed()
+	assert_eq(scene._free_rerolls, 1)
+	scene._rng.seed = 42
+	scene._on_tier_reached(1)
+	var before: Array = (scene._current_offer as Array).duplicate()
+	scene._on_reroll_pressed()
+	assert_eq(scene._free_rerolls, 0, "the charm was spent")
+	for id in scene._current_offer:
+		assert_false(before.has(id), "the free reroll redraws disjointly")
+	scene._on_reroll_pressed()
+	assert_eq(scene._current_offer, scene._current_offer, "still once per offer")
+
+func test_elections_reset_on_a_fresh_scene() -> void:
+	grant_kit({"ballast": 1})
+	scene._on_kit_toggled(true, "ballast")
+	var second = add_child_autofree(RunScene.instantiate())
+	assert_eq((second._kit_elected as Dictionary).size(), 0, "elections never persist")

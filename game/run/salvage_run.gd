@@ -23,6 +23,9 @@ var _phase := Phase.SETUP
 var _region_id := ""
 var _survivor_id := ""
 var _survivor_from_left := true
+var _kit_elected: Dictionary = {}
+var _provision_mult := 1.0
+var _free_rerolls := 0
 
 @onready var board: Skyfield = $Skyfield
 @onready var controller: DropController = $DropController
@@ -60,6 +63,7 @@ func _ready() -> void:
 	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)
 	_setup_tick()
 	_build_setup_ui(region)
+	_build_kit_panel()
 	_refresh_hud()
 
 
@@ -168,6 +172,7 @@ func _on_start_pressed() -> void:
 	if not FuelModel.spend(GameState.data["fuel"], cost, TimeUtil.now()):
 		$UI/SetupUI/SetupStatus.text = "Not enough fuel."
 		return
+	_consume_kit()
 	GameState.save_game()
 	var gizmos_state: Dictionary = GameState.data["gizmos"]
 	board.install_gizmos(
@@ -196,6 +201,77 @@ func _setup_tick() -> void:
 	var cost := RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, _region_id), GameState.data["island"])
 	$UI/SetupUI/StartButton.text = "Start (%d fuel)" % cost
 	$UI/SetupUI/StartButton.disabled = FuelModel.current(GameState.data["fuel"], TimeUtil.now()) < cost
+	_refresh_kit_panel()
+
+
+func _build_kit_panel() -> void:
+	var kit: Dictionary = DataDefs.run.get("kit", {})
+	var flow: HFlowContainer = $UI/SetupUI/KitPanel/KitFlow
+	for kit_id in ["ballast", "wind_charm", "storm_oil", "provision"]:
+		if not kit.has(kit_id):
+			continue
+		var chip := Button.new()
+		chip.toggle_mode = true
+		chip.name = "Kit_" + kit_id
+		chip.custom_minimum_size = Vector2(164.0, 56.0)
+		chip.toggled.connect(_on_kit_toggled.bind(kit_id))
+		flow.add_child(chip)
+	_refresh_kit_panel()
+
+
+func _on_kit_toggled(pressed: bool, kit_id: String) -> void:
+	if _phase != Phase.SETUP:
+		return
+	_kit_elected[kit_id] = pressed
+	_refresh_kit_panel()
+
+
+func _refresh_kit_panel() -> void:
+	var kit: Dictionary = DataDefs.run.get("kit", {})
+	for chip_node in $UI/SetupUI/KitPanel/KitFlow.get_children():
+		var chip := chip_node as Button
+		var kit_id := String(chip.name).trim_prefix("Kit_")
+		var entry: Dictionary = kit.get(kit_id, {})
+		var display := String(entry.get("name", kit_id))
+		var affordable: bool
+		if kit_id == "provision":
+			var cost := int(entry.get("cost", 3))
+			chip.text = "%s (%d provisions)" % [display, cost]
+			affordable = Economy.balance("provisions") >= cost
+		else:
+			chip.text = "%s x%d" % [display, Economy.balance(kit_id)]
+			affordable = Economy.balance(kit_id) >= 1
+		chip.disabled = not affordable
+		if not affordable and chip.button_pressed:
+			chip.set_pressed_no_signal(false)
+			_kit_elected[kit_id] = false
+
+
+func _consume_kit() -> void:
+	# Run-kit spec section 5: elections are paid only after the fuel spend
+	# succeeds; an unaffordable election is silently dropped, never blocking.
+	var kit: Dictionary = DataDefs.run.get("kit", {})
+	for kit_id in _kit_elected:
+		if not bool(_kit_elected[kit_id]):
+			continue
+		var entry: Dictionary = kit.get(String(kit_id), {})
+		if String(kit_id) == "provision":
+			if Economy.pay({"provisions": int(entry.get("cost", 3))}):
+				_provision_mult = float(entry.get("payout_multiplier", 1.15))
+		elif Economy.pay({String(kit_id): 1}):
+			_apply_consumable(String(kit_id), entry)
+
+
+func _apply_consumable(kit_id: String, entry: Dictionary) -> void:
+	if kit_id == "ballast":
+		model.add_drops(int(entry.get("drops_bonus", 2)))
+	elif kit_id == "wind_charm":
+		_free_rerolls += int(entry.get("free_rerolls", 1))
+	elif kit_id == "storm_oil":
+		# Featherfall pattern: duplicate before bumping; the shared defs are
+		# never mutated.
+		pod_defs = pod_defs.duplicate()
+		pod_defs["bounce"] = minf(1.0, float(pod_defs.get("bounce", 0.55)) + float(entry.get("bounce_bonus", 0.15)))
 
 
 func _maybe_schedule_survivor() -> void:
@@ -322,7 +398,7 @@ func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 	# Central payout resolution: the run's quota-tier multiplier and the
 	# pod-carried multipliers (Crystal Prism, Splitter Vane) apply here so
 	# every catch path (barge, sea, watchdog) gets identical treatment.
-	var mult := model.payout_multiplier() * _island_mult
+	var mult := model.payout_multiplier() * _island_mult * _provision_mult
 	if is_instance_valid(pod) and pod.has_meta("value_mult"):
 		mult *= float(pod.get_meta("value_mult"))
 	if is_equal_approx(mult, 1.0):
@@ -443,7 +519,8 @@ func _render_offer() -> void:
 			button.visible = true
 		else:
 			button.visible = false
-	$UI/BoonOffer/VBox/RerollButton.visible = Ads.service.is_available(AdService.Placement.BOON_REROLL) \
+	$UI/BoonOffer/VBox/RerollButton.text = "Reroll (free)" if _free_rerolls > 0 else "Reroll (ad)"
+	$UI/BoonOffer/VBox/RerollButton.visible = (_free_rerolls > 0 or Ads.service.is_available(AdService.Placement.BOON_REROLL)) \
 		and not _offer_rerolled
 
 
@@ -485,7 +562,15 @@ func _close_offer() -> void:
 
 
 func _on_reroll_pressed() -> void:
-	if _offer_rerolled or not Ads.service.is_available(AdService.Placement.BOON_REROLL):
+	if _offer_rerolled:
+		return
+	if _free_rerolls > 0:
+		# Wind Charm (run-kit spec section 5): the free reroll consumes no ad
+		# and is used before any ad request; still at most one per offer.
+		_free_rerolls -= 1
+		_grant_reroll()
+		return
+	if not Ads.service.is_available(AdService.Placement.BOON_REROLL):
 		return
 	Ads.service.request_reward(AdService.Placement.BOON_REROLL, _grant_reroll)
 
