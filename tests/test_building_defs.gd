@@ -29,3 +29,9 @@ func test_every_gizmo_has_craft_tuning() -> void:
 		var def: Dictionary = DataDefs.gizmos["defs"][id]
 		assert_true((def["craft_cost"] as Dictionary).size() > 0, "craft_cost missing: %s" % id)
 		assert_true(int(def["craft_seconds"]) > 0, "craft_seconds missing: %s" % id)
+
+func test_every_building_has_flavor_and_description() -> void:
+	for id in DataDefs.buildings["defs"]:
+		var def: Dictionary = DataDefs.buildings["defs"][id]
+		assert_true(String(def.get("flavor", "")) != "", "flavor missing: %s" % id)
+		assert_true(String(def.get("description", "")) != "", "description missing: %s" % id)

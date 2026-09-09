@@ -1,98 +1,315 @@
 {
-	"build_slots": {"free": 1, "max": 2, "second_slot_crystal_cost": 20},
+	"build_slots": {
+		"free": 1,
+		"max": 2,
+		"second_slot_crystal_cost": 20
+	},
 	"plot_count": 7,
 	"defs": {
 		"workshop": {
 			"name": "Workshop",
+			"flavor": "Sawdust, solder, and second chances.",
+			"description": "Crafts gizmo upgrades from worked parts; each level adds a craft slot.",
 			"max_level": 3,
 			"levels": [
-				{"cost": {"scrap": 60}, "build_seconds": 60},
-				{"cost": {"scrap": 240, "cloudsilk": 2}, "build_seconds": 900},
-				{"cost": {"scrap": 800, "cloudsilk": 6}, "build_seconds": 3600}
+				{
+					"cost": {
+						"scrap": 60
+					},
+					"build_seconds": 60
+				},
+				{
+					"cost": {
+						"scrap": 240,
+						"cloudsilk": 2
+					},
+					"build_seconds": 900
+				},
+				{
+					"cost": {
+						"scrap": 800,
+						"cloudsilk": 6
+					},
+					"build_seconds": 3600
+				}
 			]
 		},
 		"wind_still": {
 			"name": "Wind Still",
+			"flavor": "It drinks the wind and pays you back in weather.",
+			"description": "Raises the fuel cap and speeds fuel regeneration with each level.",
 			"max_level": 3,
 			"fuel_cap_bonus_per_level": 1,
 			"regen_delta_per_level": -120.0,
 			"levels": [
-				{"cost": {"scrap": 80}, "build_seconds": 120},
-				{"cost": {"scrap": 320, "cloudsilk": 3}, "build_seconds": 1200},
-				{"cost": {"scrap": 1000, "cloudsilk": 8}, "build_seconds": 4800}
+				{
+					"cost": {
+						"scrap": 80
+					},
+					"build_seconds": 120
+				},
+				{
+					"cost": {
+						"scrap": 320,
+						"cloudsilk": 3
+					},
+					"build_seconds": 1200
+				},
+				{
+					"cost": {
+						"scrap": 1000,
+						"cloudsilk": 8
+					},
+					"build_seconds": 4800
+				}
 			]
 		},
 		"dock": {
 			"name": "Dock",
+			"flavor": "Every horizon needs somewhere to leave from.",
+			"description": "Opens expeditions to farther regions; higher levels cut their fuel cost.",
 			"max_level": 2,
 			"levels": [
-				{"cost": {"scrap": 120}, "build_seconds": 180},
-				{"cost": {"scrap": 500, "cloudsilk": 4}, "build_seconds": 1800}
+				{
+					"cost": {
+						"scrap": 120
+					},
+					"build_seconds": 180
+				},
+				{
+					"cost": {
+						"scrap": 500,
+						"cloudsilk": 4
+					},
+					"build_seconds": 1800
+				}
 			]
 		},
 		"balloonworks": {
 			"name": "Balloonworks",
+			"flavor": "Silk, rope, and stubborn optimism.",
+			"description": "Adds a pod drop per run each level and crafts run consumables.",
 			"max_level": 3,
 			"drops_bonus_per_level": 1,
 			"recipes": [
-				{"id": "charged_ballast", "name": "Charged Ballast", "inputs": {"cloudsilk": 1, "parts": 1}, "outputs": {"ballast": 1}, "seconds": 900},
-				{"id": "wind_charm", "name": "Wind Charm", "inputs": {"cloudsilk": 2, "parts": 1}, "outputs": {"wind_charm": 1}, "seconds": 1200},
-				{"id": "storm_oil", "name": "Storm Oil", "inputs": {"cloudsilk": 1, "parts": 2}, "outputs": {"storm_oil": 1}, "seconds": 900}
+				{
+					"id": "charged_ballast",
+					"name": "Charged Ballast",
+					"inputs": {
+						"cloudsilk": 1,
+						"parts": 1
+					},
+					"outputs": {
+						"ballast": 1
+					},
+					"seconds": 900
+				},
+				{
+					"id": "wind_charm",
+					"name": "Wind Charm",
+					"inputs": {
+						"cloudsilk": 2,
+						"parts": 1
+					},
+					"outputs": {
+						"wind_charm": 1
+					},
+					"seconds": 1200
+				},
+				{
+					"id": "storm_oil",
+					"name": "Storm Oil",
+					"inputs": {
+						"cloudsilk": 1,
+						"parts": 2
+					},
+					"outputs": {
+						"storm_oil": 1
+					},
+					"seconds": 900
+				}
 			],
 			"levels": [
-				{"cost": {"scrap": 100}, "build_seconds": 150},
-				{"cost": {"scrap": 400, "cloudsilk": 3}, "build_seconds": 1500},
-				{"cost": {"scrap": 1200, "cloudsilk": 10}, "build_seconds": 5400}
+				{
+					"cost": {
+						"scrap": 100
+					},
+					"build_seconds": 150
+				},
+				{
+					"cost": {
+						"scrap": 400,
+						"cloudsilk": 3
+					},
+					"build_seconds": 1500
+				},
+				{
+					"cost": {
+						"scrap": 1200,
+						"cloudsilk": 10
+					},
+					"build_seconds": 5400
+				}
 			]
 		},
 		"observatory": {
 			"name": "Observatory",
+			"flavor": "The clouds keep their secrets badly.",
+			"description": "Charts the winds and reveals what waits beyond the known skies.",
 			"max_level": 1,
 			"teaser": "Charted winds hint at the Brasswork Reach beyond the eastern clouds.",
 			"levels": [
-				{"cost": {"scrap": 150, "crystals": 2}, "build_seconds": 300}
+				{
+					"cost": {
+						"scrap": 150,
+						"crystals": 2
+					},
+					"build_seconds": 300
+				}
 			]
 		},
 		"gardens": {
 			"name": "Gardens & Cisterns",
+			"flavor": "Green things, growing where nothing should.",
+			"description": "Trickles scrap while you are away and puts up provisions for expeditions.",
 			"max_level": 3,
 			"scrap_per_hour_per_level": 20,
 			"cap_hours": 8.0,
-			"recipes": [{"id": "put_up_provisions", "name": "Put up provisions", "inputs": {}, "outputs": {"provisions": 2}, "seconds": 3600}],
+			"recipes": [
+				{
+					"id": "put_up_provisions",
+					"name": "Put up provisions",
+					"inputs": {},
+					"outputs": {
+						"provisions": 2
+					},
+					"seconds": 3600
+				}
+			],
 			"levels": [
-				{"cost": {"scrap": 90}, "build_seconds": 120},
-				{"cost": {"scrap": 360, "cloudsilk": 2}, "build_seconds": 1200},
-				{"cost": {"scrap": 1100, "cloudsilk": 7}, "build_seconds": 4200}
+				{
+					"cost": {
+						"scrap": 90
+					},
+					"build_seconds": 120
+				},
+				{
+					"cost": {
+						"scrap": 360,
+						"cloudsilk": 2
+					},
+					"build_seconds": 1200
+				},
+				{
+					"cost": {
+						"scrap": 1100,
+						"cloudsilk": 7
+					},
+					"build_seconds": 4200
+				}
 			]
 		},
 		"smeltery": {
 			"name": "Smeltery",
+			"flavor": "The furnace remembers what the sky forgot.",
+			"description": "Smelts scrap into worked parts; higher levels pour bigger batches.",
 			"max_level": 3,
 			"levels": [
-				{"cost": {"scrap": 120}, "build_seconds": 180},
-				{"cost": {"scrap": 480, "cloudsilk": 3}, "build_seconds": 1800},
-				{"cost": {"scrap": 1400, "cloudsilk": 9}, "build_seconds": 5400}
+				{
+					"cost": {
+						"scrap": 120
+					},
+					"build_seconds": 180
+				},
+				{
+					"cost": {
+						"scrap": 480,
+						"cloudsilk": 3
+					},
+					"build_seconds": 1800
+				},
+				{
+					"cost": {
+						"scrap": 1400,
+						"cloudsilk": 9
+					},
+					"build_seconds": 5400
+				}
 			],
-			"recipes": [{"id": "smelt", "name": "Smelt", "inputs": {"scrap": 40}, "outputs": {"parts": 1}, "seconds": 600}]
+			"recipes": [
+				{
+					"id": "smelt",
+					"name": "Smelt",
+					"inputs": {
+						"scrap": 40
+					},
+					"outputs": {
+						"parts": 1
+					},
+					"seconds": 600
+				}
+			]
 		},
 		"lens_array": {
 			"name": "Lens Array",
+			"flavor": "Light, bent until it pays.",
+			"description": "Multiplies every expedition payout while it stands on Lantern Shoal.",
 			"islet": "lantern_shoal",
 			"max_level": 2,
 			"payout_bonus_per_level": 0.05,
 			"levels": [
-				{"cost": {"scrap": 400, "cloudsilk": 3}, "build_seconds": 1800},
-				{"cost": {"scrap": 1200, "cloudsilk": 8, "crystals": 3}, "build_seconds": 5400}
+				{
+					"cost": {
+						"scrap": 400,
+						"cloudsilk": 3
+					},
+					"build_seconds": 1800
+				},
+				{
+					"cost": {
+						"scrap": 1200,
+						"cloudsilk": 8,
+						"crystals": 3
+					},
+					"build_seconds": 5400
+				}
 			]
 		},
 		"foundry_annex": {
 			"name": "Foundry Annex",
+			"flavor": "Halvard banked these coals on purpose.",
+			"description": "Smelts brass-hardened parts, the old foundry's efficient recipe.",
 			"islet": "foundry_rock",
 			"max_level": 2,
-			"recipes": [{"id": "brass_smelt", "name": "Brass smelt", "inputs": {"scrap": 30, "brasswork": 1}, "outputs": {"parts": 2}, "seconds": 600}],
+			"recipes": [
+				{
+					"id": "brass_smelt",
+					"name": "Brass smelt",
+					"inputs": {
+						"scrap": 30,
+						"brasswork": 1
+					},
+					"outputs": {
+						"parts": 2
+					},
+					"seconds": 600
+				}
+			],
 			"levels": [
-				{"cost": {"scrap": 900, "brasswork": 6}, "build_seconds": 3600},
-				{"cost": {"scrap": 2000, "brasswork": 14}, "build_seconds": 7200}
+				{
+					"cost": {
+						"scrap": 900,
+						"brasswork": 6
+					},
+					"build_seconds": 3600
+				},
+				{
+					"cost": {
+						"scrap": 2000,
+						"brasswork": 14
+					},
+					"build_seconds": 7200
+				}
 			]
 		}
 	}

@@ -30,17 +30,33 @@ func test_builds_one_row_per_plot_plus_islets_plus_crew() -> void:
 			+ CrewModel.members(DataDefs.crew).size(),
 		"fresh save: home plots, one status row per islet, one row per crew def")
 
-func test_select_cycles_unbuilt_buildings() -> void:
-	screen._on_select_pressed("plot_0")
-	assert_eq(String(screen._selection["plot_0"]), "workshop", "first def id")
-	screen._on_select_pressed("plot_0")
-	assert_eq(String(screen._selection["plot_0"]), "wind_still")
+func test_choose_opens_the_modal_on_the_first_candidate() -> void:
+	screen._open_build_modal("plot_0")
+	assert_true(screen.get_node("BuildModal").visible)
+	assert_eq(screen._modal_building(), "workshop", "first def id")
+	var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary)["workshop"]
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalTitle").text), String(def["name"]))
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalFlavor").text), String(def["flavor"]))
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalDescription").text), String(def["description"]))
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalCost").text), "60 scrap")
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalPicture/PictureLetter").text), "W",
+		"the placeholder picture carries the building's initial")
 
-func test_build_starts_construction_through_model() -> void:
-	screen._on_select_pressed("plot_0")
-	screen._on_build_pressed("plot_0")
+func test_modal_browsing_wraps_both_ways() -> void:
+	screen._open_build_modal("plot_0")
+	screen._on_modal_next_pressed()
+	assert_eq(screen._modal_building(), "wind_still")
+	screen._on_modal_prev_pressed()
+	screen._on_modal_prev_pressed()
+	assert_eq(screen._modal_building(), screen._modal_ids[screen._modal_ids.size() - 1],
+		"prev from the first candidate wraps to the last")
+
+func test_modal_confirm_starts_construction_through_model() -> void:
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
 	assert_true(TimerService.active_timers().has("build_plot_0"))
 	assert_eq(Economy.balance("scrap"), 2000 - 60)
+	assert_false(screen.get_node("BuildModal").visible, "a successful build closes the modal")
 
 func test_collect_applies_completion_and_reapplies_fuel_effects() -> void:
 	GameState.data["island"]["plots"]["plot_0"] = {"building": "wind_still", "level": 0}
@@ -53,8 +69,8 @@ func test_collect_applies_completion_and_reapplies_fuel_effects() -> void:
 func test_built_building_no_longer_offered_for_empty_plots() -> void:
 	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
 	screen._rebuild()
-	screen._on_select_pressed("plot_1")
-	assert_ne(String(screen._selection["plot_1"]), "workshop")
+	screen._open_build_modal("plot_1")
+	assert_false((screen._modal_ids as Array).has("workshop"))
 
 func test_built_observatory_shows_its_teaser() -> void:
 	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
@@ -87,8 +103,8 @@ func test_slot_button_unlocks_second_slot() -> void:
 	assert_eq(Economy.balance("crystals"), 10)
 
 func test_skip_completes_a_construction_timer() -> void:
-	screen._on_select_pressed("plot_0")
-	screen._on_build_pressed("plot_0")
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
 	assert_true(TimerService.active_timers().has("build_plot_0"))
 	screen._on_skip_pressed("build_plot_0")
 	assert_true(TimerService.is_done("build_plot_0", TimeUtil.now()),
@@ -125,8 +141,8 @@ func test_tick_without_state_change_keeps_row_nodes_alive() -> void:
 		"per-second ticks must not free a button under the player's finger")
 
 func test_tick_rebuilds_when_a_timer_finishes() -> void:
-	screen._on_select_pressed("plot_0")
-	screen._on_build_pressed("plot_0")
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
 	screen._refresh_tick()
 	var running_signature: String = screen._last_signature
 	TimerService._state.data["timers"]["build_plot_0"]["ends_at"] = 0
@@ -139,19 +155,21 @@ func test_slot_button_disabled_when_crystals_are_short() -> void:
 	screen._rebuild()
 	assert_true(screen.get_node("SlotButton").disabled)
 
-func test_rejected_build_explains_itself() -> void:
+func test_rejected_build_explains_itself_inside_the_modal() -> void:
 	GameState.data["currencies"]["scrap"] = 0
-	screen._on_select_pressed("plot_0")
-	screen._on_build_pressed("plot_0")
-	assert_string_contains(screen.get_node("StatusLabel").text, "Not enough")
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	assert_true(screen.get_node("BuildModal").visible, "a rejected build keeps the modal open")
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalStatus").text), "Not enough")
 
-func test_successful_build_clears_the_status() -> void:
+func test_retry_after_rejection_builds_and_closes() -> void:
 	GameState.data["currencies"]["scrap"] = 0
-	screen._on_select_pressed("plot_0")
-	screen._on_build_pressed("plot_0")
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
 	GameState.data["currencies"]["scrap"] = 2000
-	screen._on_build_pressed("plot_0")
-	assert_eq(screen.get_node("StatusLabel").text, "")
+	screen._on_modal_confirm_pressed()
+	assert_true(TimerService.active_timers().has("build_plot_0"))
+	assert_false(screen.get_node("BuildModal").visible)
 
 func test_any_completion_reapplies_fuel_effects() -> void:
 	GameState.data["fuel"]["cap"] = 99
@@ -162,10 +180,43 @@ func test_any_completion_reapplies_fuel_effects() -> void:
 	assert_eq(int(GameState.data["fuel"]["cap"]), 5,
 		"apply_fuel is unconditional and idempotent; a mangled cap heals at any collect")
 
-func test_selection_change_clears_stale_status() -> void:
-	screen.get_node("StatusLabel").text = "Not enough resources."
-	screen._on_select_pressed("plot_0")
-	assert_eq(screen.get_node("StatusLabel").text, "", "a stale rejection must not outlive the selection it judged")
+func test_reopening_the_modal_clears_stale_status() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._on_modal_cancel_pressed()
+	assert_false(screen.get_node("BuildModal").visible)
+	screen._open_build_modal("plot_0")
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalStatus").text), "",
+		"a stale rejection must not outlive the visit it judged")
+
+func test_browsing_clears_stale_status() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._on_modal_next_pressed()
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalStatus").text), "",
+		"the rejection judged another card")
+
+func test_upgrade_opens_a_locked_modal() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	GameState.data["currencies"]["cloudsilk"] = 20
+	screen._rebuild()
+	screen._open_build_modal("plot_0")
+	assert_eq((screen._modal_ids as Array).size(), 1, "an occupied plot browses nothing")
+	assert_false(screen.get_node("BuildModal/VBox/NavRow").visible)
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ActionRow/ConfirmButton").text), "Upgrade to Lv 2")
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalCost").text), "240 scrap")
+	screen._on_modal_confirm_pressed()
+	assert_true(TimerService.active_timers().has("build_plot_0"))
+	assert_eq(Economy.balance("scrap"), 2000 - 240)
+
+func test_max_level_disables_the_confirm() -> void:
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	screen._rebuild()
+	screen._open_build_modal("plot_3")
+	assert_true(screen.get_node("BuildModal/VBox/ActionRow/ConfirmButton").disabled)
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalCost").text), "Max level")
 
 func restore_lantern() -> void:
 	(GameState.data["islets"]["restored"] as Dictionary)["lantern_shoal"] = true
@@ -217,11 +268,10 @@ func test_restored_islet_contributes_its_plot_row() -> void:
 
 func test_islet_plot_offers_only_its_islet_building() -> void:
 	restore_lantern()
-	screen._on_select_pressed("islet_lantern_0")
-	assert_eq(String(screen._selection["islet_lantern_0"]), "lens_array")
-	screen._on_select_pressed("islet_lantern_0")
-	assert_eq(String(screen._selection["islet_lantern_0"]), "lens_array",
-		"the cycle contains exactly the one islet building")
+	screen._open_build_modal("islet_lantern_0")
+	assert_eq(screen._modal_ids as Array, ["lens_array"], "the islet plot offers exactly its own building")
+	screen._on_modal_next_pressed()
+	assert_eq(screen._modal_building(), "lens_array", "browsing a single card is a no-op")
 
 func test_home_plot_never_offers_islet_buildings() -> void:
 	var offered: Array[String] = screen._unbuilt_ids("plot_0")
@@ -231,8 +281,8 @@ func test_home_plot_never_offers_islet_buildings() -> void:
 func test_building_on_an_islet_plot_goes_through_the_model() -> void:
 	restore_lantern()
 	GameState.data["currencies"]["cloudsilk"] = 10
-	screen._on_select_pressed("islet_lantern_0")
-	screen._on_build_pressed("islet_lantern_0")
+	screen._open_build_modal("islet_lantern_0")
+	screen._on_modal_confirm_pressed()
 	assert_true(TimerService.active_timers().has("build_islet_lantern_0"))
 
 func test_finishing_a_restoration_changes_the_signature() -> void:

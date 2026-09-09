@@ -9,8 +9,10 @@ extends Control
 ## finishing, or disappearing); otherwise labels update in place so a button
 ## mid-tap is never freed under the player's finger.
 
-var _selection: Dictionary = {}
 var _last_signature := ""
+var _modal_plot := ""
+var _modal_ids: Array[String] = []
+var _modal_index := 0
 var _plot_labels: Dictionary = {}
 var _islet_labels: Dictionary = {}
 var _letter_islet := ""
@@ -27,6 +29,10 @@ func _ready() -> void:
 	$SlotButton.pressed.connect(_on_slot_pressed)
 	$BonusCrateButton.pressed.connect(_on_bonus_crate_pressed)
 	$LetterPanel/VBox/LetterClose.pressed.connect(_on_letter_close_pressed)
+	$BuildModal/VBox/NavRow/PrevButton.pressed.connect(_on_modal_prev_pressed)
+	$BuildModal/VBox/NavRow/NextButton.pressed.connect(_on_modal_next_pressed)
+	$BuildModal/VBox/ActionRow/ConfirmButton.pressed.connect(_on_modal_confirm_pressed)
+	$BuildModal/VBox/ActionRow/CancelButton.pressed.connect(_on_modal_cancel_pressed)
 	_rebuild()
 
 
@@ -142,14 +148,10 @@ func _rebuild() -> void:
 				skip.pressed.connect(_on_skip_pressed.bind(timer_id))
 				row.add_child(skip)
 		else:
-			var select := Button.new()
-			select.text = _selection_text(plot, island)
-			select.pressed.connect(_on_select_pressed.bind(plot))
-			row.add_child(select)
-			var build := Button.new()
-			build.text = "Build"
-			build.pressed.connect(_on_build_pressed.bind(plot))
-			row.add_child(build)
+			var choose := Button.new()
+			choose.text = "Upgrade" if island.get("plots", {}).has(plot) else "Choose..."
+			choose.pressed.connect(_open_build_modal.bind(plot))
+			row.add_child(choose)
 		var occupant := ""
 		if island.get("plots", {}).has(plot):
 			occupant = String((island["plots"][plot] as Dictionary).get("building", ""))
@@ -257,12 +259,91 @@ func _row_text(plot: String, island: Dictionary, now: int) -> String:
 	return "%s: (empty)" % plot
 
 
-func _selection_text(plot: String, island: Dictionary) -> String:
-	var plots: Dictionary = island.get("plots", {})
+func _open_build_modal(plot: String) -> void:
+	# The build browser (owner request, 2026-09-09): an empty plot browses its
+	# candidates; an occupied plot opens locked on its own building for the
+	# upgrade. Confirm routes through IslandModel like the old Build button.
+	var plots: Dictionary = GameState.data["island"].get("plots", {})
+	_modal_plot = plot
 	if plots.has(plot):
-		return "Upgrade"
-	var chosen := String(_selection.get(plot, ""))
-	return chosen if chosen != "" else "Choose..."
+		var held: Array[String] = [String((plots[plot] as Dictionary).get("building", ""))]
+		_modal_ids = held
+	else:
+		_modal_ids = _unbuilt_ids(plot)
+	if _modal_ids.is_empty():
+		return
+	_modal_index = 0
+	$BuildModal/VBox/ModalStatus.text = ""
+	_render_modal()
+	$BuildModal.visible = true
+
+
+func _modal_building() -> String:
+	if _modal_ids.is_empty():
+		return ""
+	return String(_modal_ids[_modal_index])
+
+
+func _render_modal() -> void:
+	var building_id := _modal_building()
+	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building_id, {})
+	var display := String(def.get("name", building_id))
+	$BuildModal/VBox/ModalTitle.text = display
+	# Placeholder art: a deterministic tint plus the building's initial; the
+	# art pass swaps this for real portraits.
+	$BuildModal/VBox/ModalPicture.color = Color.from_hsv(float(absi(building_id.hash()) % 360) / 360.0, 0.45, 0.55)
+	$BuildModal/VBox/ModalPicture/PictureLetter.text = display.left(1)
+	$BuildModal/VBox/ModalFlavor.text = String(def.get("flavor", ""))
+	$BuildModal/VBox/ModalDescription.text = String(def.get("description", ""))
+	$BuildModal/VBox/NavRow.visible = _modal_ids.size() > 1
+	var level := IslandModel.building_level(GameState.data["island"], building_id)
+	var level_rows: Array = def.get("levels", [])
+	if level >= int(def.get("max_level", 1)) or level >= level_rows.size():
+		$BuildModal/VBox/ModalCost.text = "Max level reached"
+		$BuildModal/VBox/ActionRow/ConfirmButton.text = "Max level"
+		$BuildModal/VBox/ActionRow/ConfirmButton.disabled = true
+		return
+	var next_row: Dictionary = level_rows[level]
+	$BuildModal/VBox/ModalCost.text = "Cost: %s" % _cost_text(next_row.get("cost", {}))
+	$BuildModal/VBox/ActionRow/ConfirmButton.text = ("Upgrade to Lv %d" % (level + 1)) if level > 0 else "Build"
+	$BuildModal/VBox/ActionRow/ConfirmButton.disabled = false
+
+
+func _on_modal_prev_pressed() -> void:
+	if _modal_ids.size() <= 1:
+		return
+	_modal_index = (_modal_index - 1 + _modal_ids.size()) % _modal_ids.size()
+	$BuildModal/VBox/ModalStatus.text = ""
+	_render_modal()
+
+
+func _on_modal_next_pressed() -> void:
+	if _modal_ids.size() <= 1:
+		return
+	_modal_index = (_modal_index + 1) % _modal_ids.size()
+	$BuildModal/VBox/ModalStatus.text = ""
+	_render_modal()
+
+
+func _on_modal_confirm_pressed() -> void:
+	var building_id := _modal_building()
+	if building_id == "" or not $BuildModal.visible:
+		return
+	var island: Dictionary = GameState.data["island"]
+	var now := TimeUtil.now()
+	var reason := IslandModel.build_rejection(island, DataDefs.buildings, Economy, TimerService, _modal_plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {}))
+	if reason != "":
+		# Rejections live in the modal so the player sees them beside the card.
+		$BuildModal/VBox/ModalStatus.text = reason
+		return
+	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, _modal_plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {})):
+		GameState.save_game()
+	$BuildModal.visible = false
+	_rebuild()
+
+
+func _on_modal_cancel_pressed() -> void:
+	$BuildModal.visible = false
 
 
 func _islet_row_text(islet: Dictionary, now: int) -> String:
@@ -342,41 +423,6 @@ func _on_assign_pressed(crew_id: String) -> void:
 		CrewModel.assign(GameState.data, DataDefs.crew, String(options[next_index]), crew_id, DataDefs.buildings, now)
 	IslandEffects.apply_fuel(GameState.data, DataDefs.economy, DataDefs.buildings, DataDefs.crew)
 	GameState.save_game()
-	_rebuild()
-
-
-func _on_select_pressed(plot: String) -> void:
-	var plots: Dictionary = GameState.data["island"]["plots"]
-	if plots.has(plot):
-		return
-	var options := _unbuilt_ids(plot)
-	if options.is_empty():
-		return
-	var current := String(_selection.get(plot, ""))
-	var index := options.find(current)
-	_selection[plot] = options[(index + 1) % options.size()]
-	$StatusLabel.text = ""
-	_rebuild()
-
-
-func _on_build_pressed(plot: String) -> void:
-	var island: Dictionary = GameState.data["island"]
-	var building_id: String
-	if island["plots"].has(plot):
-		building_id = String(island["plots"][plot]["building"])
-	else:
-		building_id = String(_selection.get(plot, ""))
-	if building_id == "":
-		$StatusLabel.text = "Pick a building for %s first." % plot
-		return
-	var now := TimeUtil.now()
-	var reason := IslandModel.build_rejection(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {}))
-	if reason != "":
-		$StatusLabel.text = reason
-		return
-	if IslandModel.start_build(island, DataDefs.buildings, Economy, TimerService, plot, building_id, now, DataDefs.islets, GameState.data.get("islets", {})):
-		$StatusLabel.text = ""
-		GameState.save_game()
 	_rebuild()
 
 

@@ -91,3 +91,52 @@ autowrap_mode = 3
 
 [node name="LetterClose" type="Button" parent="LetterPanel/VBox"]
 text = "Close"
+
+[node name="BuildModal" type="PanelContainer" parent="."]
+visible = false
+offset_left = 60.0
+offset_top = 180.0
+offset_right = 660.0
+offset_bottom = 780.0
+
+[node name="VBox" type="VBoxContainer" parent="BuildModal"]
+
+[node name="ModalTitle" type="Label" parent="BuildModal/VBox"]
+
+[node name="ModalPicture" type="ColorRect" parent="BuildModal/VBox"]
+custom_minimum_size = Vector2(96, 96)
+
+[node name="PictureLetter" type="Label" parent="BuildModal/VBox/ModalPicture"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ModalFlavor" type="Label" parent="BuildModal/VBox"]
+custom_minimum_size = Vector2(560, 0)
+autowrap_mode = 3
+
+[node name="ModalDescription" type="Label" parent="BuildModal/VBox"]
+custom_minimum_size = Vector2(560, 0)
+autowrap_mode = 3
+
+[node name="ModalCost" type="Label" parent="BuildModal/VBox"]
+
+[node name="ModalStatus" type="Label" parent="BuildModal/VBox"]
+
+[node name="NavRow" type="HBoxContainer" parent="BuildModal/VBox"]
+
+[node name="PrevButton" type="Button" parent="BuildModal/VBox/NavRow"]
+text = "< Prev"
+
+[node name="NextButton" type="Button" parent="BuildModal/VBox/NavRow"]
+text = "Next >"
+
+[node name="ActionRow" type="HBoxContainer" parent="BuildModal/VBox"]
+
+[node name="ConfirmButton" type="Button" parent="BuildModal/VBox/ActionRow"]
+text = "Build"
+
+[node name="CancelButton" type="Button" parent="BuildModal/VBox/ActionRow"]
+text = "Cancel"
