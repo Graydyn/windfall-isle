@@ -214,6 +214,10 @@ func _build_kit_panel() -> void:
 		chip.toggle_mode = true
 		chip.name = "Kit_" + kit_id
 		chip.custom_minimum_size = Vector2(164.0, 56.0)
+		# PASS, not STOP: the chip still takes its press, but a drag-drop
+		# released over the kit area falls through to any slot target beneath
+		# (region 2's lowest slots overlap this rect; Plan 9 drop-walk lesson).
+		chip.mouse_filter = Control.MOUSE_FILTER_PASS
 		chip.toggled.connect(_on_kit_toggled.bind(kit_id))
 		flow.add_child(chip)
 	_refresh_kit_panel()

@@ -256,3 +256,10 @@ func test_elections_reset_on_a_fresh_scene() -> void:
 	scene._on_kit_toggled(true, "ballast")
 	var second = add_child_autofree(RunScene.instantiate())
 	assert_eq((second._kit_elected as Dictionary).size(), 0, "elections never persist")
+
+func test_kit_panel_is_mouse_transparent_for_drops() -> void:
+	assert_eq(scene.get_node("UI/SetupUI/KitPanel").mouse_filter, Control.MOUSE_FILTER_IGNORE,
+		"the panel background must not swallow drops aimed at slots beneath (region 2)")
+	assert_eq(scene.get_node("UI/SetupUI/KitPanel/KitFlow").mouse_filter, Control.MOUSE_FILTER_IGNORE)
+	assert_eq(kit_chip("ballast").mouse_filter, Control.MOUSE_FILTER_PASS,
+		"chips take presses yet let drops fall through (Plan 9 lesson)")
