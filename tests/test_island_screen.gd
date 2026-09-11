@@ -444,3 +444,41 @@ func test_legacy_batch_payload_still_offers_a_plain_collect() -> void:
 	screen._rebuild()
 	screen._on_batch_collect_pressed("smeltery")
 	assert_eq(Economy.balance("parts"), 1, "the legacy fallback credits through the screen")
+
+func test_modal_stats_are_computed_from_the_defs() -> void:
+	var defs: Dictionary = DataDefs.buildings["defs"]
+	assert_eq(screen._stats_text("wind_still", defs["wind_still"]),
+		"• +1 fuel cap per level\n• 120s faster fuel regen per level")
+	assert_eq(screen._stats_text("workshop", defs["workshop"]), "• 1 craft slot per level")
+	assert_eq(screen._stats_text("lens_array", defs["lens_array"]), "• +5% expedition payout per level")
+	assert_eq(screen._stats_text("observatory", defs["observatory"]), "",
+		"the observatory is deliberately all flavor")
+	assert_eq(screen._stats_text("gardens", defs["gardens"]),
+		"• 20 scrap per hour per level, banks up to 8h\n• Makes: Put up provisions (free -> 2 provisions, 60m)\n• Batch outputs scale with building level")
+	assert_eq(screen._stats_text("smeltery", defs["smeltery"]),
+		"• Makes: Smelt (40 scrap -> 1 parts, 10m)\n• Batch outputs scale with building level")
+
+func test_balloonworks_stats_list_all_three_recipes() -> void:
+	var text: String = screen._stats_text("balloonworks", (DataDefs.buildings["defs"] as Dictionary)["balloonworks"])
+	assert_string_contains(text, "+1 pod drop per run per level")
+	assert_string_contains(text, "Charged Ballast (1 cloudsilk, 1 parts -> 1 ballast, 15m)")
+	assert_string_contains(text, "Wind Charm (2 cloudsilk, 1 parts -> 1 wind_charm, 20m)")
+	assert_string_contains(text, "Storm Oil (1 cloudsilk, 2 parts -> 1 storm_oil, 15m)")
+
+func test_modal_renders_the_stats_line() -> void:
+	screen._open_build_modal("plot_0")
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalStats").text), "• 1 craft slot per level",
+		"the first candidate is the workshop")
+	assert_true(screen.get_node("BuildModal/VBox/ModalStats").visible)
+	screen._on_modal_next_pressed()
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalStats").text), "fuel cap")
+
+func test_stats_hide_when_a_building_has_none() -> void:
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	screen._rebuild()
+	screen._open_build_modal("plot_3")
+	assert_false(screen.get_node("BuildModal/VBox/ModalStats").visible)
+
+func test_flavor_reads_as_a_different_voice() -> void:
+	assert_almost_eq(screen.get_node("BuildModal/VBox/ModalFlavor").modulate.a, 0.7, 0.01,
+		"flavor dims so function stands out")

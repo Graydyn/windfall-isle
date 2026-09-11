@@ -114,10 +114,15 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ModalFlavor" type="Label" parent="BuildModal/VBox"]
+modulate = Color(1, 1, 1, 0.7)
 custom_minimum_size = Vector2(560, 0)
 autowrap_mode = 3
 
 [node name="ModalDescription" type="Label" parent="BuildModal/VBox"]
+custom_minimum_size = Vector2(560, 0)
+autowrap_mode = 3
+
+[node name="ModalStats" type="Label" parent="BuildModal/VBox"]
 custom_minimum_size = Vector2(560, 0)
 autowrap_mode = 3
 

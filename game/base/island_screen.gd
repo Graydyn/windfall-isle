@@ -295,6 +295,9 @@ func _render_modal() -> void:
 	$BuildModal/VBox/ModalPicture/PictureLetter.text = display.left(1)
 	$BuildModal/VBox/ModalFlavor.text = String(def.get("flavor", ""))
 	$BuildModal/VBox/ModalDescription.text = String(def.get("description", ""))
+	var stats := _stats_text(building_id, def)
+	$BuildModal/VBox/ModalStats.text = stats
+	$BuildModal/VBox/ModalStats.visible = stats != ""
 	$BuildModal/VBox/NavRow.visible = _modal_ids.size() > 1
 	var level := IslandModel.building_level(GameState.data["island"], building_id)
 	var level_rows: Array = def.get("levels", [])
@@ -307,6 +310,40 @@ func _render_modal() -> void:
 	$BuildModal/VBox/ModalCost.text = "Cost: %s" % _cost_text(next_row.get("cost", {}))
 	$BuildModal/VBox/ActionRow/ConfirmButton.text = ("Upgrade to Lv %d" % (level + 1)) if level > 0 else "Build"
 	$BuildModal/VBox/ActionRow/ConfirmButton.disabled = false
+
+
+func _stats_text(building_id: String, def: Dictionary) -> String:
+	# Concrete numbers straight from the def (owner request, 2026-09-11): the
+	# line can never drift from the data because it IS the data. Buildings
+	# whose whole effect is narrative (observatory, dock) return "".
+	var lines := PackedStringArray()
+	if building_id == "workshop":
+		lines.append("• 1 craft slot per level")
+	if def.has("fuel_cap_bonus_per_level"):
+		lines.append("• +%d fuel cap per level" % int(def["fuel_cap_bonus_per_level"]))
+	if def.has("regen_delta_per_level"):
+		lines.append("• %ds faster fuel regen per level" % absi(int(def["regen_delta_per_level"])))
+	if def.has("drops_bonus_per_level"):
+		lines.append("• +%d pod drop per run per level" % int(def["drops_bonus_per_level"]))
+	if def.has("scrap_per_hour_per_level"):
+		lines.append("• %d scrap per hour per level, banks up to %dh" % [
+			int(def["scrap_per_hour_per_level"]), int(def.get("cap_hours", 8.0))])
+	if def.has("payout_bonus_per_level"):
+		lines.append("• +%d%% expedition payout per level" % roundi(float(def["payout_bonus_per_level"]) * 100.0))
+	var recipe_rows: Array = def.get("recipes", [])
+	for row_v in recipe_rows:
+		var conversion := row_v as Dictionary
+		var inputs: Dictionary = conversion.get("inputs", {})
+		var input_text := _cost_text(inputs) if not inputs.is_empty() else "free"
+		lines.append("• Makes: %s (%s -> %s, %dm)" % [
+			String(conversion.get("name", conversion.get("id", ""))),
+			input_text,
+			_cost_text(conversion.get("outputs", {})),
+			int(float(conversion.get("seconds", 600)) / 60.0),
+		])
+	if not recipe_rows.is_empty():
+		lines.append("• Batch outputs scale with building level")
+	return "\n".join(lines)
 
 
 func _on_modal_prev_pressed() -> void:
