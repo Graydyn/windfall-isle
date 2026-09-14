@@ -8,6 +8,7 @@ var controller: DropController
 func before_each() -> void:
 	controller = add_child_autofree(ControllerScript.new())
 	controller.configure({"left": 20, "right": 700, "top": 140}, 12.0)
+	# configure() gives min_x 44, max_x 676, so the marker starts centered at 360.
 
 
 func touch(pos: Vector2, pressed: bool, index: int = 0) -> InputEventScreenTouch:
@@ -24,66 +25,49 @@ func drag_to(pos: Vector2, index: int = 0) -> InputEventScreenDrag:
 	return event
 
 
-func test_tap_release_drops_at_tap_x() -> void:
+func test_marker_starts_centered() -> void:
+	assert_eq(controller._aim_x, 360.0)
+
+func test_sweep_advances_with_time() -> void:
+	controller._process(0.1)
+	assert_eq(controller._aim_x, 360.0 + controller.sweep_speed * 0.1)
+
+func test_sweep_reverses_at_right_wall() -> void:
+	controller._process(1.0)
+	assert_eq(controller._aim_x, 676.0)
+	controller._process(0.1)
+	assert_eq(controller._aim_x, 676.0 - controller.sweep_speed * 0.1)
+
+func test_sweep_reverses_at_left_wall() -> void:
+	controller._process(1.0)
+	controller._process(2.0)
+	assert_eq(controller._aim_x, 44.0)
+	controller._process(0.1)
+	assert_eq(controller._aim_x, 44.0 + controller.sweep_speed * 0.1)
+
+func test_tap_drops_at_current_marker_position() -> void:
 	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true))
+	controller._process(0.1)
+	var expected := controller._aim_x
+	controller._unhandled_input(touch(Vector2(50, 900), true))
+	assert_signal_emitted_with_parameters(controller, "drop_requested", [expected])
+
+func test_touch_release_does_not_drop() -> void:
+	watch_signals(controller)
 	controller._unhandled_input(touch(Vector2(300, 80), false))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [300.0])
+	assert_signal_not_emitted(controller, "drop_requested")
 
-func test_drag_updates_aim_before_release() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true))
-	controller._unhandled_input(drag_to(Vector2(500, 90)))
-	controller._unhandled_input(touch(Vector2(500, 90), false))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [500.0])
+func test_drag_does_not_move_marker() -> void:
+	controller._unhandled_input(drag_to(Vector2(600, 90)))
+	assert_eq(controller._aim_x, 360.0)
 
-func test_aim_is_clamped_inside_walls() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(2, 80), true))
-	controller._unhandled_input(touch(Vector2(2, 80), false))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [44.0])
+func test_disabled_controller_does_not_sweep() -> void:
+	controller.enabled = false
+	controller._process(0.1)
+	assert_eq(controller._aim_x, 360.0)
 
-func test_disabled_controller_ignores_input() -> void:
+func test_disabled_controller_ignores_taps() -> void:
 	controller.enabled = false
 	watch_signals(controller)
 	controller._unhandled_input(touch(Vector2(300, 80), true))
-	controller._unhandled_input(touch(Vector2(300, 80), false))
 	assert_signal_not_emitted(controller, "drop_requested")
-
-func test_release_without_press_does_not_drop() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), false))
-	assert_signal_not_emitted(controller, "drop_requested")
-
-func test_second_finger_press_does_not_steal_aim() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true, 0))
-	controller._unhandled_input(touch(Vector2(600, 80), true, 1))
-	controller._unhandled_input(touch(Vector2(300, 80), false, 0))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [300.0])
-	assert_signal_emit_count(controller, "drop_requested", 1)
-
-func test_second_finger_drag_ignored() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true, 0))
-	controller._unhandled_input(drag_to(Vector2(600, 90), 1))
-	controller._unhandled_input(touch(Vector2(300, 80), false, 0))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [300.0])
-
-func test_second_finger_release_does_not_drop() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true, 0))
-	controller._unhandled_input(touch(Vector2(600, 80), false, 1))
-	assert_signal_not_emitted(controller, "drop_requested")
-	controller._unhandled_input(touch(Vector2(300, 80), false, 0))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [300.0])
-
-func test_disabling_resets_aim_state() -> void:
-	watch_signals(controller)
-	controller._unhandled_input(touch(Vector2(300, 80), true))
-	controller.enabled = false
-	controller.enabled = true
-	# After a disable/enable cycle a new finger (any index) must aim cleanly
-	controller._unhandled_input(touch(Vector2(500, 90), true, 1))
-	controller._unhandled_input(touch(Vector2(500, 90), false, 1))
-	assert_signal_emitted_with_parameters(controller, "drop_requested", [500.0])
