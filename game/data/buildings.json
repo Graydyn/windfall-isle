@@ -68,7 +68,7 @@
 			"name": "Dock",
 			"flavor": "Every horizon needs somewhere to leave from.",
 			"description": "Opens expeditions to farther regions; higher levels cut their fuel cost.",
-			"max_level": 2,
+			"max_level": 4,
 			"levels": [
 				{
 					"cost": {
@@ -82,6 +82,14 @@
 						"cloudsilk": 4
 					},
 					"build_seconds": 1800
+				},
+				{
+					"cost": {"scrap": 2000, "brasswork": 6},
+					"build_seconds": 7200
+				},
+				{
+					"cost": {"scrap": 4000, "rimeglass": 6},
+					"build_seconds": 14400
 				}
 			]
 		},

@@ -8,7 +8,9 @@
 		"provisions": 0,
 		"ballast": 0,
 		"wind_charm": 0,
-		"storm_oil": 0
+		"storm_oil": 0,
+		"rimeglass": 0,
+		"stormglass": 0
 	},
 	"fuel": {
 		"starting": 5,

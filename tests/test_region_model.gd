@@ -64,11 +64,13 @@ func test_selected_id_reads_the_save_and_falls_back() -> void:
 
 func test_shipped_run_defs_carry_both_regions() -> void:
 	var regions: Array = DataDefs.run.get("regions", [])
-	assert_eq(regions.size(), 2)
+	assert_eq(regions.size(), 4)
 	assert_eq(String((regions[0] as Dictionary)["id"]), "region_1")
 	assert_eq(String((regions[1] as Dictionary)["id"]), "region_2")
 	assert_eq(int((regions[1] as Dictionary)["fuel_cost"]), 2)
 	assert_eq(int((regions[1] as Dictionary)["min_dock_level"]), 1)
+	assert_eq(String((regions[2] as Dictionary)["id"]), "region_3")
+	assert_eq(String((regions[3] as Dictionary)["id"]), "region_4")
 
 func test_selected_id_tolerates_a_wrong_typed_expedition_section() -> void:
 	assert_eq(RegionModel.selected_id({"expedition": "region_2"}, RUN_DEFS, island_with_dock(2)), "region_1",
