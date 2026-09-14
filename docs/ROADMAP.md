@@ -1,7 +1,7 @@
 # Windfall Isles: Pending Work
 
-**As of:** 2026-09-14, branch worktree-plan-13-gizmo-rarities (Plan 13 pending merge), full suite green.
-**State:** Plans 1-9 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
+**As of:** 2026-09-14, main at 3491a83 (Plan 13 merged), full suite green.
+**State:** Plans 1-13 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
 
 The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md) (section 3.2's launch-time fuel spend carries a Plan 9 errata). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
 
