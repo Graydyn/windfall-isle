@@ -1,0 +1,12 @@
+{
+	"name": "Hazard Test",
+	"board": {"left": 20, "right": 700, "top": 140, "bottom": 1020},
+	"pegs": [
+		{"x": 200, "y": 500, "r": 14, "type": "ice"},
+		{"x": 500, "y": 500, "r": 14, "type": "storm"}
+	],
+	"gizmo_slots": [],
+	"barges": [
+		{"id": "catch_all", "x": 360, "y": 900, "half_width": 340, "half_height": 25, "payout": {"scrap": 12}}
+	]
+}

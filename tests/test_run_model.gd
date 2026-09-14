@@ -248,3 +248,13 @@ func test_same_type_boon_multipliers_compose_with_maxf() -> void:
 	model.add_boon("big_sea", defs)
 	model.add_boon("small_sea", defs)
 	assert_eq(model.sea_boon_multiplier(), 3.0)
+
+func test_empty_payout_resolution_spends_the_drop_without_loot() -> void:
+	var model := RunModel.new({"drops_per_run": 8, "max_active_pods": 4,
+		"quota_tiers": [{"scrap_quota": 5, "payout_multiplier": 1.5}]})
+	model.begin_drop()
+	model.resolve_pod({})
+	assert_eq(model.pods_in_flight, 0, "a consumed pod is resolved, not leaked")
+	assert_eq(model.tier, 0, "a consumed pod lifts no tier")
+	assert_true(model.loot.is_empty())
+	assert_eq(model.drops_remaining(), 7, "the drop is spent")

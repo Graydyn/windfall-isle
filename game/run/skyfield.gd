@@ -41,6 +41,17 @@ func _build_walls(board: Dictionary) -> void:
 
 func _build_pegs(pegs: Array) -> void:
 	for peg in pegs:
+		var type := String((peg as Dictionary).get("type", ""))
+		if type == "storm":
+			var storm := StormPeg.new()
+			storm.setup(peg as Dictionary)
+			storm.body_entered.connect(_on_storm_peg_body)
+			$Pegs.add_child(storm)
+			continue
+		if type != "" and type != "ice":
+			# Fail-open authoring guard: a typo costs the hazard, not the board.
+			push_warning("Region JSON has unknown peg type '%s'; building a normal peg" % type)
+			type = ""
 		var body := StaticBody2D.new()
 		body.add_to_group("pegs")
 		body.position = Vector2(float(peg["x"]), float(peg["y"]))
@@ -52,8 +63,26 @@ func _build_pegs(pegs: Array) -> void:
 		var visual := Polygon2D.new()
 		visual.polygon = Geometry.circle_points(shape.radius)
 		visual.color = Color(0.55, 0.6, 0.7)
+		if type == "ice":
+			# Ice peg (spec 3.4 hazard): absorbent + zero bounce subtracts the
+			# pod's own restitution during combination, so contact drops dead.
+			var material := PhysicsMaterial.new()
+			material.bounce = 0.0
+			material.absorbent = true
+			body.physics_material_override = material
+			visual.color = Color(0.7, 0.85, 0.95)
 		body.add_child(visual)
 		$Pegs.add_child(body)
+
+
+func _on_storm_peg_body(body: Node2D) -> void:
+	# Same guard set as _on_catcher_body: only live, unresolved pods count.
+	if not (body is RigidBody2D):
+		return
+	if body.has_meta("caught"):
+		return
+	body.set_meta("caught", true)
+	pod_caught.emit(body, {}, "storm")
 
 
 static func duplicate_barge_ids(barges: Array) -> Array:
