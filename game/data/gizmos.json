@@ -10,9 +10,15 @@
 		"splitter_vane": 1
 	},
 	"craft_max_level": 5,
+	"rarity_unlocks": {
+		"common": 1,
+		"uncommon": 2,
+		"rare": 3
+	},
 	"defs": {
 		"wind_fan": {
 			"name": "Wind Fan",
+			"rarity": "common",
 			"scene": "res://game/run/gizmos/wind_fan.tscn",
 			"force": 260.0,
 			"direction": 1.0,
@@ -23,6 +29,7 @@
 		},
 		"balloon_cluster": {
 			"name": "Balloon Cluster",
+			"rarity": "common",
 			"scene": "res://game/run/gizmos/balloon_cluster.tscn",
 			"impulse": 420.0,
 			"max_hits": 3,
@@ -32,6 +39,7 @@
 		},
 		"crystal_prism": {
 			"name": "Crystal Prism",
+			"rarity": "uncommon",
 			"scene": "res://game/run/gizmos/crystal_prism.tscn",
 			"multiplier": 1.5,
 			"radius": 30.0,
@@ -40,6 +48,7 @@
 		},
 		"lightning_jar": {
 			"name": "Lightning Jar",
+			"rarity": "uncommon",
 			"scene": "res://game/run/gizmos/lightning_jar.tscn",
 			"zone_radius": 24.0,
 			"zap_radius": 150.0,
@@ -51,6 +60,7 @@
 		},
 		"chime_bell": {
 			"name": "Chime Bell",
+			"rarity": "uncommon",
 			"scene": "res://game/run/gizmos/chime_bell.tscn",
 			"radius": 26.0,
 			"barge_multiplier": 2.0,
@@ -60,6 +70,7 @@
 		},
 		"magnet_buoy": {
 			"name": "Magnet Buoy",
+			"rarity": "common",
 			"scene": "res://game/run/gizmos/magnet_buoy.tscn",
 			"radius": 160.0,
 			"force": 240.0,
@@ -68,6 +79,7 @@
 		},
 		"cargo_net": {
 			"name": "Cargo Net",
+			"rarity": "common",
 			"scene": "res://game/run/gizmos/cargo_net.tscn",
 			"radius": 34.0,
 			"hold_seconds": 0.8,
@@ -80,6 +92,7 @@
 		},
 		"splitter_vane": {
 			"name": "Splitter Vane",
+			"rarity": "rare",
 			"scene": "res://game/run/gizmos/splitter_vane.tscn",
 			"radius": 24.0,
 			"value_multiplier": 0.5,
@@ -88,6 +101,7 @@
 		},
 		"gyro_damper": {
 			"name": "Gyro Damper",
+			"rarity": "rare",
 			"scene": "res://game/run/gizmos/gyro_damper.tscn",
 			"field_radius": 140.0,
 			"craft_cost": {"parts": 5, "brasswork": 2},
@@ -95,6 +109,7 @@
 		},
 		"piston_kicker": {
 			"name": "Piston Kicker",
+			"rarity": "rare",
 			"scene": "res://game/run/gizmos/piston_kicker.tscn",
 			"force": 520.0,
 			"direction": 1.0,
