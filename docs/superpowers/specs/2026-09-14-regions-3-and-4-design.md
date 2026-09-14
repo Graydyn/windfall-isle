@@ -88,7 +88,7 @@ No structural UI work: the region cyclers, salvage_run scene, setup phase, and k
 - **RunModel:** empty-payout resolution keeps tier math and drop accounting honest (no tier lift from a consumed pod).
 - **Dock/regions:** RegionModel gating truth table for dock levels 0-4 across all four regions; fuel cost and reduction values.
 - **Gizmos:** Sleet Sail (gravity_scale halves inside, restores on exit, width scales with level), Gale Vent (one kick per pod per vent, impulse scales with level, caught pods ignored), rarity tier table pin extended to 12 entries, real-contact proof each.
-- **Economy:** new currencies present in starting_balances and backfilled onto an old save without a schema bump.
+- **Economy:** new currencies present in starting_balances; an old save missing the keys reads them as 0 through Economy.balance and gains them on first add (no schema bump, no migration).
 
 ## 8. Out of scope
 
