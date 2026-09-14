@@ -506,6 +506,10 @@ func _show_next_offer() -> void:
 	_pending_offers -= 1
 	_current_offer = BoonModel.offer((DataDefs.boons.get("defs", {}) as Dictionary).keys(), model.boons, _rng)
 	if _current_offer.is_empty():
+		# Exhausted pool (Plan 7 tripwire): nothing to offer, so close out the
+		# way a skip would; _close_offer drains any remaining queued offers and
+		# re-enables the controller when the run is not over.
+		_close_offer()
 		return
 	_offer_rerolled = false
 	controller.enabled = false
@@ -524,8 +528,8 @@ func _render_offer() -> void:
 		else:
 			button.visible = false
 	$UI/BoonOffer/VBox/RerollButton.text = "Reroll (free)" if _free_rerolls > 0 else "Reroll (ad)"
-	$UI/BoonOffer/VBox/RerollButton.visible = (_free_rerolls > 0 or Ads.service.is_available(AdService.Placement.BOON_REROLL)) \
-		and not _offer_rerolled
+	$UI/BoonOffer/VBox/RerollButton.visible = _has_reroll_candidates() and not _offer_rerolled \
+		and (_free_rerolls > 0 or Ads.service.is_available(AdService.Placement.BOON_REROLL))
 
 
 func _on_boon_picked(index: int) -> void:
@@ -566,7 +570,7 @@ func _close_offer() -> void:
 
 
 func _on_reroll_pressed() -> void:
-	if _offer_rerolled:
+	if _offer_rerolled or not _has_reroll_candidates():
 		return
 	if _free_rerolls > 0:
 		# Wind Charm (run-kit spec section 5): the free reroll consumes no ad
@@ -582,8 +586,9 @@ func _on_reroll_pressed() -> void:
 func _grant_reroll() -> void:
 	# One reroll per offer (spec 6 placement 5), granted at reward time. The
 	# current trio joins the exclusions so the redraw is always disjoint;
-	# the exclusion is per-reroll only, never permanent.
-	if _offer_rerolled:
+	# the exclusion is per-reroll only, never permanent. The candidate guard
+	# repeats here because the pool can be covered between show and grant.
+	if _offer_rerolled or not _has_reroll_candidates():
 		return
 	_offer_rerolled = true
 	var exclusions: Array = (model.boons as Array).duplicate()
@@ -592,3 +597,8 @@ func _grant_reroll() -> void:
 	if not redraw.is_empty():
 		_current_offer = redraw
 	_render_offer()
+
+
+func _has_reroll_candidates() -> bool:
+	return not BoonModel.reroll_candidates(
+		(DataDefs.boons.get("defs", {}) as Dictionary).keys(), model.boons, _current_offer).is_empty()

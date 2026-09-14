@@ -233,3 +233,18 @@ func test_scene_only_boons_record_without_magnitudes() -> void:
 	assert_true(model.has_boon("featherfall"))
 	assert_true(model.has_boon("second_wind"))
 	assert_eq(model.barge_boon_multiplier(), 1.0, "no payout magnitudes on scene-side boons")
+
+func test_same_type_boon_multipliers_compose_with_maxf() -> void:
+	var model := RunModel.new({"drops_per_run": 8, "max_active_pods": 4})
+	var defs := {"defs": {
+		"big_barge": {"barge_multiplier": 2.0},
+		"small_barge": {"barge_multiplier": 1.5},
+		"big_sea": {"sea_multiplier": 3.0},
+		"small_sea": {"sea_multiplier": 2.0},
+	}}
+	model.add_boon("small_barge", defs)
+	model.add_boon("big_barge", defs)
+	assert_eq(model.barge_boon_multiplier(), 2.0, "the strongest same-type boon wins; they never stack")
+	model.add_boon("big_sea", defs)
+	model.add_boon("small_sea", defs)
+	assert_eq(model.sea_boon_multiplier(), 3.0)

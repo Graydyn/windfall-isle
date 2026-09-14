@@ -52,3 +52,13 @@ func test_boon_magnitudes_are_data() -> void:
 	assert_eq(int((defs["spare_pods"] as Dictionary)["extra_drops"]), 2)
 	assert_eq(int((defs["heavy_loot"] as Dictionary)["bonus_scrap_per_catch"]), 2)
 	assert_almost_eq(float((defs["featherfall"] as Dictionary)["bounce_bonus"]), 0.2, 0.001)
+
+func test_reroll_candidates_excludes_taken_and_current() -> void:
+	var pool := ["a", "b", "c", "d", "e", "f"]
+	assert_eq(BoonModel.reroll_candidates(pool, ["a", "b"], ["c", "d", "e"]), ["f"])
+
+
+func test_reroll_candidates_empty_when_pool_covered() -> void:
+	var pool := ["a", "b", "c", "d"]
+	assert_eq(BoonModel.reroll_candidates(pool, ["a"], ["b", "c", "d"]), [],
+		"taken plus the current trio cover the pool: nothing to redraw")

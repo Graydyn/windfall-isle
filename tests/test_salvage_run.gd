@@ -361,3 +361,42 @@ func test_lens_array_multiplies_every_catch_payout() -> void:
 		"20 scrap x 1.05 lens bonus rounds to 21")
 	assert_eq(scene._compute_payout(null, {"scrap": 20}), {"scrap": 20},
 		"the before_each scene was built without a lens array and stays neutral")
+
+
+func test_queued_offer_exhaustion_reenables_the_controller() -> void:
+	var pool: Array = (DataDefs.boons.get("defs", {}) as Dictionary).keys()
+	# Leave exactly 3 boons untaken so the first offer succeeds.
+	for i in range(3, pool.size()):
+		scene.model.add_boon(String(pool[i]), DataDefs.boons)
+	scene._on_tier_reached(1)
+	assert_true(scene.get_node("UI/BoonOffer").visible)
+	assert_false(scene.controller.enabled)
+	scene._on_tier_reached(2)
+	for i in range(3):
+		scene.model.add_boon(String(pool[i]), DataDefs.boons)
+	scene._on_boon_picked(0)
+	assert_false(scene.get_node("UI/BoonOffer").visible,
+		"the queued empty draw must not leave the panel showing stale content")
+	assert_true(scene.controller.enabled,
+		"a queued offer exhausting the pool must not leave the controller locked (Plan 7 tripwire)")
+
+
+func test_reroll_hidden_when_pool_has_no_disjoint_candidate() -> void:
+	var pool: Array = (DataDefs.boons.get("defs", {}) as Dictionary).keys()
+	scene._current_offer = [pool[0], pool[1], pool[2]]
+	for i in range(3, pool.size()):
+		scene.model.add_boon(String(pool[i]), DataDefs.boons)
+	scene._render_offer()
+	assert_false(scene.get_node("UI/BoonOffer/VBox/RerollButton").visible,
+		"a reroll that cannot redraw anything is hidden (Plan 7 tripwire)")
+
+
+func test_reroll_press_with_no_candidates_consumes_nothing() -> void:
+	var pool: Array = (DataDefs.boons.get("defs", {}) as Dictionary).keys()
+	scene._current_offer = [pool[0], pool[1], pool[2]]
+	for i in range(3, pool.size()):
+		scene.model.add_boon(String(pool[i]), DataDefs.boons)
+	scene._free_rerolls = 1
+	scene._on_reroll_pressed()
+	assert_eq(scene._free_rerolls, 1, "the wind charm survives a pointless reroll press")
+	assert_false(scene._offer_rerolled)
