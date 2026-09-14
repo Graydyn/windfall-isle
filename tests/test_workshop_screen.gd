@@ -93,3 +93,43 @@ func test_unowned_recipe_row_is_labeled_and_craftable() -> void:
 func test_idle_rows_show_the_parts_cost() -> void:
 	var text: String = screen._gizmo_label_text("wind_fan", TimeUtil.now())
 	assert_string_contains(text, "2 parts", "the label shows the price the tap will pay")
+
+func test_locked_rarity_row_shows_requirement_and_no_button() -> void:
+	var text: String = screen._gizmo_label_text("crystal_prism", TimeUtil.now())
+	assert_string_contains(text, "Requires Workshop Lv 2")
+	var index: int = (DataDefs.gizmos["defs"] as Dictionary).keys().find("crystal_prism")
+	var row: HBoxContainer = screen.get_node("Rows").get_child(index) as HBoxContainer
+	assert_eq(row.get_child_count(), 1, "label only: no Craft button on a rarity-locked row")
+	assert_almost_eq((row.get_child(0) as Label).modulate.a, 0.5, 0.001, "locked rows render dimmed")
+
+func test_unlocked_idle_row_shows_its_rarity() -> void:
+	assert_string_contains(screen._gizmo_label_text("wind_fan", TimeUtil.now()), "[Common]")
+
+func test_locked_craft_press_is_refused() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 50
+	screen._on_craft_pressed("crystal_prism")
+	assert_false(TimerService.active_timers().has("craft_crystal_prism"),
+		"the model gate holds even if a Craft press sneaks through")
+
+func test_workshop_upgrade_is_structural_for_the_signature() -> void:
+	screen._refresh_tick()
+	var locked_signature: String = screen._last_signature
+	GameState.data["island"]["plots"]["plot_0"]["level"] = 2
+	screen._refresh_tick()
+	assert_ne(screen._last_signature, locked_signature,
+		"unlocking a rarity must rebuild rows, not just relabel them")
+
+func test_inflight_craft_on_a_now_locked_gizmo_still_collects() -> void:
+	GameState.data["island"]["plots"]["plot_0"]["level"] = 2
+	GameState.data["currencies"]["cloudsilk"] = 50
+	screen._rebuild()
+	screen._on_craft_pressed("crystal_prism")
+	GameState.data["island"]["plots"]["plot_0"]["level"] = 1
+	TimerService._state.data["timers"]["craft_crystal_prism"]["ends_at"] = 0
+	screen._rebuild()
+	var index: int = (DataDefs.gizmos["defs"] as Dictionary).keys().find("crystal_prism")
+	var row: HBoxContainer = screen.get_node("Rows").get_child(index) as HBoxContainer
+	assert_eq(row.get_child_count(), 2, "a grandfathered in-flight craft keeps its Collect! button")
+	screen._on_collect_pressed("crystal_prism")
+	assert_eq(int(GameState.data["gizmos"]["owned"]["crystal_prism"]), 1,
+		"the craft the player already paid for completes")
