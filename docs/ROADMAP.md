@@ -1,7 +1,7 @@
 # Windfall Isles: Pending Work
 
-**As of:** 2026-09-14, main at 3491a83 (Plan 13 merged), full suite green.
-**State:** Plans 1-13 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
+**As of:** 2026-09-14, branch worktree-plan-14-regions-3-and-4 (Plan 14 pending merge), full suite green.
+**State:** Plans 1-14 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
 
 The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md) (section 3.2's launch-time fuel spend carries a Plan 9 errata). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
 
@@ -18,11 +18,8 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - SHIPPED (Plan 13, spec: docs/superpowers/specs/2026-09-14-gizmo-rarities-design.md): static rarity per def (`rarity` + `rarity_unlocks` in gizmos.json), Workshop level gates crafting via CraftModel.rarity_unlocked (fail-closed on unknown rarities), starters shrunk to the four commons (existing saves grandfathered, still schema v8), workshop screen dims locked rows. Cargo Net rider landed: uses scale with level, relaunch speed no longer does. Future gizmos: add `rarity` to the def and extend the pinned tier table in tests/test_gizmo_rarity_defs.gd.
 
 ### Regions 3+
-- Now data-driven: a new `game/data/skyfields/region_N.json` plus a `regions` entry, and at most one new hazard implementation (storm pegs and ice pegs from spec 3.4 are unbuilt; drift currents exist). Dock max_level currently 2; a third region needs a Dock level or another unlock.
-- **Tripwire before any region ships 3+ quota tiers or the boon pool grows past six** (latent bugs, unreachable with shipped data, found by Plan 7's final review):
-  - `salvage_run._show_next_offer`'s empty-draw return leaves `controller.enabled` false when a queued offer finds the pool exhausted; re-enable when not over.
-  - `RunModel.add_boon`'s `maxf` composition of same-type multipliers is untested (only one barge and one sea booster exist today).
-- Region-authoring guards already in place: barge-id uniqueness validation, quota-tier row validation, ascending-quota warning, islet plot-id uniqueness.
+- Regions 3 and 4 SHIPPED (Plan 14, spec: docs/superpowers/specs/2026-09-14-regions-3-and-4-design.md): Rimefall Shallows (ice pegs, rimeglass, Dock Lv3, 3 quota tiers) and Stormglass Verge (storm pegs, stormglass, Dock Lv4, 3 tiers), plus the Plan 7 boon tripwire fixes (exhausted-pool offers close out and re-enable drops; pointless rerolls hide via BoonModel.reroll_candidates; maxf composition pinned). Peg hazards are data-driven ("type": "ice"/"storm" on peg rows; unknown types warn and build normal pegs). Two new rare gizmos: Sleet Sail (rimeglass) and Gale Vent (stormglass).
+- Region 5+ is JSON authoring plus at most one new hazard; a fuel-reduction row for region 4 wants a Dock Lv5 first. The remaining boon latency: growing the pool past six composes fine now, but only one barge and one sea booster exist in data.
 
 ### Design-doc open questions (fold into the island rework brainstorm)
 - Boon persistence as a late-game "expedition perks" tree (open question 1).
