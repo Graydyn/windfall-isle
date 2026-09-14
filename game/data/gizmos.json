@@ -2,12 +2,8 @@
 	"starting_inventory": {
 		"wind_fan": 1,
 		"balloon_cluster": 1,
-		"crystal_prism": 1,
-		"lightning_jar": 1,
-		"chime_bell": 1,
-		"magnet_buoy": 1,
 		"cargo_net": 1,
-		"splitter_vane": 1
+		"magnet_buoy": 1
 	},
 	"craft_max_level": 5,
 	"rarity_unlocks": {

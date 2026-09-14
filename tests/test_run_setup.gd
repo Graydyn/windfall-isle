@@ -167,6 +167,7 @@ func test_slot_token_carries_its_source_slot() -> void:
 	assert_eq(token._get_drag_data(Vector2.ZERO), {"gizmo": "wind_fan", "from_slot": "slot_2"})
 
 func test_saved_loadout_prefills_the_board() -> void:
+	GameState.data["gizmos"]["owned"]["chime_bell"] = 1
 	GizmoLoadout.set_slot(GameState.data["gizmos"], "region_1", "slot_3", "chime_bell")
 	var second = add_child_autofree(RunScene.instantiate())
 	var target := second.get_node("UI/SetupUI/SlotTargets").get_child(3) as SlotTarget

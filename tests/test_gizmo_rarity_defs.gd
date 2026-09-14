@@ -45,3 +45,13 @@ func test_tier_table_is_pinned() -> void:
 			String(expected[gizmo_id]), gizmo_id)
 	assert_eq((DataDefs.gizmos["defs"] as Dictionary).size(), expected.size(),
 		"a new gizmo must join this tier table deliberately")
+
+
+func test_starting_inventory_is_exactly_the_commons() -> void:
+	var starters: Dictionary = DataDefs.gizmos["starting_inventory"]
+	for gizmo_id in DataDefs.gizmos["defs"]:
+		var rarity := String(((DataDefs.gizmos["defs"] as Dictionary)[gizmo_id] as Dictionary).get("rarity", ""))
+		assert_eq(starters.has(gizmo_id), rarity == "common",
+			"%s: only commons are starters (Plan 13)" % gizmo_id)
+	for gizmo_id in starters:
+		assert_eq(int(starters[gizmo_id]), 1, "starters are granted at level 1")

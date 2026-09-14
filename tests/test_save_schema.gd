@@ -79,11 +79,11 @@ func test_migrate_v2_preserves_loadout() -> void:
 	var migrated := SaveSchema.migrate(v2, GIZMO_DEFS)
 	assert_eq(migrated["gizmos"]["loadout"], {"region_1": {"slot_0": "wind_fan"}})
 
-func test_current_version_is_eight_and_defaults_grant_eight() -> void:
+func test_current_version_is_eight_and_defaults_grant_the_commons() -> void:
 	assert_eq(SaveSchema.CURRENT_VERSION, 8)
 	var data := SaveSchema.default_data(DEFS, DataDefs.gizmos)
-	assert_eq((data["gizmos"]["owned"] as Dictionary).size(), 8,
-		"the brass gizmos are craft-to-acquire, never starters")
+	assert_eq((data["gizmos"]["owned"] as Dictionary).size(), 4,
+		"only common gizmos are starters; everything else is craft-to-acquire (Plan 13)")
 
 func test_default_data_has_v4_island_shape() -> void:
 	var data := SaveSchema.default_data(DEFS)
