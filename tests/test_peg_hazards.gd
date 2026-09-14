@@ -26,9 +26,9 @@ func test_ice_peg_builds_with_dead_bounce_material() -> void:
 	var board := build_board()
 	var ice: StaticBody2D = board.get_node("Pegs").get_child(0) as StaticBody2D
 	assert_not_null(ice.physics_material_override, "ice pegs carry their own material")
-	assert_eq(ice.physics_material_override.bounce, 0.0)
+	assert_eq(ice.physics_material_override.bounce, 1.0)
 	assert_true(ice.physics_material_override.absorbent,
-		"absorbent subtracts the peg's bounce during combination, deadening the pod's own material")
+		"absorbent subtracts the peg's full bounce during combination, deadening the pod's own restitution")
 
 
 func test_storm_peg_builds_as_area_in_group() -> void:

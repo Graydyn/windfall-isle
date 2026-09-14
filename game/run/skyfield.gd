@@ -64,10 +64,12 @@ func _build_pegs(pegs: Array) -> void:
 		visual.polygon = Geometry.circle_points(shape.radius)
 		visual.color = Color(0.55, 0.6, 0.7)
 		if type == "ice":
-			# Ice peg (spec 3.4 hazard): absorbent + zero bounce subtracts the
-			# pod's own restitution during combination, so contact drops dead.
+			# Ice peg (spec 3.4 hazard): absorbent negates the peg's own bounce
+			# in Godot's combine, so a FULL bounce of 1.0 subtracts the pod's
+			# 0.55 restitution to zero: clamp(0.55 - 1.0, 0, 1). A zero-bounce
+			# absorbent material would contribute nothing.
 			var material := PhysicsMaterial.new()
-			material.bounce = 0.0
+			material.bounce = 1.0
 			material.absorbent = true
 			body.physics_material_override = material
 			visual.color = Color(0.7, 0.85, 0.95)
