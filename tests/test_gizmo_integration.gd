@@ -55,6 +55,19 @@ func test_cargo_net_catches_holds_and_redrops_to_barge() -> void:
 	var net: GizmoBase = board.get_node("Gizmos").get_child(0)
 	assert_eq(net._uses_left, 0, "the net consumed its single use on the way down")
 
+func test_level_2_cargo_net_keeps_a_use_after_a_real_catch() -> void:
+	var board: Skyfield = add_child_autofree(SkyfieldScene.instantiate())
+	board.build(DataDefs.load_json("res://tests/fixtures/test_region_slot.json"), run_defs)
+	board.install_gizmos({"slot_0": "cargo_net"}, DataDefs.gizmos, {"cargo_net": 2}, self)
+	var pod: Pod = PodScene.instantiate()
+	pod.position = Vector2(360, 160)
+	pod.setup(run_defs["pod"])
+	board.add_child(pod)
+	var caught: bool = await wait_for_signal(board.pod_caught, 12.0)
+	assert_true(caught, "held, re-dropped, and still landed within 12s")
+	var net: GizmoBase = board.get_node("Gizmos").get_child(0)
+	assert_eq(net._uses_left, 1, "a level 2 net has a second catch left after one real contact")
+
 func test_splitter_through_the_real_scene_credits_two_half_pods() -> void:
 	GameState._io = SaveIO.new("user://test_gizmo_integration.json")
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)

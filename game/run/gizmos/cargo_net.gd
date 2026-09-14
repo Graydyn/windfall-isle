@@ -1,9 +1,11 @@
 class_name CargoNet
 extends GizmoBase
-## Cargo Net (spec 3.3): catches a falling pod once and re-drops it at a
-## chosen angle toward the board center. The hold Timer is a child of the net
-## (dies with the scene) and binds a weakref (survives the pod being freed),
-## per the project's timer-lifetime rule.
+## Cargo Net (spec 3.3): catches a falling pod and re-drops it at a chosen
+## angle toward the board center. Uses scale with level (Plan 13 rebalance:
+## the net's identity is extra passes through the peg field; relaunch speed
+## is level-independent). The hold Timer is a child of the net (dies with
+## the scene) and binds a weakref (survives the pod being freed), per the
+## project's timer-lifetime rule.
 
 var _uses_left := 0
 
@@ -11,7 +13,7 @@ var _uses_left := 0
 
 
 func _configure() -> void:
-	_uses_left = int(defs.get("uses", 1))
+	_uses_left = int(defs.get("uses", 1)) * level
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("radius", 34.0))
 	$Zone/Shape.shape = circle
@@ -45,11 +47,11 @@ func _release(pod_ref: WeakRef, hold: Timer) -> void:
 		return
 	pod.freeze = false
 	var angle := deg_to_rad(float(defs.get("redrop_angle_degrees", 60.0)))
-	var speed := scaled(float(defs.get("redrop_speed", 420.0)))
+	var speed := float(defs.get("redrop_speed", 420.0))
 	var direction := 1.0 if global_position.x < float(defs.get("board_center_x", 360.0)) else -1.0
 	pod.linear_velocity = Vector2(cos(angle) * speed * direction, -sin(angle) * speed)
 
 
 func recharge() -> void:
-	_uses_left = int(defs.get("uses", 1))
+	_uses_left = int(defs.get("uses", 1)) * level
 	$Visual.modulate.a = 1.0

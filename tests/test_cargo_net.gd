@@ -64,3 +64,30 @@ func test_recharge_restores_the_net() -> void:
 	net.recharge()
 	assert_eq(net._uses_left, int(DataDefs.gizmos["defs"]["cargo_net"]["uses"]))
 	assert_almost_eq(net.get_node("Visual").modulate.a, 1.0, 0.001)
+
+func make_net(level: int) -> Node:
+	var scaled_net = add_child_autofree(NetScene.instantiate())
+	scaled_net.position = Vector2(200, 500)
+	scaled_net.setup(net_defs, level, self)
+	return scaled_net
+
+func test_uses_scale_with_level() -> void:
+	assert_eq(make_net(2)._uses_left, 2, "uses = base uses x level (Plan 13 rebalance)")
+	assert_eq(make_net(5)._uses_left, 5)
+
+func test_recharge_restores_level_scaled_uses() -> void:
+	var lv3 = make_net(3)
+	lv3._uses_left = 0
+	lv3.get_node("Visual").modulate.a = 0.4
+	lv3.recharge()
+	assert_eq(lv3._uses_left, 3)
+	assert_almost_eq(lv3.get_node("Visual").modulate.a, 1.0, 0.001)
+
+func test_relaunch_speed_is_level_independent() -> void:
+	var lv5 = make_net(5)
+	var pod := make_pod()
+	lv5._on_body_entered(pod)
+	await wait_physics_frames(2)
+	lv5._release(weakref(pod), add_child_autofree(Timer.new()))
+	assert_almost_eq(pod.linear_velocity.length(), float(net_defs["redrop_speed"]), 1.0,
+		"level scaling moved from speed to uses; the relaunch speed is the raw defs value")
