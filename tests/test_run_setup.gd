@@ -269,7 +269,7 @@ func test_kit_panel_is_mouse_transparent_for_drops() -> void:
 func test_kit_panel_intersects_no_slot_target_in_any_region() -> void:
 	var panel: Control = scene.get_node("UI/SetupUI/KitPanel")
 	var panel_rect := Rect2(panel.position, panel.size)
-	for region_id in ["region_1", "region_2"]:
+	for region_id in ["region_1", "region_2", "region_3", "region_4"]:
 		var slots: Array = DataDefs.skyfield(region_id).get("gizmo_slots", [])
 		for slot_v in slots:
 			var slot := slot_v as Dictionary
