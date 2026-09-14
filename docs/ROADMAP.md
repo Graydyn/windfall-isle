@@ -1,6 +1,6 @@
 # Windfall Isles: Pending Work
 
-**As of:** 2026-09-07, main at 20b8820, 438/438 GUT tests green.
+**As of:** 2026-09-14, branch worktree-plan-13-gizmo-rarities (Plan 13 pending merge), full suite green.
 **State:** Plans 1-9 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
 
 The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md) (section 3.2's launch-time fuel spend carries a Plan 9 errata). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
@@ -15,8 +15,7 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - Direction settled 2026-09-07 (spec: docs/superpowers/specs/2026-09-07-crew-system-design.md, section 0): a closed bidirectional economy in three plans. Plan 10 (crew: rescued survivors staff buildings, rate seam CrewModel.multiplier_for): SHIPPED. Plan 11 (production chains): SHIPPED (spec: docs/superpowers/specs/2026-09-08-production-chains-design.md; parts and provisions currencies, Smeltery + Annex + Gardens batch recipes on the "convert" timer kind, all gizmo crafts repriced to parts, Annex discount retired). Plan 12 (run kit): SHIPPED (spec: docs/superpowers/specs/2026-09-09-run-kit-design.md; recipes arrays, three Balloonworks consumables, setup-phase kit panel, provisioning at 1.15x). The island rework arc is COMPLETE: every run resource feeds the island and every island output feeds the runs.
 
 ### Gizmo rarities (spec 3.3)
-- Rarity tiers beyond the current flat set; interacts with Workshop levels ("higher levels unlock higher rarities") and the craft-to-acquire flow from Plan 6.
-- Rider for any gizmo-balance work: the Cargo Net is the weakest gizmo (assessed 2026-08-26): one use per run, and its relaunch aims at board center, which in region 1 is the lowest-paying barge; its real value is an incidental second pass through the peg field. Candidate fixes: aim at the highest-value barge, scale uses (not speed) with level, or lean into the second-pass identity.
+- SHIPPED (Plan 13, spec: docs/superpowers/specs/2026-09-14-gizmo-rarities-design.md): static rarity per def (`rarity` + `rarity_unlocks` in gizmos.json), Workshop level gates crafting via CraftModel.rarity_unlocked (fail-closed on unknown rarities), starters shrunk to the four commons (existing saves grandfathered, still schema v8), workshop screen dims locked rows. Cargo Net rider landed: uses scale with level, relaunch speed no longer does. Future gizmos: add `rarity` to the def and extend the pinned tier table in tests/test_gizmo_rarity_defs.gd.
 
 ### Regions 3+
 - Now data-driven: a new `game/data/skyfields/region_N.json` plus a `regions` entry, and at most one new hazard implementation (storm pegs and ice pegs from spec 3.4 are unbuilt; drift currents exist). Dock max_level currently 2; a third region needs a Dock level or another unlock.
@@ -63,8 +62,8 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 
 ## Environment and process (for whoever picks this up)
 
-- Godot binary: `/Applications/Godot-4.6.app/Contents/MacOS/Godot` (4.6.3; brew ships 4.7 which GUT 9.6.1 does not support; never use `/Applications/Godot.app`).
-- Test command (must exit 0): `$GODOT --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit`
+- Godot binary: `godot` on PATH (4.7.1) runs the suite fine with the vendored GUT 9.6.1; the old 4.6.3-only note is obsolete. `/Applications/Godot-4.6.app/Contents/MacOS/Godot` remains available if a regression ever appears.
+- Test command (must exit 0): `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit`
 - Run `$GODOT --headless --import` after adding files; commit `.gd.uid` sidecars (and `.import` files for assets).
 - Repo disciplines that repeatedly mattered: raw JSON floats with `int()`/`float()` casts at use and assert sites (never normalize in DataDefs); injected clocks (`now: int`) and injected RNG (seeded `RandomNumberGenerator`); mass-respecting forces only; `has_meta("caught")` early returns in contact gizmos; `add_child.call_deferred` inside physics flushes; UI tests call handlers directly and never press scene-changing buttons; Control drag-and-drop chips need `MOUSE_FILTER_PASS` (STOP blocks the drop-target ancestor walk, and headless direct-handler tests cannot see it).
 - Session memory for the AI-assisted workflow lives outside the repo (auto-memory); this file is the repo-resident source of truth for pending work.
