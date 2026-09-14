@@ -110,3 +110,48 @@ func test_splitter_splits_on_real_contact_without_errors() -> void:
 	assert_eq(get_tree().get_nodes_in_group("pods").size(), 2,
 		"a real falling pod through the vane must split without engine errors")
 	assert_eq(scene.model.pods_in_flight, 2)
+
+func test_sleet_sail_slows_a_real_drop_and_restores_gravity() -> void:
+	var board: Skyfield = add_child_autofree(SkyfieldScene.instantiate())
+	board.build(DataDefs.load_json("res://tests/fixtures/test_region_slot.json"), run_defs)
+	board.install_gizmos({"slot_0": "sleet_sail"}, DataDefs.gizmos, {"sleet_sail": 1}, self)
+	var pod: Pod = PodScene.instantiate()
+	pod.position = Vector2(360, 160)
+	pod.setup(run_defs["pod"])
+	board.add_child(pod)
+	var slowed := false
+	var restored := false
+	for i in 240:
+		await wait_physics_frames(1)
+		if not is_instance_valid(pod) or pod.has_meta("caught"):
+			break
+		if not slowed and is_equal_approx(pod.gravity_scale, 0.5):
+			slowed = true
+		elif slowed and is_equal_approx(pod.gravity_scale, 1.0):
+			restored = true
+			break
+	assert_true(slowed, "the falling pod entered the column at half gravity")
+	assert_true(restored, "gravity came back once the pod left the column")
+
+
+func test_gale_vent_kicks_a_real_drop_once() -> void:
+	var board: Skyfield = add_child_autofree(SkyfieldScene.instantiate())
+	board.build(DataDefs.load_json("res://tests/fixtures/test_region_slot.json"), run_defs)
+	board.install_gizmos({"slot_0": "gale_vent"}, DataDefs.gizmos, {"gale_vent": 1}, self)
+	var vent: GizmoBase = board.get_node("Gizmos").get_child(0)
+	var meta_key := "gale_vented_%d" % vent.get_instance_id()
+	var pod: Pod = PodScene.instantiate()
+	pod.position = Vector2(360, 160)
+	pod.setup(run_defs["pod"])
+	board.add_child(pod)
+	var kicked := false
+	for i in 240:
+		await wait_physics_frames(1)
+		if not is_instance_valid(pod):
+			break
+		if pod.has_meta(meta_key):
+			kicked = true
+			break
+	assert_true(kicked, "real contact triggers the vent exactly once, without engine errors")
+	var caught: bool = await wait_for_signal(board.pod_caught, 12.0)
+	assert_true(caught, "the kicked pod still lands within 12s")

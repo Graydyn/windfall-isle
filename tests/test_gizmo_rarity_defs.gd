@@ -39,6 +39,8 @@ func test_tier_table_is_pinned() -> void:
 		"splitter_vane": "rare",
 		"gyro_damper": "rare",
 		"piston_kicker": "rare",
+		"sleet_sail": "rare",
+		"gale_vent": "rare",
 	}
 	for gizmo_id in expected:
 		assert_eq(String(((DataDefs.gizmos["defs"] as Dictionary)[gizmo_id] as Dictionary).get("rarity", "")),

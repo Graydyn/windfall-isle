@@ -112,6 +112,31 @@
 			"radius": 24.0,
 			"craft_cost": {"parts": 4, "brasswork": 1},
 			"craft_seconds": 300
+		},
+		"sleet_sail": {
+			"name": "Sleet Sail",
+			"rarity": "rare",
+			"scene": "res://game/run/gizmos/sleet_sail.tscn",
+			"column_width": 80.0,
+			"column_height": 420.0,
+			"gravity_factor": 0.5,
+			"craft_cost": {
+				"parts": 5,
+				"rimeglass": 2
+			},
+			"craft_seconds": 480
+		},
+		"gale_vent": {
+			"name": "Gale Vent",
+			"rarity": "rare",
+			"scene": "res://game/run/gizmos/gale_vent.tscn",
+			"radius": 28.0,
+			"impulse": 380.0,
+			"craft_cost": {
+				"parts": 5,
+				"stormglass": 2
+			},
+			"craft_seconds": 480
 		}
 	}
 }
