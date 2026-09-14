@@ -78,6 +78,7 @@ func test_tick_rebuilds_when_a_craft_finishes() -> void:
 		"done is structural: the Collect! button must appear")
 
 func test_unowned_recipe_row_is_labeled_and_craftable() -> void:
+	GameState.data["island"]["plots"]["plot_0"]["level"] = 3
 	GameState.data["currencies"]["brasswork"] = 2
 	screen._rebuild()
 	assert_string_contains(screen._gizmo_label_text("gyro_damper", TimeUtil.now()), "(not owned)")

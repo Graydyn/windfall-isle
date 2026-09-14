@@ -15,6 +15,19 @@ static func active_crafts(timers: Node) -> int:
 	return count
 
 
+static func rarity_unlocked(island: Dictionary, gizmo_defs: Dictionary, gizmo_id: String) -> bool:
+	# Rarity is an acquisition gate keyed to Workshop level (Plan 13, spec
+	# 3.3). Fail-closed authoring guard: a def whose rarity is missing or
+	# absent from rarity_unlocks cannot be crafted.
+	var def: Dictionary = (gizmo_defs.get("defs", {}) as Dictionary).get(gizmo_id, {})
+	var rarity := String(def.get("rarity", ""))
+	var unlocks: Dictionary = gizmo_defs.get("rarity_unlocks", {})
+	if not unlocks.has(rarity):
+		push_warning("Gizmo '%s' has missing or unknown rarity '%s'; crafting locked" % [gizmo_id, rarity])
+		return false
+	return IslandModel.building_level(island, "workshop") >= int(unlocks[rarity])
+
+
 static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, timers: Node, gizmo_id: String) -> bool:
 	if craft_slots(data.get("island", {})) <= 0:
 		return false
@@ -24,6 +37,8 @@ static func can_craft(data: Dictionary, gizmo_defs: Dictionary, economy: Node, t
 		return false
 	var def: Dictionary = (gizmo_defs.get("defs", {}) as Dictionary).get(gizmo_id, {})
 	if def.is_empty():
+		return false
+	if not rarity_unlocked(data.get("island", {}), gizmo_defs, gizmo_id):
 		return false
 	# Craft-to-acquire (spec 3.3): unowned recipes craft at level 0 -> 1;
 	# resources (worked parts and regional materials) are the gate, not

@@ -29,10 +29,10 @@ func test_flywheel_build_craft_upgrade_with_fake_clock() -> void:
 	t += 61
 	IslandModel.complete_build(island, timers.collect("build_plot_0", t), state.data, t)
 	assert_eq(IslandModel.building_level(island, "workshop"), 1)
-	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "splitter_vane", t))
-	t += 361
-	CraftModel.complete_craft(state.data, timers.collect("craft_splitter_vane", t))
-	assert_eq(int(state.data["gizmos"]["owned"]["splitter_vane"]), 2,
+	assert_true(CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", t))
+	t += 121
+	CraftModel.complete_craft(state.data, timers.collect("craft_wind_fan", t))
+	assert_eq(int(state.data["gizmos"]["owned"]["wind_fan"]), 2,
 		"the flywheel: runs feed the base, the base upgrades the board (spec 5)")
 
 func test_wind_still_completion_raises_effective_fuel() -> void:

@@ -61,6 +61,7 @@ func test_unknown_gizmo_id_cannot_be_crafted() -> void:
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "no_such_gizmo"))
 
 func test_brasswork_gates_the_brass_recipes() -> void:
+	(state.data["island"]["plots"]["plot_0"] as Dictionary)["level"] = 3
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "gyro_damper"),
 		"50 parts but zero brasswork: locked")
 	state.data["currencies"]["brasswork"] = 2
@@ -89,3 +90,54 @@ func test_crafts_cost_parts_not_scrap() -> void:
 		"5000 scrap buys nothing at the workshop anymore")
 	state.data["currencies"]["parts"] = 2
 	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan"))
+
+
+func test_rarity_gates_follow_workshop_level() -> void:
+	state.data["currencies"]["brasswork"] = 5
+	var expectations := {
+		1: {"wind_fan": true, "crystal_prism": false, "splitter_vane": false},
+		2: {"wind_fan": true, "crystal_prism": true, "splitter_vane": false},
+		3: {"wind_fan": true, "crystal_prism": true, "splitter_vane": true},
+	}
+	for level in expectations:
+		(state.data["island"]["plots"]["plot_0"] as Dictionary)["level"] = level
+		var expected: Dictionary = expectations[level]
+		for gizmo_id in expected:
+			assert_eq(CraftModel.rarity_unlocked(state.data["island"], DataDefs.gizmos, String(gizmo_id)),
+				bool(expected[gizmo_id]),
+				"workshop lv %d vs %s" % [int(level), String(gizmo_id)])
+
+
+func test_locked_rarity_blocks_can_craft_even_when_affordable() -> void:
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "crystal_prism"),
+		"a level 1 workshop cannot craft uncommons no matter the balance")
+	(state.data["island"]["plots"]["plot_0"] as Dictionary)["level"] = 2
+	assert_true(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "crystal_prism"))
+
+
+func test_unknown_rarity_fails_closed_with_a_warning() -> void:
+	var defs := {
+		"defs": {"mystery": {"rarity": "mythic", "craft_cost": {"parts": 1}, "craft_seconds": 60}},
+		"rarity_unlocks": {"common": 1},
+		"craft_max_level": 5,
+	}
+	assert_false(CraftModel.rarity_unlocked(state.data["island"], defs, "mystery"),
+		"authoring errors lock the recipe, never open it")
+	assert_push_warning_count(1)
+
+
+func test_missing_rarity_fails_closed_with_a_warning() -> void:
+	var defs := {
+		"defs": {"legacy": {"craft_cost": {"parts": 1}, "craft_seconds": 60}},
+		"rarity_unlocks": {"common": 1},
+		"craft_max_level": 5,
+	}
+	assert_false(CraftModel.rarity_unlocked(state.data["island"], defs, "legacy"))
+	assert_push_warning_count(1)
+
+
+func test_owned_but_locked_gizmo_still_cannot_craft() -> void:
+	state.data["gizmos"]["owned"]["splitter_vane"] = 2
+	state.data["currencies"]["cloudsilk"] = 50
+	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "splitter_vane"),
+		"grandfathered ownership never unlocks CRAFTING below the rarity's workshop level")
