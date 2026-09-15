@@ -1,7 +1,7 @@
 # Windfall Isles: Pending Work
 
-**As of:** 2026-09-14, branch worktree-plan-14-regions-3-and-4 (Plan 14 pending merge), full suite green.
-**State:** Plans 1-14 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Two regions, ten gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
+**As of:** 2026-09-15, main at 913e4af (Plan 14 merged), full suite green.
+**State:** Plans 1-14 merged. MVP (Plans 1-5), Region 2 "Brasswork Reach" (Plan 6), Boons (Plan 7), Island Expansion + Vignettes (Plan 8, schema v7), and the drag-and-drop gizmo setup phase (Plan 9: placement happens over the real board inside the run scene, fuel is spent on Start, the loadout screen is gone). Four regions, twelve gizmos, six boons, two restorable islets with two islet-exclusive buildings, four retention hooks with local-notification logic, five rewarded-ad placements behind the AdService seam, Android export scaffolding.
 
 The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](design/2026-08-15-windfall-isles-design.md) (section 3.2's launch-time fuel spend carries a Plan 9 errata). Post-MVP feature specs live in [docs/superpowers/specs/](superpowers/specs/), implementation plans in [docs/superpowers/plans/](superpowers/plans/). The established cadence per feature: brainstorm scope with the owner, write a spec, write a plan, execute subagent-driven in a worktree, merge on a clean final review.
 
@@ -42,7 +42,7 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - **Accumulated hardening list that MUST ride along** (parked across Plans 5-7 because GrantAdService grants synchronously):
   - Grant callbacks assume synchronous grants: with real async ads, a scene change between request and grant leaves dangling callables (fuel refill on main, payout double and boon reroll on salvage_run, skips/bonus crate on island/workshop). The AdMob seam implementation must survive or cancel grants across scene changes.
   - Skip-button availability sits outside the island/workshop refresh signature: if `is_available` flips mid-session, row skip buttons will not appear/disappear until the next structural rebuild (the standalone buttons already refresh per tick).
-  - The boon reroll can consume a grant with no effect when taken boons + the current trio cover the whole pool; hide the reroll when no disjoint candidate exists.
+  - FIXED in Plan 14: the boon reroll now hides when no disjoint candidate exists and the grant path no-ops; the only residual window is an async ad watched while the pool becomes covered mid-request (the grant no-ops, the ad was still watched).
 
 ### Notification plugin vendoring (Android build step)
 - Vendor cengiz-pz notification-scheduler and implement a plugin-backed `NotificationScheduler`; the seam (`schedule/cancel_all/request_permission`), the pure planner, and the permission-once flow are done and tested. Selection at boot mirrors Ads.
