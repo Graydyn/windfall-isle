@@ -27,10 +27,10 @@
 		{"x": 360, "y": 800, "half_width": 220, "half_height": 80, "force": 220.0, "direction": -1.0}
 	],
 	"barges": [
-		{"id": "far_left", "x": 90, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 14}},
-		{"id": "left", "x": 225, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 6}},
+		{"id": "far_left", "art": "fanciest", "x": 90, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 14}},
+		{"id": "left", "art": "fancier", "x": 225, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 6}},
 		{"id": "center", "x": 360, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 3}},
-		{"id": "right", "x": 495, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 6, "brasswork": 1}},
-		{"id": "far_right", "x": 630, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 10, "brasswork": 2}}
+		{"id": "right", "art": "fancier", "x": 495, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 6, "brasswork": 1}},
+		{"id": "far_right", "art": "fanciest", "x": 630, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 10, "brasswork": 2}}
 	]
 }

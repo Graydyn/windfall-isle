@@ -69,10 +69,10 @@
 		{"x": 470, "y": 180}
 	],
 	"barges": [
-		{"id": "far_left", "x": 90, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 20}},
-		{"id": "left", "x": 225, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 9}},
+		{"id": "far_left", "art": "fanciest", "x": 90, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 20}},
+		{"id": "left", "art": "fancier", "x": 225, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 9}},
 		{"id": "center", "x": 360, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 4}},
-		{"id": "right", "x": 495, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 9, "rimeglass": 1}},
-		{"id": "far_right", "x": 630, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 14, "rimeglass": 2}}
+		{"id": "right", "art": "fancier", "x": 495, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 9, "rimeglass": 1}},
+		{"id": "far_right", "art": "fanciest", "x": 630, "y": 1060, "half_width": 50, "half_height": 25, "payout": {"scrap": 14, "rimeglass": 2}}
 	]
 }

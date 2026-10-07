@@ -113,15 +113,29 @@ func _build_barges(barges: Array) -> void:
 		shape.size = half * 2.0
 		collider.shape = shape
 		area.add_child(collider)
-		var visual := Polygon2D.new()
-		visual.polygon = PackedVector2Array([
-			Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
-			Vector2(half.x, half.y), Vector2(-half.x, half.y),
-		])
-		visual.color = Color(0.35, 0.55, 0.4)
-		area.add_child(visual)
-		area.body_entered.connect(_on_catcher_body.bind((barge.get("payout", {}) as Dictionary).duplicate(), "barge"))
+		area.add_child(_barge_visual(String(barge.get("art", "")), half))
+		area.body_entered.connect(_on_catcher_body.bind((barge.get("payout", {}) as Dictionary).duplicate(), "barge", area))
 		$Barges.add_child(area)
+
+
+func _barge_visual(art: String, half: Vector2) -> Node2D:
+	# Barge sprites are authored 100x100 with the hull in the lower half, so the
+	# balloons float above the catch rect while the hull spans it. The "art"
+	# tier lets high-payout barges look richer (audit 1.3); anything without a
+	# matching sprite falls back to the old placeholder rectangle.
+	var path := "res://game/assets/sprites/barge%s.png" % ("_" + art if art != "" else "")
+	if ResourceLoader.exists(path):
+		var sprite := Sprite2D.new()
+		sprite.texture = load(path)
+		sprite.scale = Vector2.ONE * (half.x / 50.0)
+		return sprite
+	var visual := Polygon2D.new()
+	visual.polygon = PackedVector2Array([
+		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
+		Vector2(half.x, half.y), Vector2(-half.x, half.y),
+	])
+	visual.color = Color(0.35, 0.55, 0.4)
+	return visual
 
 
 func _build_sea(board: Dictionary) -> void:
@@ -171,10 +185,23 @@ func install_gizmos(loadout: Dictionary, gizmo_defs: Dictionary, owned: Dictiona
 		gizmo.setup(def, int(owned.get(gizmo_id, 1)), context)
 
 
-func _on_catcher_body(body: Node2D, payout: Dictionary, source: String) -> void:
+func _on_catcher_body(body: Node2D, payout: Dictionary, source: String, catcher: CanvasItem = null) -> void:
 	if not (body is RigidBody2D):
 		return
 	if body.has_meta("caught"):
 		return
 	body.set_meta("caught", true)
+	if catcher != null:
+		_flash(catcher)
 	pod_caught.emit(body, payout.duplicate(), source)
+
+
+func _flash(item: CanvasItem) -> void:
+	# Catch feedback: over-brighten the catcher, then ease back. Modulate above
+	# white is Godot's no-spritesheet flash; the tween is owned by the item so
+	# it dies with the board. Restarting from WHITE keeps rapid double catches
+	# reading as two distinct flashes instead of compounding.
+	item.modulate = Color.WHITE
+	var tween := item.create_tween()
+	tween.tween_property(item, "modulate", Color(2.5, 2.5, 2.5), 0.06)
+	tween.tween_property(item, "modulate", Color.WHITE, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

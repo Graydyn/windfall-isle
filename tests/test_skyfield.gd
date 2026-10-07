@@ -103,6 +103,18 @@ func test_pod_caught_carries_source_tag() -> void:
 	var params: Array = get_signal_parameters(board, "pod_caught")
 	assert_eq(params[2], "barge")
 
+func test_barge_flashes_on_catch() -> void:
+	var board := build_board(DataDefs.load_json("res://tests/fixtures/test_region.json"))
+	var barge: Area2D = board.get_node("Barges").get_child(0)
+	assert_eq(barge.modulate, Color.WHITE, "barge starts unmodulated")
+	drop_pod_over(board, 360.0)
+	var emitted: bool = await wait_for_signal(board.pod_caught, 5.0)
+	assert_true(emitted)
+	await wait_physics_frames(2)
+	assert_gt(barge.modulate.r, 1.0, "catch over-brightens the barge")
+	await wait_seconds(0.6)
+	assert_almost_eq(barge.modulate.r, 1.0, 0.01, "flash settles back to white")
+
 func test_pegs_join_pegs_group() -> void:
 	var board := build_board(DataDefs.skyfield("region_1"))
 	var first_peg: Node = board.get_node("Pegs").get_child(0)
