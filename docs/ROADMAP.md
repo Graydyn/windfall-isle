@@ -32,7 +32,8 @@ The binding design doc is [docs/design/2026-08-15-windfall-isles-design.md](desi
 - Nothing researched (design doc open question 2). Needs direction before any implementation.
 
 ### Art pass (external image-agent pipeline)
-- The complete image-agent brief is `docs/art/placeholder-graphics-audit.md` (NOTE: currently untracked in git; commit it or keep it wherever the art pipeline lives). Written against the MVP; before running the pipeline, extend it with: region 2 visuals (gear-ring pegs, drift-zone haze, brass barges), the Gyro Damper and Piston Kicker sprites, boon offer icons, BoonOffer panel theming, Plan 8's islet and letter-panel visuals, and Plan 9's setup-phase chrome (slot outlines, tray chips, drag preview). Whatever Phase A adds extends it further.
+- The complete image-agent brief is `docs/art/placeholder-graphics-audit.md`, re-audited 2026-10-07 against Plans 1-14 (4 regions, 12 gizmos with rarity frames, 9 buildings, islets and letters, crew portraits, boons, run-kit consumables, setup-phase chrome). Whatever later Phase A work adds extends it further.
+- First assets delivered: three barge tiers (`barge.png`, `barge_fancier.png`, `barge_fanciest.png`, currently at the repo root, 1x, not yet imported or wired). See audit section 1.3 for fit notes.
 - Wiring delivered art into scenes (Polygon2D to Sprite2D swaps, backgrounds, UI theme) is a separate code plan once assets exist.
 - Small UI polish parked for this pass (Plan 8 final review): LetterPanel body needs a ScrollContainer for long letters; locked islet rows should render dimmed; maxed gizmos still show a craft cost in the workshop.
 
