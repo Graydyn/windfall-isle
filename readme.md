@@ -1,0 +1,1 @@
+/Applications/Godot-4.6.app/Contents/MacOS/Godot --path .
