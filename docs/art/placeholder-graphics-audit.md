@@ -1,6 +1,7 @@
 # Placeholder Graphics Audit
 
 **Date:** 2026-10-07 (replaces the 2026-08-16 MVP audit)
+**Wiring status (2026-10-08):** first wiring pass done for the delivered `game/art/` batch. Wired: run board (pod + split pod, drop marker, airship strip, slot sockets + hover, survivor raft, region peg variants, ice/storm pegs, storm-swallow puff, material barge pennants), all 12 gizmo sprites with spent variants and direction flips, building modal illustrations, islet thumbnails, letter panel + seals, crew portraits, region emblem on the region button, boon offer icons, crate/build-slot button icons, sprite drag previews. Delivered but NOT yet wired: currency/material/kit icons (text rows need an icon layout), rarity frames, zap arc / gale puff / piston-extended effect frames, region locked overlay, ui/panel.png + button.png + boon_card.png (theme pass), construction overlay. Not yet delivered: region backgrounds, cloud sea band, field/column overlays, app icon, island vista.
 **Codebase state:** main at f6f5e0b, Plans 1-14 merged: 4 regions, 12 gizmos, 9 buildings, 2 islets, 8 crew, 6 boons, 3 run-kit consumables, 11 balances + fuel.
 **Purpose:** Complete inventory of every visual the game needs, written as a brief for the image-generation agent. Each entry lists the asset, where its placeholder lives in code, what it looks like today, its exact on-screen size, its gameplay role, and any states or variants the final art must support. Entries marked **NEW** did not exist in the August audit; **CHANGED** means the requirement moved since then.
 
