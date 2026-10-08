@@ -13,8 +13,5 @@ func setup(peg_defs: Dictionary) -> void:
 	var collider := CollisionShape2D.new()
 	collider.shape = shape
 	add_child(collider)
-	var visual := Polygon2D.new()
-	visual.polygon = Geometry.circle_points(shape.radius)
-	visual.color = Color(0.85, 0.45, 0.25)
-	add_child(visual)
+	add_child(Skyfield.peg_visual("peg_storm", shape.radius, Color(0.85, 0.45, 0.25)))
 	add_to_group("storm_pegs")

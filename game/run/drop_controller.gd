@@ -6,6 +6,11 @@ extends Node2D
 
 signal drop_requested(x: float)
 
+const MARKER_TEXTURE := preload("res://game/art/run/drop_marker.png")
+const AIRSHIP_TEXTURE := preload("res://game/art/run/airship_strip.png")
+const MARKER_SIZE := 32.0
+const AIRSHIP_HEIGHT := 100.0
+
 var enabled := true:
 	set(value):
 		enabled = value
@@ -49,5 +54,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _draw() -> void:
+	# The airship hull anchors the fiction of dropping from your ship; it is
+	# part of the board dressing, so it stays visible even while drops are
+	# disabled (setup phase, between drops). The marker slides beneath it.
+	draw_texture_rect(AIRSHIP_TEXTURE, Rect2(0.0, 0.0, 720.0, AIRSHIP_HEIGHT), false)
 	if enabled:
-		draw_circle(Vector2(_aim_x, drop_y), 8.0, Color(1, 1, 1, 0.5))
+		var half := MARKER_SIZE / 2.0
+		draw_texture_rect(MARKER_TEXTURE, Rect2(_aim_x - half, drop_y - half, MARKER_SIZE, MARKER_SIZE), false)

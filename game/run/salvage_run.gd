@@ -42,7 +42,7 @@ func _ready() -> void:
 	model = RunModel.new(run_config)
 	# Island state cannot change mid-run; read the Lens Array bonus once.
 	_island_mult = IslandEffects.payout_multiplier(GameState.data["island"], DataDefs.buildings)
-	board.build(region, run_defs)
+	board.build(region, run_defs, _region_id)
 	controller.configure(region.get("board", {}), float(pod_defs.get("radius", 12.0)))
 	board.pod_caught.connect(_on_pod_caught)
 	controller.drop_requested.connect(_on_drop_requested)
@@ -464,6 +464,9 @@ func request_split(pod: RigidBody2D) -> bool:
 	if pod.has_meta("value_mult"):
 		clone.set_meta("value_mult", pod.get_meta("value_mult"))
 	clone.set_meta("split", true)
+	clone.mark_split()
+	if pod is Pod:
+		(pod as Pod).mark_split()
 	# request_split runs from Area2D.body_entered during a physics-query
 	# flush; entering the tree synchronously here throws "Can't change this
 	# state while flushing queries", so the add is deferred to end of frame.

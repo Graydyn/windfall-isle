@@ -27,11 +27,11 @@ func setup(id: String, survivor_defs: Dictionary, from_left: bool, board: Dictio
 	circle.radius = float(survivor_defs.get("radius", 26.0))
 	shape.shape = circle
 	add_child(shape)
-	var visual := Polygon2D.new()
-	visual.polygon = PackedVector2Array([
-		Vector2(-24, 10), Vector2(24, 10), Vector2(16, -8), Vector2(-16, -8),
-	])
-	visual.color = Color(0.9, 0.75, 0.3)
+	var visual := Sprite2D.new()
+	visual.texture = load("res://game/art/run/survivor_raft.png")
+	visual.scale = Vector2.ONE * 0.5
+	# Raft art faces right; mirror it when drifting in from the right edge.
+	visual.flip_h = not from_left
 	add_child(visual)
 	add_to_group("survivors")
 	body_entered.connect(_on_body)

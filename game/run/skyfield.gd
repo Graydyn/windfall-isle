@@ -7,10 +7,16 @@ extends Node2D
 
 signal pod_caught(pod: RigidBody2D, payout: Dictionary, source: String)
 
+const PEG_VARIANTS := 3
+const MATERIAL_PENNANTS := ["cloudsilk", "brasswork", "rimeglass", "stormglass"]
+
 var sea_payout: Dictionary = {}
+var _peg_art_prefix := ""
 
 
-func build(region_defs: Dictionary, run_defs: Dictionary) -> void:
+func build(region_defs: Dictionary, run_defs: Dictionary, region_id: String = "") -> void:
+	# Peg art is themed per region (audit 2.2): region_N maps to peg_rN_1..3.
+	_peg_art_prefix = "peg_r" + region_id.trim_prefix("region_") if region_id != "" else ""
 	sea_payout = (region_defs.get("sea_payout", run_defs.get("sea_payout", {"scrap": 1})) as Dictionary).duplicate()
 	var board: Dictionary = region_defs.get("board", {})
 	_build_walls(board)
@@ -40,6 +46,7 @@ func _build_walls(board: Dictionary) -> void:
 
 
 func _build_pegs(pegs: Array) -> void:
+	var natural_index := 0
 	for peg in pegs:
 		var type := String((peg as Dictionary).get("type", ""))
 		if type == "storm":
@@ -60,9 +67,7 @@ func _build_pegs(pegs: Array) -> void:
 		shape.radius = float(peg.get("r", 14.0))
 		collider.shape = shape
 		body.add_child(collider)
-		var visual := Polygon2D.new()
-		visual.polygon = Geometry.circle_points(shape.radius)
-		visual.color = Color(0.55, 0.6, 0.7)
+		var art_name := ""
 		if type == "ice":
 			# Ice peg (spec 3.4 hazard): absorbent negates the peg's own bounce
 			# in Godot's combine, so a FULL bounce of 1.0 subtracts the pod's
@@ -72,9 +77,28 @@ func _build_pegs(pegs: Array) -> void:
 			material.bounce = 1.0
 			material.absorbent = true
 			body.physics_material_override = material
-			visual.color = Color(0.7, 0.85, 0.95)
-		body.add_child(visual)
+			art_name = "peg_ice"
+		elif _peg_art_prefix != "":
+			# Cycle the region's variants so grids don't look stamped.
+			art_name = "%s_%d" % [_peg_art_prefix, (natural_index % PEG_VARIANTS) + 1]
+			natural_index += 1
+		body.add_child(peg_visual(art_name, shape.radius, Color(0.7, 0.85, 0.95) if type == "ice" else Color(0.55, 0.6, 0.7)))
 		$Pegs.add_child(body)
+
+
+static func peg_visual(art_name: String, radius: float, fallback: Color) -> Node2D:
+	# Peg art is authored at 2x a 28 px peg (radius 14); anything without a
+	# matching sprite keeps the old placeholder circle.
+	var path := "res://game/art/regions/%s.png" % art_name
+	if art_name != "" and ResourceLoader.exists(path):
+		var sprite := Sprite2D.new()
+		sprite.texture = load(path)
+		sprite.scale = Vector2.ONE * (radius / 14.0) * 0.5
+		return sprite
+	var visual := Polygon2D.new()
+	visual.polygon = Geometry.circle_points(radius)
+	visual.color = fallback
+	return visual
 
 
 func _on_storm_peg_body(body: Node2D) -> void:
@@ -84,7 +108,26 @@ func _on_storm_peg_body(body: Node2D) -> void:
 	if body.has_meta("caught"):
 		return
 	body.set_meta("caught", true)
+	_storm_swallow_puff(body.global_position)
 	pod_caught.emit(body, {}, "storm")
+
+
+func _storm_swallow_puff(at: Vector2) -> void:
+	# Swallowed-pod feedback (audit 2.4 nice-to-have): a one-shot puff that
+	# swells and fades where the pod vanished, then frees itself.
+	var path := "res://game/art/regions/storm_swallow.png"
+	if not ResourceLoader.exists(path):
+		return
+	var puff := Sprite2D.new()
+	puff.texture = load(path)
+	puff.global_position = at
+	puff.scale = Vector2.ONE * 0.4
+	add_child(puff)
+	var tween := puff.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(puff, "scale", Vector2.ONE * 0.6, 0.35)
+	tween.tween_property(puff, "modulate:a", 0.0, 0.35)
+	tween.chain().tween_callback(puff.queue_free)
 
 
 static func duplicate_barge_ids(barges: Array) -> Array:
@@ -114,6 +157,7 @@ func _build_barges(barges: Array) -> void:
 		collider.shape = shape
 		area.add_child(collider)
 		area.add_child(_barge_visual(String(barge.get("art", "")), half))
+		_add_barge_pennant(area, barge.get("payout", {}) as Dictionary, half)
 		area.body_entered.connect(_on_catcher_body.bind((barge.get("payout", {}) as Dictionary).duplicate(), "barge", area))
 		$Barges.add_child(area)
 
@@ -136,6 +180,24 @@ func _barge_visual(art: String, half: Vector2) -> Node2D:
 	])
 	visual.color = Color(0.35, 0.55, 0.4)
 	return visual
+
+
+func _add_barge_pennant(area: Area2D, payout: Dictionary, half: Vector2) -> void:
+	# Material barges fly a tinted pennant (audit 1.3 "still wanted") so the
+	# barges that pay the region's material read apart from scrap-only ones.
+	for material in MATERIAL_PENNANTS:
+		if not payout.has(material):
+			continue
+		var path := "res://game/art/run/barge_pennant_%s.png" % material
+		if not ResourceLoader.exists(path):
+			return
+		var pennant := Sprite2D.new()
+		pennant.texture = load(path)
+		pennant.scale = Vector2.ONE * 0.5
+		# Hoisted off the hull's outer corner, above the barge sprite's balloons.
+		pennant.position = Vector2(half.x * 0.7, -half.y - 44.0)
+		area.add_child(pennant)
+		return
 
 
 func _build_sea(board: Dictionary) -> void:
