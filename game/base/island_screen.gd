@@ -247,6 +247,8 @@ func _refresh_static_controls(now: int) -> void:
 	$GardensButton.disabled = pending <= 0
 	$CrateButton.disabled = not DailyCrate.can_claim(GameState.data, now)
 	$CrateButton.text = "Open daily crate" if not $CrateButton.disabled else "Crate opened today"
+	$CrateButton.icon = load("res://game/art/icons/daily_crate_open.png" if $CrateButton.disabled else "res://game/art/icons/daily_crate.png")
+	$CrateButton.add_theme_constant_override("icon_max_width", 40)
 	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
 	var slot_cost := int(slots_cfg.get("second_slot_crystal_cost", 20))
 	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
@@ -254,6 +256,10 @@ func _refresh_static_controls(now: int) -> void:
 	$SlotButton.disabled = not Economy.can_afford({"crystals": slot_cost})
 	$BonusCrateButton.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE)
 	$BonusCrateButton.disabled = not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)
+	$BonusCrateButton.icon = load("res://game/art/icons/bonus_crate.png")
+	$BonusCrateButton.add_theme_constant_override("icon_max_width", 40)
+	$SlotButton.icon = load("res://game/art/icons/build_slot.png")
+	$SlotButton.add_theme_constant_override("icon_max_width", 32)
 
 
 func _row_text(plot: String, island: Dictionary, now: int) -> String:

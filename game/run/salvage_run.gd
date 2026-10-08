@@ -527,6 +527,9 @@ func _render_offer() -> void:
 		if i < _current_offer.size():
 			var def: Dictionary = defs.get(String(_current_offer[i]), {})
 			button.text = "%s\n%s" % [String(def.get("name", _current_offer[i])), String(def.get("description", ""))]
+			var icon_path := "res://game/art/icons/boon_%s.png" % String(_current_offer[i])
+			button.icon = load(icon_path) if ResourceLoader.exists(icon_path) else null
+			button.add_theme_constant_override("icon_max_width", 48)
 			button.visible = true
 		else:
 			button.visible = false

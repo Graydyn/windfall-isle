@@ -32,7 +32,21 @@ func _get_drag_data(_at: Vector2) -> Variant:
 	# (true when the engine calls this hook; false when tests call it
 	# directly, where an unguarded call pushes an engine error).
 	if is_inside_tree() and get_viewport().gui_is_dragging():
-		var preview := Label.new()
-		preview.text = text
-		set_drag_preview(preview)
+		set_drag_preview(_build_preview())
 	return {"gizmo": gizmo_id, "from_slot": from_slot}
+
+
+func _build_preview() -> Control:
+	# Drag the gizmo's own sprite when it has one; the old text label stays
+	# as the fallback for gizmos without delivered art.
+	var art_path := "res://game/art/gizmos/%s.png" % gizmo_id
+	if ResourceLoader.exists(art_path):
+		var preview := TextureRect.new()
+		preview.texture = load(art_path)
+		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		preview.custom_minimum_size = Vector2(56, 56)
+		return preview
+	var label := Label.new()
+	label.text = text
+	return label
