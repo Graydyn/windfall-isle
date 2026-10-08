@@ -15,11 +15,6 @@ func _configure() -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("radius", 28.0))
 	$Zone/Shape.shape = circle
-	var visual: Polygon2D = $Visual
-	visual.polygon = PackedVector2Array([
-		Vector2(-22, 10), Vector2(0, -22), Vector2(22, 10),
-	])
-	visual.color = Color(0.55, 0.75, 0.6)
 	zone.body_entered.connect(_on_body_entered)
 
 

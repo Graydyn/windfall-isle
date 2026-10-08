@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/run/gizmos/crystal_prism.gd" id="1_cp"]
+[ext_resource type="Texture2D" path="res://game/art/gizmos/crystal_prism.png" id="2_cp_tex"]
 
 [node name="CrystalPrism" type="Node2D"]
 script = ExtResource("1_cp")
@@ -9,4 +10,6 @@ script = ExtResource("1_cp")
 
 [node name="Shape" type="CollisionShape2D" parent="Zone"]
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="."]
+texture = ExtResource("2_cp_tex")
+scale = Vector2(0.5, 0.5)

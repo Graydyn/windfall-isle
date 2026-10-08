@@ -16,11 +16,8 @@ func _configure() -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("radius", 24.0))
 	$Zone/Shape.shape = circle
-	var visual: Polygon2D = $Visual
-	visual.polygon = PackedVector2Array([
-		Vector2(-24, -10), Vector2(10, -10), Vector2(24, 0), Vector2(10, 10), Vector2(-24, 10),
-	])
-	visual.color = Color(0.8, 0.55, 0.3)
+	# Kicker art faces right; mirror it when it fires left.
+	$Visual.flip_h = float(defs.get("direction", 1.0)) < 0.0
 	zone.body_entered.connect(_on_body_entered)
 
 

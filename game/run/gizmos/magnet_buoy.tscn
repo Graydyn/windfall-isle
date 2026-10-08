@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/run/gizmos/magnet_buoy.gd" id="1_mb"]
+[ext_resource type="Texture2D" path="res://game/art/gizmos/magnet_buoy.png" id="2_mb_tex"]
 
 [node name="MagnetBuoy" type="Node2D"]
 script = ExtResource("1_mb")
@@ -9,4 +10,6 @@ script = ExtResource("1_mb")
 
 [node name="Shape" type="CollisionShape2D" parent="Zone"]
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="."]
+texture = ExtResource("2_mb_tex")
+scale = Vector2(0.5, 0.5)

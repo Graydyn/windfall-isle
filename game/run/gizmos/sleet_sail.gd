@@ -14,11 +14,6 @@ func _configure() -> void:
 	rect.size = Vector2(scaled(float(defs.get("column_width", 80.0))), float(defs.get("column_height", 420.0)))
 	$Zone/Shape.shape = rect
 	zone.position = Vector2(0.0, -rect.size.y / 2.0)
-	var visual: Polygon2D = $Visual
-	visual.polygon = PackedVector2Array([
-		Vector2(-20, -14), Vector2(20, -14), Vector2(20, 14), Vector2(-20, 14),
-	])
-	visual.color = Color(0.75, 0.9, 1.0)
 	zone.body_entered.connect(_on_body_entered)
 	zone.body_exited.connect(_on_body_exited)
 

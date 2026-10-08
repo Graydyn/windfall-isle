@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/run/gizmos/gyro_damper.gd" id="1_gd"]
+[ext_resource type="Texture2D" path="res://game/art/gizmos/gyro_damper.png" id="2_gd_tex"]
 
 [node name="GyroDamper" type="Node2D"]
 script = ExtResource("1_gd")
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="."]
+texture = ExtResource("2_gd_tex")
+scale = Vector2(0.5, 0.5)

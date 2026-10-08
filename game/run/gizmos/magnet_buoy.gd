@@ -13,9 +13,6 @@ func _configure() -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("radius", 160.0))
 	$Zone/Shape.shape = circle
-	var visual: Polygon2D = $Visual
-	visual.polygon = Geometry.circle_points(16.0, 8)
-	visual.color = Color(0.55, 0.65, 0.9)
 
 
 func _physics_process(_delta: float) -> void:

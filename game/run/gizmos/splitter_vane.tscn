@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/run/gizmos/splitter_vane.gd" id="1_sv"]
+[ext_resource type="Texture2D" path="res://game/art/gizmos/splitter_vane.png" id="2_sv_tex"]
 
 [node name="SplitterVane" type="Node2D"]
 script = ExtResource("1_sv")
@@ -9,4 +10,6 @@ script = ExtResource("1_sv")
 
 [node name="Shape" type="CollisionShape2D" parent="Zone"]
 
-[node name="Visual" type="Polygon2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="."]
+texture = ExtResource("2_sv_tex")
+scale = Vector2(0.5, 0.5)

@@ -11,9 +11,8 @@ var field_radius := 140.0
 func _configure() -> void:
 	field_radius = scaled(float(defs.get("field_radius", 140.0)))
 	add_to_group("gyro_dampers")
-	var visual: Polygon2D = $Visual
-	visual.polygon = Geometry.circle_points(20.0, 8)
-	visual.color = Color(0.85, 0.7, 0.35)
+	# The field disc stays code-drawn: its radius scales with level, and no
+	# scalable field art has been delivered yet.
 	var field := Polygon2D.new()
 	field.polygon = Geometry.circle_points(field_radius, 24)
 	field.color = Color(0.85, 0.7, 0.35, 0.12)

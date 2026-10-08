@@ -7,6 +7,9 @@ extends GizmoBase
 ## the scene) and binds a weakref (survives the pod being freed), per the
 ## project's timer-lifetime rule.
 
+const BASE_TEXTURE := preload("res://game/art/gizmos/cargo_net.png")
+const SPENT_TEXTURE := preload("res://game/art/gizmos/cargo_net_spent.png")
+
 var _uses_left := 0
 
 @onready var zone: Area2D = $Zone
@@ -17,11 +20,6 @@ func _configure() -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("radius", 34.0))
 	$Zone/Shape.shape = circle
-	var visual: Polygon2D = $Visual
-	visual.polygon = PackedVector2Array([
-		Vector2(-30, -6), Vector2(30, -6), Vector2(22, 22), Vector2(-22, 22),
-	])
-	visual.color = Color(0.7, 0.55, 0.4)
 	zone.body_entered.connect(_on_body_entered)
 
 
@@ -37,6 +35,7 @@ func _on_body_entered(body: Node2D) -> void:
 	hold.timeout.connect(_release.bind(weakref(body), hold))
 	hold.start()
 	if _uses_left <= 0:
+		$Visual.texture = SPENT_TEXTURE
 		$Visual.modulate.a = 0.4
 
 
@@ -54,4 +53,5 @@ func _release(pod_ref: WeakRef, hold: Timer) -> void:
 
 func recharge() -> void:
 	_uses_left = int(defs.get("uses", 1)) * level
+	$Visual.texture = BASE_TEXTURE
 	$Visual.modulate.a = 1.0

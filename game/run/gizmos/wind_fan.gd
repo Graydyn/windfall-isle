@@ -14,11 +14,8 @@ func _configure() -> void:
 	rect.size = Vector2(float(defs.get("column_width", 90.0)), float(defs.get("column_height", 420.0)))
 	$Zone/Shape.shape = rect
 	zone.position = Vector2(0.0, -rect.size.y / 2.0)
-	var visual: Polygon2D = $Visual
-	visual.polygon = PackedVector2Array([
-		Vector2(-22, -12), Vector2(22, -12), Vector2(22, 12), Vector2(-22, 12),
-	])
-	visual.color = Color(0.6, 0.8, 0.95)
+	# Fan art faces right; mirror it when the fan blows left.
+	$Visual.flip_h = float(defs.get("direction", 1.0)) < 0.0
 
 
 func _physics_process(_delta: float) -> void:

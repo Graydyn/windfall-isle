@@ -3,6 +3,9 @@ extends GizmoBase
 ## Lightning Jar (spec 3.3): chain-zaps nearby natural pegs into bonus scrap.
 ## Zapped pegs are removed from the board; each pays scrap via context.add_bonus.
 
+const BASE_TEXTURE := preload("res://game/art/gizmos/lightning_jar.png")
+const SPENT_TEXTURE := preload("res://game/art/gizmos/lightning_jar_spent.png")
+
 var _charges := 0
 var _zap_radius := 150.0
 var _pegs_zapped := 3
@@ -19,9 +22,6 @@ func _configure() -> void:
 	var circle := CircleShape2D.new()
 	circle.radius = float(defs.get("zone_radius", 24.0))
 	$Zone/Shape.shape = circle
-	var visual: Polygon2D = $Visual
-	visual.polygon = Geometry.circle_points(circle.radius, 6)
-	visual.color = Color(0.95, 0.9, 0.4)
 	zone.body_entered.connect(_on_body_entered)
 
 
@@ -46,9 +46,11 @@ func _on_body_entered(body: Node2D) -> void:
 	_charges -= 1
 	context.add_bonus({"scrap": _scrap_per_peg * zapped})
 	if _charges <= 0:
+		$Visual.texture = SPENT_TEXTURE
 		$Visual.modulate.a = 0.25
 
 
 func recharge() -> void:
 	_charges = int(defs.get("charges", 2))
+	$Visual.texture = BASE_TEXTURE
 	$Visual.modulate.a = 1.0
