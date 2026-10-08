@@ -40,6 +40,10 @@ func _refresh() -> void:
 	var region_entry := RegionModel.entry(DataDefs.run, _selected_region())
 	var cost := RegionModel.fuel_cost(region_entry, GameState.data["island"])
 	$RegionButton.text = "Region: %s (%d fuel)" % [String(region_entry.get("name", "?")), cost]
+	# Region emblem (audit 4.5) beside the selector text; icon_max_width in
+	# the scene keeps the 192 px art inside the button.
+	var emblem_path := "res://game/art/regions/region_%s_emblem.png" % _selected_region().trim_prefix("region_")
+	$RegionButton.icon = load(emblem_path) if ResourceLoader.exists(emblem_path) else null
 	launch_button.disabled = FuelModel.current(fuel, now) < cost
 
 

@@ -179,6 +179,15 @@ func _rebuild() -> void:
 		var islet_id := String(islet.get("id", ""))
 		var islet_row := HBoxContainer.new()
 		islet_row.custom_minimum_size = Vector2(0, 64)
+		var islet_art := "res://game/art/buildings/islet_%s_%s.png" % [
+			islet_id, "restored" if IsletModel.is_restored(GameState.data, islet_id) else "ruined"]
+		if ResourceLoader.exists(islet_art):
+			var thumb := TextureRect.new()
+			thumb.texture = load(islet_art)
+			thumb.custom_minimum_size = Vector2(56, 56)
+			thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			islet_row.add_child(thumb)
 		var islet_label := Label.new()
 		islet_label.custom_minimum_size = Vector2(320, 0)
 		islet_label.text = _islet_row_text(islet, now)
@@ -206,6 +215,15 @@ func _rebuild() -> void:
 		var member_id := String(member.get("id", ""))
 		var crew_row := HBoxContainer.new()
 		crew_row.custom_minimum_size = Vector2(0, 56)
+		var portrait_path := "res://game/art/crew/%s.png" % member_id
+		var portrait: TextureRect = null
+		if ResourceLoader.exists(portrait_path):
+			portrait = TextureRect.new()
+			portrait.texture = load(portrait_path)
+			portrait.custom_minimum_size = Vector2(48, 48)
+			portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			crew_row.add_child(portrait)
 		var crew_label := Label.new()
 		crew_label.custom_minimum_size = Vector2(320, 0)
 		crew_label.text = _crew_row_text(member)
@@ -217,6 +235,8 @@ func _rebuild() -> void:
 			crew_row.add_child(assign_button)
 		else:
 			crew_label.modulate.a = 0.5
+			if portrait != null:
+				portrait.modulate.a = 0.5
 		rows.add_child(crew_row)
 	_refresh_static_controls(now)
 
@@ -289,10 +309,15 @@ func _render_modal() -> void:
 	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building_id, {})
 	var display := String(def.get("name", building_id))
 	$BuildModal/VBox/ModalTitle.text = display
-	# Placeholder art: a deterministic tint plus the building's initial; the
-	# art pass swaps this for real portraits.
-	$BuildModal/VBox/ModalPicture.color = Color.from_hsv(float(absi(building_id.hash()) % 360) / 360.0, 0.45, 0.55)
-	$BuildModal/VBox/ModalPicture/PictureLetter.text = display.left(1)
+	# Building illustration (audit 4.2); the lettered placeholder only remains
+	# as the fallback for a building without delivered art.
+	var art_path := "res://game/art/buildings/%s.png" % building_id
+	if ResourceLoader.exists(art_path):
+		$BuildModal/VBox/ModalPicture.texture = load(art_path)
+		$BuildModal/VBox/ModalPicture/PictureLetter.text = ""
+	else:
+		$BuildModal/VBox/ModalPicture.texture = null
+		$BuildModal/VBox/ModalPicture/PictureLetter.text = display.left(1)
 	$BuildModal/VBox/ModalFlavor.text = String(def.get("flavor", ""))
 	$BuildModal/VBox/ModalDescription.text = String(def.get("description", ""))
 	var stats := _stats_text(building_id, def)
@@ -511,6 +536,15 @@ func _open_letter(islet_id: String) -> void:
 	for line in vignette.get("lines", []):
 		lines.append(String(line))
 	$LetterPanel/VBox/LetterBody.text = "\n\n".join(lines)
+	# Each letter carries its own ornament: a wax seal for the shoal's letter,
+	# a brass clasp for the foundry log (audit 4.3).
+	var seal_path := String({
+		"lantern_shoal": "res://game/art/ui/seal_lantern.png",
+		"foundry_rock": "res://game/art/ui/clasp_foundry.png",
+	}.get(islet_id, ""))
+	var seal: TextureRect = $LetterPanel/VBox/LetterSeal
+	seal.texture = load(seal_path) if seal_path != "" and ResourceLoader.exists(seal_path) else null
+	seal.visible = seal.texture != null
 	$LetterPanel.visible = true
 
 

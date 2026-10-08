@@ -39,8 +39,10 @@ func test_choose_opens_the_modal_on_the_first_candidate() -> void:
 	assert_eq(String(screen.get_node("BuildModal/VBox/ModalFlavor").text), String(def["flavor"]))
 	assert_eq(String(screen.get_node("BuildModal/VBox/ModalDescription").text), String(def["description"]))
 	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalCost").text), "60 scrap")
-	assert_eq(String(screen.get_node("BuildModal/VBox/ModalPicture/PictureLetter").text), "W",
-		"the placeholder picture carries the building's initial")
+	assert_not_null(screen.get_node("BuildModal/VBox/ModalPicture").texture,
+		"the modal picture carries the building's illustration")
+	assert_eq(String(screen.get_node("BuildModal/VBox/ModalPicture/PictureLetter").text), "",
+		"the lettered placeholder is only a fallback for missing art")
 
 func test_modal_browsing_wraps_both_ways() -> void:
 	screen._open_build_modal("plot_0")

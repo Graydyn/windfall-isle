@@ -1,6 +1,18 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/base/island_screen.gd" id="1_is"]
+[ext_resource type="Texture2D" path="res://game/art/ui/letter_panel.png" id="2_letter"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_letter"]
+texture = ExtResource("2_letter")
+texture_margin_left = 48.0
+texture_margin_top = 48.0
+texture_margin_right = 48.0
+texture_margin_bottom = 48.0
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
 
 [node name="IslandScreen" type="Control"]
 anchors_preset = 15
@@ -79,11 +91,17 @@ offset_left = 40.0
 offset_top = 200.0
 offset_right = 680.0
 offset_bottom = 700.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_letter")
 
 [node name="VBox" type="VBoxContainer" parent="LetterPanel"]
 
 [node name="LetterTitle" type="Label" parent="LetterPanel/VBox"]
 text = "A letter"
+
+[node name="LetterSeal" type="TextureRect" parent="LetterPanel/VBox"]
+custom_minimum_size = Vector2(48, 48)
+expand_mode = 1
+stretch_mode = 5
 
 [node name="LetterBody" type="Label" parent="LetterPanel/VBox"]
 custom_minimum_size = Vector2(600, 0)
@@ -103,8 +121,10 @@ offset_bottom = 780.0
 
 [node name="ModalTitle" type="Label" parent="BuildModal/VBox"]
 
-[node name="ModalPicture" type="ColorRect" parent="BuildModal/VBox"]
+[node name="ModalPicture" type="TextureRect" parent="BuildModal/VBox"]
 custom_minimum_size = Vector2(96, 96)
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PictureLetter" type="Label" parent="BuildModal/VBox/ModalPicture"]
 anchors_preset = 15
