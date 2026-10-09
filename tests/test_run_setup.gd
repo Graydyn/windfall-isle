@@ -34,7 +34,9 @@ func test_scene_opens_in_setup() -> void:
 		"gizmos install at Start, not at boot")
 	assert_eq(FuelModel.current(GameState.data["fuel"], TimeUtil.now()), 5,
 		"no fuel is spent by entering the scene")
-	assert_string_contains(String(scene.get_node("UI/HudLabel").text), "Place your gizmos")
+	assert_eq(String(scene.get_node("UI/HudLabel").text), "",
+		"the kit panel owns the top band during setup; the HUD stays blank")
+	assert_string_contains(String(scene.get_node("UI/SetupUI/SetupStatus").text), "Place your gizmos")
 
 func test_drops_are_ignored_during_setup() -> void:
 	var drops_before: int = scene.model.drops_remaining()

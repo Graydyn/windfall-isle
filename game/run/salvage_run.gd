@@ -218,12 +218,13 @@ func _build_kit_panel() -> void:
 		var chip := Button.new()
 		chip.toggle_mode = true
 		chip.name = "Kit_" + kit_id
-		# The panel is pinned to the one rect that clears every region's slot
-		# targets (see test_kit_panel_intersects_no_slot_target_in_any_region),
-		# so the two-line chips earn their room with a smaller font instead of
-		# a bigger panel.
-		chip.custom_minimum_size = Vector2(188.0, 44.0)
-		chip.add_theme_font_size_override("font_size", 13)
+		# The panel owns the top band (the setup prompt lives in SetupStatus,
+		# and the HUD label is blank until the run starts); it must stay above
+		# y=132 where regions 3/4 slot targets begin (guarded by
+		# test_kit_panel_intersects_no_slot_target_in_any_region), so the
+		# chips hold two text lines via a 14px font.
+		chip.custom_minimum_size = Vector2(332.0, 46.0)
+		chip.add_theme_font_size_override("font_size", 14)
 		# PASS, not STOP: the chip still takes its press, but a drag-drop
 		# released over the kit area falls through to any slot target beneath
 		# (region 2's lowest slots overlap this rect; Plan 9 drop-walk lesson).
@@ -453,7 +454,11 @@ func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 
 func _refresh_hud() -> void:
 	if _phase == Phase.SETUP:
-		$UI/HudLabel.text = "Place your gizmos, then press Start."
+		# The kit panel owns the top band during setup; the prompt shows in
+		# SetupStatus by the Start button instead (until a fuel error replaces it).
+		$UI/HudLabel.text = ""
+		if String($UI/SetupUI/SetupStatus.text) == "":
+			$UI/SetupUI/SetupStatus.text = "Place your gizmos, then press Start."
 		return
 	var parts := PackedStringArray()
 	for currency in model.loot:
