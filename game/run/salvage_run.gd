@@ -454,11 +454,9 @@ func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:
 
 func _refresh_hud() -> void:
 	if _phase == Phase.SETUP:
-		# The kit panel owns the top band during setup; the prompt shows in
-		# SetupStatus by the Start button instead (until a fuel error replaces it).
+		# The kit panel owns the top band during setup; SetupStatus stays
+		# empty until a fuel error needs it.
 		$UI/HudLabel.text = ""
-		if String($UI/SetupUI/SetupStatus.text) == "":
-			$UI/SetupUI/SetupStatus.text = "Place your gizmos, then press Start."
 		return
 	var parts := PackedStringArray()
 	for currency in model.loot:
