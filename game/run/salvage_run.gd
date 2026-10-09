@@ -58,6 +58,11 @@ func _ready() -> void:
 	$UI/Results/VBox/DoubleButton.pressed.connect(_on_double_pressed)
 	controller.enabled = false
 	$UI/AbandonButton.visible = false
+	# Godot's default panel stylebox is translucent; menus on this screen sit
+	# over the busy skyfield, so they get solid backing (owner request,
+	# 2026-10-09: no transparent menu backgrounds here).
+	for panel in [$UI/SetupUI/KitPanel, $UI/SetupUI/TrayPanel, $UI/Results, $UI/BoonOffer]:
+		(panel as PanelContainer).add_theme_stylebox_override("panel", _opaque_panel_style())
 	$UI/SetupUI/StartButton.pressed.connect(_on_start_pressed)
 	$UI/SetupUI/BackButton.pressed.connect(_on_setup_back_pressed)
 	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)
@@ -387,15 +392,25 @@ func _refresh_setup_ui() -> void:
 	for id in GizmoLoadout.owned(gizmos_state):
 		var chip := GizmoChip.new()
 		chip.setup(String(id), _chip_text(String(id)), "")
-		chip.custom_minimum_size = Vector2(164.0, 56.0)
+		chip.custom_minimum_size = Vector2(110.0, 104.0)
 		chip.set_dimmed(placed.has(id))
 		flow.add_child(chip)
 
 
+func _opaque_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.13, 0.15, 0.19)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 10.0
+	style.content_margin_right = 10.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	return style
+
+
 func _chip_text(gizmo_id: String) -> String:
 	var def: Dictionary = (DataDefs.gizmos.get("defs", {}) as Dictionary).get(gizmo_id, {})
-	var level := int(GizmoLoadout.owned(GameState.data["gizmos"]).get(gizmo_id, 1))
-	return "%s\nLv %d" % [String(def.get("name", gizmo_id)), level]
+	return String(def.get("name", gizmo_id))
 
 
 func _compute_payout(pod: Node, base: Dictionary) -> Dictionary:

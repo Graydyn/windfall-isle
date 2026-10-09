@@ -13,11 +13,25 @@ func setup(id: String, display: String, source_slot: String) -> void:
 	gizmo_id = id
 	from_slot = source_slot
 	text = display
+	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	autowrap_mode = TextServer.AUTOWRAP_WORD
 	# PASS, not STOP: a chip must receive the drag press itself, yet let a
 	# DROP released over it fall through Godot's ancestor walk to the
 	# SlotTarget or tray beneath (STOP would terminate the walk and block
 	# replacing an occupied slot or removing over a tray chip).
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	var art_path := "res://game/art/gizmos/%s.png" % gizmo_id
+	if ResourceLoader.exists(art_path):
+		# The name sits at the bottom edge; the art fills the space above it.
+		vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		var art := TextureRect.new()
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art.texture = load(art_path)
+		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.offset_bottom = -26.0
+		add_child(art)
 
 
 func set_dimmed(dimmed: bool) -> void:

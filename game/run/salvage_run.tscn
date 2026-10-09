@@ -95,29 +95,29 @@ mouse_filter = 2
 offset_left = 10.0
 offset_top = 930.0
 offset_right = 710.0
-offset_bottom = 1120.0
+offset_bottom = 1160.0
 
 [node name="TrayFlow" type="HFlowContainer" parent="UI/SetupUI/TrayPanel"]
 
 [node name="StartButton" type="Button" parent="UI/SetupUI"]
 offset_left = 380.0
-offset_top = 1140.0
+offset_top = 1210.0
 offset_right = 700.0
-offset_bottom = 1210.0
+offset_bottom = 1280.0
 text = "Start"
 
 [node name="BackButton" type="Button" parent="UI/SetupUI"]
 offset_left = 20.0
-offset_top = 1140.0
+offset_top = 1210.0
 offset_right = 340.0
-offset_bottom = 1210.0
+offset_bottom = 1280.0
 text = "Back"
 
 [node name="SetupStatus" type="Label" parent="UI/SetupUI"]
 offset_left = 20.0
-offset_top = 1220.0
+offset_top = 1166.0
 offset_right = 700.0
-offset_bottom = 1260.0
+offset_bottom = 1206.0
 
 [node name="SetupRefreshTimer" type="Timer" parent="UI/SetupUI"]
 wait_time = 1.0
