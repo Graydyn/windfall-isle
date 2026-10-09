@@ -218,7 +218,12 @@ func _build_kit_panel() -> void:
 		var chip := Button.new()
 		chip.toggle_mode = true
 		chip.name = "Kit_" + kit_id
-		chip.custom_minimum_size = Vector2(190.0, 38.0)
+		# The panel is pinned to the one rect that clears every region's slot
+		# targets (see test_kit_panel_intersects_no_slot_target_in_any_region),
+		# so the two-line chips earn their room with a smaller font instead of
+		# a bigger panel.
+		chip.custom_minimum_size = Vector2(188.0, 44.0)
+		chip.add_theme_font_size_override("font_size", 13)
 		# PASS, not STOP: the chip still takes its press, but a drag-drop
 		# released over the kit area falls through to any slot target beneath
 		# (region 2's lowest slots overlap this rect; Plan 9 drop-walk lesson).
@@ -245,15 +250,31 @@ func _refresh_kit_panel() -> void:
 		var affordable: bool
 		if kit_id == "provision":
 			var cost := int(entry.get("cost", 3))
-			chip.text = "%s (%d provisions)" % [display, cost]
+			chip.text = "%s\n%s" % [display, _kit_blurb(kit_id, entry)]
 			affordable = Economy.balance("provisions") >= cost
 		else:
-			chip.text = "%s x%d" % [display, Economy.balance(kit_id)]
+			chip.text = "%s x%d\n%s" % [display, Economy.balance(kit_id), _kit_blurb(kit_id, entry)]
 			affordable = Economy.balance(kit_id) >= 1
 		chip.disabled = not affordable
 		if not affordable and chip.button_pressed:
 			chip.set_pressed_no_signal(false)
 			_kit_elected[kit_id] = false
+
+
+func _kit_blurb(kit_id: String, entry: Dictionary) -> String:
+	# One-line effect text on each kit chip; numbers read from the defs so the
+	# label can never drift from what _apply_consumable actually grants.
+	if kit_id == "ballast":
+		return "+%d extra drops this run" % int(entry.get("drops_bonus", 2))
+	if kit_id == "wind_charm":
+		var rerolls := int(entry.get("free_rerolls", 1))
+		return "Free boon reroll" if rerolls == 1 else "%d free boon rerolls" % rerolls
+	if kit_id == "storm_oil":
+		return "Bouncier pods this run"
+	if kit_id == "provision":
+		var pct := roundi((float(entry.get("payout_multiplier", 1.15)) - 1.0) * 100.0)
+		return "+%d%% payouts (%d provisions)" % [pct, int(entry.get("cost", 3))]
+	return ""
 
 
 func _consume_kit() -> void:
@@ -392,7 +413,7 @@ func _refresh_setup_ui() -> void:
 	for id in GizmoLoadout.owned(gizmos_state):
 		var chip := GizmoChip.new()
 		chip.setup(String(id), _chip_text(String(id)), "")
-		chip.custom_minimum_size = Vector2(110.0, 104.0)
+		chip.custom_minimum_size = Vector2(110.0, 96.0)
 		chip.set_dimmed(placed.has(id))
 		flow.add_child(chip)
 
