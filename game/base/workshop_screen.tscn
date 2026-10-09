@@ -15,11 +15,12 @@ offset_right = 660.0
 offset_bottom = 64.0
 text = "Workshop"
 
-[node name="Rows" type="VBoxContainer" parent="."]
+[node name="Tiles" type="GridContainer" parent="."]
 offset_left = 20.0
 offset_top = 90.0
 offset_right = 700.0
-offset_bottom = 900.0
+offset_bottom = 1040.0
+columns = 3
 
 [node name="RefreshTimer" type="Timer" parent="."]
 wait_time = 1.0
@@ -31,3 +32,42 @@ offset_top = 1080.0
 offset_right = 560.0
 offset_bottom = 1160.0
 text = "Back to Island"
+
+[node name="CraftModal" type="PanelContainer" parent="."]
+visible = false
+offset_left = 60.0
+offset_top = 180.0
+offset_right = 660.0
+offset_bottom = 780.0
+
+[node name="VBox" type="VBoxContainer" parent="CraftModal"]
+
+[node name="ModalTitle" type="Label" parent="CraftModal/VBox"]
+
+[node name="ModalPicture" type="TextureRect" parent="CraftModal/VBox"]
+custom_minimum_size = Vector2(96, 96)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PictureLetter" type="Label" parent="CraftModal/VBox/ModalPicture"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ModalDescription" type="Label" parent="CraftModal/VBox"]
+custom_minimum_size = Vector2(560, 0)
+autowrap_mode = 3
+
+[node name="ModalCost" type="Label" parent="CraftModal/VBox"]
+
+[node name="ModalStatus" type="Label" parent="CraftModal/VBox"]
+
+[node name="ActionRow" type="HBoxContainer" parent="CraftModal/VBox"]
+
+[node name="ActionButton" type="Button" parent="CraftModal/VBox/ActionRow"]
+text = "Craft"
+
+[node name="CloseButton" type="Button" parent="CraftModal/VBox/ActionRow"]
+text = "Close"

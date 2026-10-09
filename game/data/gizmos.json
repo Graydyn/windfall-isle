@@ -15,67 +15,88 @@
 		"wind_fan": {
 			"name": "Wind Fan",
 			"rarity": "common",
+			"description": "A steady fan that pushes the pod sideways through its column of wind.",
 			"scene": "res://game/run/gizmos/wind_fan.tscn",
 			"force": 260.0,
 			"direction": 1.0,
 			"column_width": 90.0,
 			"column_height": 420.0,
-			"craft_cost": {"parts": 2},
+			"craft_cost": {
+				"parts": 2
+			},
 			"craft_seconds": 120
 		},
 		"balloon_cluster": {
 			"name": "Balloon Cluster",
 			"rarity": "common",
+			"description": "A bundle of balloons that bounces the pod upward. Pops after a few hits.",
 			"scene": "res://game/run/gizmos/balloon_cluster.tscn",
 			"impulse": 420.0,
 			"max_hits": 3,
 			"radius": 26.0,
-			"craft_cost": {"parts": 2},
+			"craft_cost": {
+				"parts": 2
+			},
 			"craft_seconds": 150
 		},
 		"crystal_prism": {
 			"name": "Crystal Prism",
 			"rarity": "uncommon",
+			"description": "Refracts the pod as it passes, multiplying the value of what it catches afterward.",
 			"scene": "res://game/run/gizmos/crystal_prism.tscn",
 			"multiplier": 1.5,
 			"radius": 30.0,
-			"craft_cost": {"parts": 3, "cloudsilk": 1},
+			"craft_cost": {
+				"parts": 3,
+				"cloudsilk": 1
+			},
 			"craft_seconds": 300
 		},
 		"lightning_jar": {
 			"name": "Lightning Jar",
 			"rarity": "uncommon",
+			"description": "Zaps nearby pegs for bonus scrap when the pod drifts through its field.",
 			"scene": "res://game/run/gizmos/lightning_jar.tscn",
 			"zone_radius": 24.0,
 			"zap_radius": 150.0,
 			"pegs_zapped": 3,
 			"scrap_per_peg": 2,
 			"charges": 2,
-			"craft_cost": {"parts": 3, "cloudsilk": 1},
+			"craft_cost": {
+				"parts": 3,
+				"cloudsilk": 1
+			},
 			"craft_seconds": 240
 		},
 		"chime_bell": {
 			"name": "Chime Bell",
 			"rarity": "uncommon",
+			"description": "Rings as the pod passes, doubling the next barge catch. Limited uses per run.",
 			"scene": "res://game/run/gizmos/chime_bell.tscn",
 			"radius": 26.0,
 			"barge_multiplier": 2.0,
 			"uses_per_run": 2,
-			"craft_cost": {"parts": 3},
+			"craft_cost": {
+				"parts": 3
+			},
 			"craft_seconds": 200
 		},
 		"magnet_buoy": {
 			"name": "Magnet Buoy",
 			"rarity": "common",
+			"description": "Gently pulls the pod toward itself from across the board.",
 			"scene": "res://game/run/gizmos/magnet_buoy.tscn",
 			"radius": 160.0,
 			"force": 240.0,
-			"craft_cost": {"parts": 3},
+			"craft_cost": {
+				"parts": 3
+			},
 			"craft_seconds": 180
 		},
 		"cargo_net": {
 			"name": "Cargo Net",
 			"rarity": "common",
+			"description": "Catches the pod, holds it a beat, then flings it back into play. Single use.",
 			"scene": "res://game/run/gizmos/cargo_net.tscn",
 			"radius": 34.0,
 			"hold_seconds": 0.8,
@@ -83,39 +104,54 @@
 			"redrop_speed": 420.0,
 			"board_center_x": 360.0,
 			"uses": 1,
-			"craft_cost": {"parts": 2},
+			"craft_cost": {
+				"parts": 2
+			},
 			"craft_seconds": 160
 		},
 		"splitter_vane": {
 			"name": "Splitter Vane",
 			"rarity": "rare",
+			"description": "Splits the pod in two, each half carrying part of the value.",
 			"scene": "res://game/run/gizmos/splitter_vane.tscn",
 			"radius": 24.0,
 			"value_multiplier": 0.5,
-			"craft_cost": {"parts": 4, "cloudsilk": 2},
+			"craft_cost": {
+				"parts": 4,
+				"cloudsilk": 2
+			},
 			"craft_seconds": 360
 		},
 		"gyro_damper": {
 			"name": "Gyro Damper",
 			"rarity": "rare",
+			"description": "Projects a calming field that deadens wild bounces.",
 			"scene": "res://game/run/gizmos/gyro_damper.tscn",
 			"field_radius": 140.0,
-			"craft_cost": {"parts": 5, "brasswork": 2},
+			"craft_cost": {
+				"parts": 5,
+				"brasswork": 2
+			},
 			"craft_seconds": 420
 		},
 		"piston_kicker": {
 			"name": "Piston Kicker",
 			"rarity": "rare",
+			"description": "Slams the pod sideways with a powerful mechanical kick.",
 			"scene": "res://game/run/gizmos/piston_kicker.tscn",
 			"force": 520.0,
 			"direction": 1.0,
 			"radius": 24.0,
-			"craft_cost": {"parts": 4, "brasswork": 1},
+			"craft_cost": {
+				"parts": 4,
+				"brasswork": 1
+			},
 			"craft_seconds": 300
 		},
 		"sleet_sail": {
 			"name": "Sleet Sail",
 			"rarity": "rare",
+			"description": "An icy sail whose column slows the pod's fall to a drift.",
 			"scene": "res://game/run/gizmos/sleet_sail.tscn",
 			"column_width": 80.0,
 			"column_height": 420.0,
@@ -129,6 +165,7 @@
 		"gale_vent": {
 			"name": "Gale Vent",
 			"rarity": "rare",
+			"description": "Erupts with a burst of storm air that launches the pod away.",
 			"scene": "res://game/run/gizmos/gale_vent.tscn",
 			"radius": 28.0,
 			"impulse": 380.0,

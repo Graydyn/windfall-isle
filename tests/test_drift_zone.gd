@@ -44,6 +44,27 @@ func test_pod_falling_through_a_zone_is_pushed_sideways() -> void:
 	assert_true(pod.linear_velocity.x > 30.0,
 		"spec 3.4: the drift current pushes the pod in its direction")
 
+func test_setup_adds_wind_streak_particles_blowing_with_the_current() -> void:
+	var board := build_board(DRIFT_REGION)
+	var zone: DriftZone = board.get_node("DriftZones").get_child(0)
+	var streaks: GPUParticles2D = zone.get_node("Visual/Streaks")
+	assert_not_null(streaks, "drift zones animate wind streaks instead of static art")
+	assert_true(streaks.emitting)
+	assert_eq(zone.get_node("Visual").clip_children, CanvasItem.CLIP_CHILDREN_ONLY,
+		"streaks stay inside the zone rectangle, masked at full alpha")
+	assert_eq(zone.get_node("Visual").get_child_count(), 1,
+		"the streaks alone mark the zone; no tint rectangle")
+	var mat: ParticleProcessMaterial = streaks.process_material
+	assert_true(mat.direction.x > 0.0, "streaks travel in the zone's push direction")
+
+func test_leftward_zone_streaks_blow_left() -> void:
+	var region := DRIFT_REGION.duplicate(true)
+	region["drift_zones"][0]["direction"] = -1.0
+	var board := build_board(region)
+	var zone: DriftZone = board.get_node("DriftZones").get_child(0)
+	var mat: ParticleProcessMaterial = zone.get_node("Visual/Streaks").process_material
+	assert_true(mat.direction.x < 0.0, "streaks mirror when the current blows left")
+
 func test_region_sea_payout_overrides_the_run_default() -> void:
 	var region := DRIFT_REGION.duplicate(true)
 	region["sea_payout"] = {"scrap": 2}
