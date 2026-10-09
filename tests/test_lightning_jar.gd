@@ -96,6 +96,25 @@ func test_out_of_range_contact_consumes_no_charge() -> void:
 	assert_eq(context_stub.bonuses.size(), 1,
 		"charges were never consumed by the empty zaps")
 
+func test_zap_spawns_bolts_that_clean_up() -> void:
+	make_peg(Vector2(360, 420))
+	make_peg(Vector2(420, 500))
+	jar._on_body_entered(make_pod())
+	assert_eq(get_tree().get_nodes_in_group("zap_bolts").size(), 2,
+		"one bolt per zapped peg")
+	await wait_seconds(0.6)
+	assert_eq(get_tree().get_nodes_in_group("zap_bolts").size(), 0,
+		"bolts free themselves when the effect ends")
+
+func test_zapped_peg_lingers_for_effect_then_frees() -> void:
+	var peg := make_peg(Vector2(360, 480))
+	jar._on_body_entered(make_pod())
+	assert_false(peg.is_in_group("pegs"), "gameplay removal stays immediate")
+	await wait_physics_frames(2)
+	assert_true(is_instance_valid(peg), "the visual lingers for the zap flash")
+	await wait_seconds(0.6)
+	assert_false(is_instance_valid(peg), "the peg frees once the flash ends")
+
 func test_recharge_restores_charges_and_visual() -> void:
 	jar._charges = 0
 	jar.get_node("Visual").modulate.a = 0.25
