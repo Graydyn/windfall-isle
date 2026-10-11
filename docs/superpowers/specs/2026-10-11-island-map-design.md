@@ -95,6 +95,8 @@ keeps its name and signature. Scripts that `get_node` the six HUD buttons
 switch to their new `HudBar/...` paths; tests use `find_child` or the new
 paths explicitly.
 
+**Errata (execution):** the six HUD buttons and StatusLabel stayed DIRECT children of IslandScreen with their original node names (no HudBar container), eliminating all path churn in script and tests; inside the Map, Islets and CrewBand render before Plots so pads draw and pick above islet art where they overlap.
+
 ### 1.3 Refresh discipline (carried over verbatim)
 
 The signature mechanism stays: `_signature(now)` is unchanged, `_refresh_tick`

@@ -1,7 +1,7 @@
 # Placeholder Graphics Audit
 
 **Date:** 2026-10-07 (replaces the 2026-08-16 MVP audit)
-**Wiring status (2026-10-08):** first wiring pass done for the delivered `game/art/` batch. Wired: run board (pod + split pod, drop marker, airship strip, slot sockets + hover, survivor raft, region peg variants, ice/storm pegs, storm-swallow puff, material barge pennants), all 12 gizmo sprites with spent variants and direction flips, building modal illustrations, islet thumbnails, letter panel + seals, crew portraits, region emblem on the region button, boon offer icons, crate/build-slot button icons, sprite drag previews. Delivered but NOT yet wired: currency/material/kit icons (text rows need an icon layout), rarity frames, zap arc / gale puff / piston-extended effect frames, region locked overlay, ui/panel.png + button.png + boon_card.png (theme pass), construction overlay. Not yet delivered: region backgrounds, cloud sea band, field/column overlays, app icon, island vista.
+**Wiring status (2026-10-11):** first wiring pass done for the delivered `game/art/` batch. Wired: run board (pod + split pod, drop marker, airship strip, slot sockets + hover, survivor raft, region peg variants, ice/storm pegs, storm-swallow puff, material barge pennants), all 12 gizmo sprites with spent variants and direction flips, building modal illustrations, islet thumbnails, letter panel + seals, crew portraits, region emblem on the region button, boon offer icons, crate/build-slot button icons, sprite drag previews. Delivered but NOT yet wired: currency/material/kit icons (text rows need an icon layout), rarity frames, zap arc / gale puff / piston-extended effect frames, region locked overlay, ui/panel.png + button.png + boon_card.png (theme pass), construction overlay. Not yet delivered: region backgrounds, cloud sea band, field/column overlays, app icon, island vista. The island screen is now a scrollable map (see 4.6); the construction overlay, islet art and crew portraits gained their map wiring there.
 **Codebase state:** main at f6f5e0b, Plans 1-14 merged: 4 regions, 12 gizmos, 9 buildings, 2 islets, 8 crew, 6 boons, 3 run-kit consumables, 11 balances + fuel.
 **Purpose:** Complete inventory of every visual the game needs, written as a brief for the image-generation agent. Each entry lists the asset, where its placeholder lives in code, what it looks like today, its exact on-screen size, its gameplay role, and any states or variants the final art must support. Entries marked **NEW** did not exist in the August audit; **CHANGED** means the requirement moved since then.
 
@@ -139,7 +139,7 @@ All screens still use the stock gray Godot theme. Screen chrome (panels, buttons
 | Screen | File | Contents today |
 |---|---|---|
 | Main / home | [main.tscn](../../game/main.tscn) | Debug text block listing balances and fuel; buttons: Launch, Island, **Region selector** (cycles regions and shows fuel cost), **Refill fuel (ad)**. Will eventually become the island vista. |
-| Island | [island_screen.tscn](../../game/base/island_screen.tscn) | Text rows for each building plot with build/upgrade/collect/skip; conversion batch buttons; **islet rows** (restore / cross / read letter); **crew rows** (assign); gardens collect, daily crate, bonus crate (ad), second build slot unlock; **BuildModal** browser; **LetterPanel**. |
+| Island | [island_screen.tscn](../../game/base/island_screen.tscn) | Scrollable 720 x 2000 island map: building pads at authored positions, islet markers with code-drawn bridges, crew tokens on the shore band; PlotSheet bottom sheet for upgrade/batch/skip; BuildModal browser; LetterPanel; HUD bar (trickle, crates, slot unlock, workshop, back). |
 | Workshop | [workshop_screen.tscn](../../game/base/workshop_screen.tscn) | Text rows for the 12 gizmo recipes with craft timers; rarity-locked rows dimmed. |
 | Run setup phase — NEW (replaces the loadout screen) | inside [salvage_run.tscn](../../game/run/salvage_run.tscn) | Gizmo **tray** (164 x 56 chips, name + level), slot outlines over the live board, **kit panel** (190 x 38 toggle chips for consumables), Start (fuel cost) and Back buttons, status label. Drag preview is a plain text label. |
 | Run HUD | inside [salvage_run.tscn](../../game/run/salvage_run.tscn) | Text HUD (drops, loot, quota tier), Abandon button, **BoonOffer panel** (title, 3 picks, reroll, skip), **RescueBanner**, results panel (summary, double-payout ad, return). |
@@ -188,8 +188,20 @@ The old loadout screen (`game/ui/loadout_screen.tscn`) no longer exists.
 - **Placeholder:** the main-screen RegionButton is text ("Region: Home Skies (1 fuel)").
 - **Art needed:** four 96 px emblems or postcard thumbnails (Home Skies, Brasswork Reach, Rimefall Shallows, Stormglass Verge) for region selection, plus a **locked** treatment (shared padlock / fog overlay) for regions still gated behind Dock level.
 
-### 4.6 Island vista (future, large) — carried over
-- The main screen is still a debug label. The design intent is a painted vista of the home island with building plots (7 base + 2 islet plots) and the two islets connected by bridges/balloon lines. This is the biggest single art piece and depends on a layout decision in code; scope it once the screen is designed. Listed here so it isn't forgotten.
+### 4.6 Island map screen (CHANGED: layout shipped 2026-10-11)
+The island screen is now a vertically scrollable 720 x 2000 map ([island_screen.tscn](../../game/base/island_screen.tscn)); every coordinate lives in [island_layout.json](../../game/data/island_layout.json), so art is painted AROUND those authored positions. The backdrop is code-drawn (sky gradient, plateau and islet silhouettes, cloud band) until the vista lands; the fallback lives in [island_backdrop.gd](../../game/base/island_backdrop.gd) and swaps itself out the moment `game/art/regions/island_vista.png` exists.
+
+| Asset | Size (design px, deliver 2x) | Notes |
+|---|---|---|
+| Island vista map background | 720 x 2000 | Sky top band (y 0..200), home plateau (plots centered per island_layout.json, y 200..1050), Lantern Shoal rock (~y 1150..1450 left), Foundry Rock (~y 1500..1800 right), cloud-sea bottom band (y 1850..2000). File: `game/art/regions/island_vista.png`. |
+| Empty plot pad | 128 x 128 | Cleared foundation (stone circle / timber deck) that reads as "build here". File: `game/art/buildings/plot_pad.png`; the dashed-outline fallback draws until it exists. |
+| Bridge, broken | ~200 x 80 | Snapped rope-bridge stub pair; one generic set serves both islets. Replaces the code-drawn stubs in island_backdrop.gd. |
+| Bridge, scaffold | ~200 x 80 | Half-built planks and rigging (shown while a restoration timer runs). |
+| Bridge, restored | ~200 x 80 | Whole rope bridge. |
+| Ready glow badge | 96 x 96 | Soft gold burst behind "Tap to collect!"; nice-to-have, the gold "!" label ships first. |
+| Shore band dressing | 720 x 160 | Optional dock planks under the crew tokens (band centered at y 940). |
+
+Wired by the map rework (previously delivered): `construction_overlay.png` now scaffolds constructing pads; building illustrations double as pad sprites; islet ruined/restored art marks the islets; crew portraits became shore tokens and worker badges on pads.
 
 ---
 
