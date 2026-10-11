@@ -10,6 +10,7 @@ const RETENTION_PATH := "res://game/data/retention.json"
 const BOONS_PATH := "res://game/data/boons.json"
 const ISLETS_PATH := "res://game/data/islets.json"
 const CREW_PATH := "res://game/data/crew.json"
+const ISLAND_LAYOUT_PATH := "res://game/data/island_layout.json"
 
 var economy: Dictionary = {}
 var run: Dictionary = {}
@@ -19,6 +20,7 @@ var retention: Dictionary = {}
 var boons: Dictionary = {}
 var islets: Dictionary = {}
 var crew: Dictionary = {}
+var island_layout: Dictionary = {}
 
 
 func _ready() -> void:
@@ -30,6 +32,7 @@ func _ready() -> void:
 	boons = load_json(BOONS_PATH)
 	islets = load_json(ISLETS_PATH)
 	crew = load_json(CREW_PATH)
+	island_layout = load_json(ISLAND_LAYOUT_PATH)
 
 
 static func load_json(path: String) -> Dictionary:
