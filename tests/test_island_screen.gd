@@ -24,11 +24,13 @@ func after_all() -> void:
 	GameState.load_game(DataDefs.economy, TimeUtil.now(), DataDefs.gizmos, DataDefs.buildings)
 
 
-func test_builds_one_row_per_plot_plus_islets_plus_crew() -> void:
-	assert_eq(screen.get_node("Rows").get_child_count(),
-		int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size()
-			+ CrewModel.members(DataDefs.crew).size(),
-		"fresh save: home plots, one status row per islet, one row per crew def")
+func test_builds_map_nodes_for_plots_islets_and_crew() -> void:
+	assert_eq(screen.get_node("MapScroll/Map/Plots").get_child_count(),
+		int(DataDefs.buildings["plot_count"]), "fresh save: one pad per home plot")
+	assert_eq(screen.get_node("MapScroll/Map/Islets").get_child_count(),
+		IsletModel.islets(DataDefs.islets).size(), "one marker per islet")
+	assert_eq(screen.get_node("MapScroll/Map/CrewBand").get_child_count(),
+		CrewModel.members(DataDefs.crew).size(), "one token per crew def, rescued or not")
 
 func test_choose_opens_the_modal_on_the_first_candidate() -> void:
 	screen._open_build_modal("plot_0")
@@ -74,10 +76,11 @@ func test_built_building_no_longer_offered_for_empty_plots() -> void:
 	screen._open_build_modal("plot_1")
 	assert_false((screen._modal_ids as Array).has("workshop"))
 
-func test_built_observatory_shows_its_teaser() -> void:
+func test_built_observatory_shows_its_teaser_in_the_sheet() -> void:
 	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
-	var text: String = screen._row_text("plot_3", GameState.data["island"], TimeUtil.now())
-	assert_string_contains(text, "Brasswork Reach",
+	screen._rebuild()
+	screen._on_plot_tapped("plot_3")
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetInfo").text), "Brasswork Reach",
 		"spec 4.1: the Observatory reveals upcoming regions")
 
 func test_gardens_collect_credits_scrap() -> void:
@@ -136,11 +139,11 @@ func test_first_construction_completion_requests_notification_permission() -> vo
 	assert_true(bool(GameState.data["notifications"]["permission_requested"]),
 		"spec 5: permission asked at the first construction completion, not at launch")
 
-func test_tick_without_state_change_keeps_row_nodes_alive() -> void:
-	var row_before: Node = screen.get_node("Rows").get_child(0)
+func test_tick_without_state_change_keeps_map_nodes_alive() -> void:
+	var node_before: Node = screen.get_node("MapScroll/Map/Plots").get_child(0)
 	screen._refresh_tick()
-	assert_true(is_instance_valid(row_before) and not row_before.is_queued_for_deletion(),
-		"per-second ticks must not free a button under the player's finger")
+	assert_true(is_instance_valid(node_before) and not node_before.is_queued_for_deletion(),
+		"per-second ticks must not free a pad under the player's finger")
 
 func test_tick_rebuilds_when_a_timer_finishes() -> void:
 	screen._open_build_modal("plot_0")
@@ -261,12 +264,11 @@ func test_letter_close_records_letters_seen() -> void:
 	assert_false(screen.get_node("LetterPanel").visible)
 	assert_true(bool((GameState.data["islets"]["letters_seen"] as Dictionary)["lantern_shoal"]))
 
-func test_restored_islet_contributes_its_plot_row() -> void:
+func test_restored_islet_contributes_its_plot_pad() -> void:
 	restore_lantern()
-	assert_eq(screen.get_node("Rows").get_child_count(),
-		int(DataDefs.buildings["plot_count"]) + 1 + IsletModel.islets(DataDefs.islets).size()
-			+ CrewModel.members(DataDefs.crew).size(),
-		"the restored islet's plot joins the list")
+	assert_eq(screen.get_node("MapScroll/Map/Plots").get_child_count(),
+		int(DataDefs.buildings["plot_count"]) + 1,
+		"the restored islet's plot joins the map")
 
 func test_islet_plot_offers_only_its_islet_building() -> void:
 	restore_lantern()
@@ -304,24 +306,29 @@ func rescue_and_rebuild(ids: Array) -> void:
 	screen._rebuild()
 
 
-func crew_row_count() -> int:
-	return screen.get_node("Rows").get_child_count()
+func crew_token_count() -> int:
+	return screen.get_node("MapScroll/Map/CrewBand").get_child_count()
 
 
-func test_crew_rows_exist_for_the_whole_cast() -> void:
-	var base := int(DataDefs.buildings["plot_count"]) + IsletModel.islets(DataDefs.islets).size()
-	assert_eq(crew_row_count(), base + CrewModel.members(DataDefs.crew).size(),
-		"every crew def gets a row, rescued or not")
+func test_crew_tokens_exist_for_the_whole_cast() -> void:
+	assert_eq(crew_token_count(), CrewModel.members(DataDefs.crew).size(),
+		"every crew def gets a token, rescued or not")
 
-func test_unrescued_crew_show_as_silhouettes() -> void:
-	assert_string_contains(screen._crew_row_text(CrewModel.entry(DataDefs.crew, "odo")),
-		"still out there")
+func test_unrescued_crew_show_as_disabled_silhouettes() -> void:
+	var state: Dictionary = screen._crew_visual_state(CrewModel.entry(DataDefs.crew, "odo"))
+	assert_eq(String(state["name"]), "???")
+	assert_false(bool(state["rescued"]))
+	var token: Button = screen._crew_tokens["odo"]
+	assert_true(token.disabled)
+
 
 func test_rescued_crew_show_name_and_specialty() -> void:
 	rescue_and_rebuild(["odo"])
-	var text: String = screen._crew_row_text(CrewModel.entry(DataDefs.crew, "odo"))
-	assert_string_contains(text, "Odo")
-	assert_string_contains(text, "Gardens")
+	var state: Dictionary = screen._crew_visual_state(CrewModel.entry(DataDefs.crew, "odo"))
+	assert_eq(String(state["name"]), "Odo")
+	assert_string_contains(String(state["line"]), "Gardens")
+	var token: Button = screen._crew_tokens["odo"]
+	assert_false(token.disabled)
 
 func test_assign_cycle_walks_workable_then_idle() -> void:
 	rescue_and_rebuild(["odo"])
@@ -351,12 +358,13 @@ func test_wind_still_assignment_reapplies_fuel_effects() -> void:
 	assert_eq(int(GameState.data["fuel"]["regen_seconds"]), 720,
 		"(1200 - 120) / 1.5: the handler re-applies fuel effects")
 
-func test_worker_suffix_on_building_rows() -> void:
+func test_worker_badge_rides_the_building_pad() -> void:
 	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
 	rescue_and_rebuild(["odo"])
 	screen._on_assign_pressed("odo")
-	assert_string_contains(screen._row_text("plot_2", GameState.data["island"], TimeUtil.now()),
-		"Odo working")
+	var state: Dictionary = screen._plot_state("plot_2", TimeUtil.now())
+	assert_string_contains(String(state.get("worker_portrait", "")), "odo",
+		"the assigned worker's portrait badges the pad")
 
 func test_rescue_and_assignment_are_structural_signature_changes() -> void:
 	screen._refresh_tick()
@@ -414,8 +422,8 @@ func test_running_batch_joins_the_signature_and_row_text() -> void:
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, idle_signature, "a starting batch is structural")
 	var running_signature: String = screen._last_signature
-	assert_string_contains(screen._row_text("plot_1", GameState.data["island"], TimeUtil.now()), "batch",
-		"the countdown rides the row label")
+	assert_string_contains(String(screen._plot_state("plot_1", TimeUtil.now()).get("status", "")), "batch",
+		"the countdown rides the pad's status label")
 	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, running_signature, "done is structural: Collect must appear")
@@ -484,3 +492,126 @@ func test_stats_hide_when_a_building_has_none() -> void:
 func test_flavor_reads_as_a_different_voice() -> void:
 	assert_almost_eq(screen.get_node("BuildModal/VBox/ModalFlavor").modulate.a, 0.7, 0.01,
 		"flavor dims so function stands out")
+
+
+func test_empty_plot_tap_opens_the_build_browser() -> void:
+	screen._on_plot_tapped("plot_0")
+	assert_true(screen.get_node("BuildModal").visible)
+	assert_eq(screen._modal_building(), "workshop")
+
+
+func test_done_construction_tap_collects_directly() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 0}
+	TimerService.start("build_plot_0", "construction", 10, 1000, {"plot": "plot_0", "building": "workshop", "to_level": 1})
+	TimerService._state.data["timers"]["build_plot_0"]["ends_at"] = 0
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	assert_eq(IslandModel.building_level(GameState.data["island"], "workshop"), 1)
+	assert_false(screen.get_node("PlotSheet").visible, "a done build collects on the tap itself")
+
+
+func test_built_plot_tap_opens_the_sheet() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	assert_true(screen.get_node("PlotSheet").visible)
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetTitle").text), "Workshop Lv 1")
+
+
+func test_constructing_plot_tap_opens_the_sheet_with_countdown() -> void:
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._on_plot_tapped("plot_0")
+	assert_true(screen.get_node("PlotSheet").visible)
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetTitle").text), "Building Workshop")
+
+
+func test_done_batch_tap_collects_directly() -> void:
+	with_smeltery(1)
+	screen._on_batch_start_pressed("smeltery", "smelt")
+	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
+	screen._rebuild()
+	screen._on_plot_tapped("plot_1")
+	assert_eq(Economy.balance("parts"), 1)
+	assert_false(screen.get_node("PlotSheet").visible)
+
+
+func test_construction_done_outranks_batch_done_on_one_tap() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	screen._rebuild()
+	screen._on_batch_start_pressed("gardens", "put_up_provisions")
+	TimerService.start("build_plot_2", "construction", 10, 1000, {"plot": "plot_2", "building": "gardens", "to_level": 2})
+	TimerService._state.data["timers"]["build_plot_2"]["ends_at"] = 0
+	TimerService._state.data["timers"]["convert_gardens"]["ends_at"] = 0
+	screen._on_plot_tapped("plot_2")
+	assert_eq(int((GameState.data["island"]["plots"]["plot_2"] as Dictionary)["level"]), 2,
+		"the construction collects first")
+	assert_true(TimerService.active_timers().has("convert_gardens"), "the batch stays for the next tap")
+
+
+func test_plot_pads_sit_at_their_authored_positions() -> void:
+	var node: Control = screen._plot_nodes["plot_0"]
+	var pos: Array = (DataDefs.island_layout["plots"] as Dictionary)["plot_0"]
+	assert_eq(node.position + node.custom_minimum_size / 2.0, Vector2(float(pos[0]), float(pos[1])))
+
+
+func test_constructing_plot_shows_the_scaffold_overlay() -> void:
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	var node: IslandPlotNode = screen._plot_nodes["plot_0"]
+	assert_true(node._overlay.visible, "construction_overlay.png wired (audit 4.2)")
+
+
+func test_unknown_plot_position_falls_back_to_origin_without_crashing() -> void:
+	assert_eq(screen._layout_pos([]), Vector2.ZERO)
+	assert_eq(screen._layout_pos(null), Vector2.ZERO)
+
+
+func test_islet_tap_restores_when_offered() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_islet_tapped("lantern_shoal")
+	assert_true(TimerService.active_timers().has("restore_lantern_shoal"))
+
+
+func test_islet_tap_is_a_noop_while_locked() -> void:
+	screen._on_islet_tapped("foundry_rock")
+	assert_false(TimerService.active_timers().has("restore_foundry_rock"))
+	assert_eq(screen.get_node("StatusLabel").text, "", "a locked islet tap does not even complain")
+
+
+func test_islet_tap_collects_a_done_restoration_and_opens_the_letter() -> void:
+	GameState.data["currencies"]["cloudsilk"] = 10
+	screen._on_restore_pressed("lantern_shoal")
+	TimerService._state.data["timers"]["restore_lantern_shoal"]["ends_at"] = 0
+	screen._refresh_tick()
+	screen._on_islet_tapped("lantern_shoal")
+	assert_true(IsletModel.is_restored(GameState.data, "lantern_shoal"))
+	assert_true(screen.get_node("LetterPanel").visible)
+
+
+func test_islet_tap_rereads_the_letter_when_restored() -> void:
+	restore_lantern()
+	screen._on_islet_tapped("lantern_shoal")
+	assert_true(screen.get_node("LetterPanel").visible)
+
+
+func test_locked_islet_dims_on_the_map() -> void:
+	var node: Control = screen._islet_nodes["foundry_rock"]
+	assert_almost_eq(node.modulate.a, 0.4, 0.01, "Plan 8 polish: locked islets finally dim")
+
+
+func test_modal_block_shades_the_map_behind_overlays() -> void:
+	assert_false(screen.get_node("ModalBlock").visible)
+	screen._open_build_modal("plot_0")
+	assert_true(screen.get_node("ModalBlock").visible, "map taps cannot leak through the modal")
+	screen._on_modal_cancel_pressed()
+	assert_false(screen.get_node("ModalBlock").visible)
+
+
+func test_sheet_close_hides_sheet_and_block() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	screen._on_sheet_close_pressed()
+	assert_false(screen.get_node("PlotSheet").visible)
+	assert_false(screen.get_node("ModalBlock").visible)

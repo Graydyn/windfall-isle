@@ -1,23 +1,23 @@
 extends Control
-## The home island (spec 4.1): plots, timed construction, upgrades, and the
-## retention controls (trickle, crates, build slot, rewarded-ad accelerators).
-## Dumb UI: every rule lives in IslandModel; this screen renders state and
-## forwards taps.
+## The home island (spec 4.1) as a scrollable map (Plan 15): building pads,
+## islets and crew live at authored positions from island_layout.json. Dumb
+## UI: every rule lives in the models; this screen renders state and routes
+## taps to the same handlers the old menu used.
 ##
 ## Refresh discipline: RefreshTimer ticks call _refresh_tick, which rebuilds
-## the row tree ONLY when the structural signature changes (a timer starting,
-## finishing, or disappearing); otherwise labels update in place so a button
-## mid-tap is never freed under the player's finger.
+## the map ONLY when the structural signature changes (a timer starting,
+## finishing, or disappearing); otherwise nodes re-render in place so a pad
+## is never freed under the player's finger.
 
 var _last_signature := ""
 var _modal_plot := ""
 var _modal_ids: Array[String] = []
 var _modal_index := 0
-var _plot_labels: Dictionary = {}
-var _islet_labels: Dictionary = {}
+var _plot_nodes: Dictionary = {}
+var _islet_nodes: Dictionary = {}
+var _crew_tokens: Dictionary = {}
 var _letter_islet := ""
-
-@onready var rows: VBoxContainer = $Rows
+var _sheet_plot := ""
 
 
 func _ready() -> void:
@@ -33,6 +33,10 @@ func _ready() -> void:
 	$BuildModal/VBox/NavRow/NextButton.pressed.connect(_on_modal_next_pressed)
 	$BuildModal/VBox/ActionRow/ConfirmButton.pressed.connect(_on_modal_confirm_pressed)
 	$BuildModal/VBox/ActionRow/CancelButton.pressed.connect(_on_modal_cancel_pressed)
+	$PlotSheet/VBox/SheetClose.pressed.connect(_on_sheet_close_pressed)
+	$BuildModal.visibility_changed.connect(_update_modal_block)
+	$LetterPanel.visibility_changed.connect(_update_modal_block)
+	$PlotSheet.visibility_changed.connect(_update_modal_block)
 	_rebuild()
 
 
@@ -106,139 +110,276 @@ func _refresh_tick() -> void:
 
 
 func _refresh_labels(now: int) -> void:
-	var island: Dictionary = GameState.data["island"]
-	for plot in _plot_labels:
-		var label: Label = _plot_labels[plot]
-		if is_instance_valid(label):
-			label.text = _row_text(String(plot), island, now)
-	for islet_id in _islet_labels:
-		var islet_label: Label = _islet_labels[islet_id]
-		if is_instance_valid(islet_label):
-			islet_label.text = _islet_row_text(IsletModel.entry(DataDefs.islets, String(islet_id)), now)
+	for plot in _plot_nodes:
+		var node: IslandPlotNode = _plot_nodes[plot]
+		if is_instance_valid(node):
+			node.render(_plot_state(String(plot), now))
+	for islet_id in _islet_nodes:
+		var islet_node: IslandIsletNode = _islet_nodes[islet_id]
+		if is_instance_valid(islet_node):
+			islet_node.render(_islet_visual_state(IsletModel.entry(DataDefs.islets, String(islet_id)), now))
+	if $PlotSheet.visible:
+		_render_sheet()
 	_refresh_static_controls(now)
 
 
 func _rebuild() -> void:
-	for child in rows.get_children():
-		rows.remove_child(child)
-		child.queue_free()
-	_plot_labels.clear()
-	_islet_labels.clear()
+	for container in [$MapScroll/Map/Plots, $MapScroll/Map/Islets, $MapScroll/Map/CrewBand]:
+		for child in (container as Control).get_children():
+			(container as Control).remove_child(child)
+			child.queue_free()
+	_plot_nodes.clear()
+	_islet_nodes.clear()
+	_crew_tokens.clear()
 	var now := TimeUtil.now()
 	_last_signature = _signature(now)
-	var island: Dictionary = GameState.data["island"]
+	var layout: Dictionary = DataDefs.island_layout
+	var plot_positions: Dictionary = layout.get("plots", {})
 	for plot in _plot_ids():
-		var row := HBoxContainer.new()
-		row.custom_minimum_size = Vector2(0, 64)
-		var label := Label.new()
-		label.custom_minimum_size = Vector2(320, 0)
-		label.text = _row_text(plot, island, now)
-		row.add_child(label)
-		_plot_labels[plot] = label
-		var timer_id := "build_" + plot
-		if TimerService.active_timers().has(timer_id):
-			if TimerService.is_done(timer_id, now):
-				var collect := Button.new()
-				collect.text = "Complete!"
-				collect.pressed.connect(_on_collect_pressed.bind(plot))
-				row.add_child(collect)
-			elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
-				var skip := Button.new()
-				skip.text = "Skip (ad)"
-				skip.pressed.connect(_on_skip_pressed.bind(timer_id))
-				row.add_child(skip)
-		else:
-			var choose := Button.new()
-			choose.text = "Upgrade" if island.get("plots", {}).has(plot) else "Choose..."
-			choose.pressed.connect(_open_build_modal.bind(plot))
-			row.add_child(choose)
-		var occupant := ""
-		if island.get("plots", {}).has(plot):
-			occupant = String((island["plots"][plot] as Dictionary).get("building", ""))
-		if occupant != "" and not ConvertModel.recipes(DataDefs.buildings, occupant).is_empty():
-			var convert_id := "convert_" + occupant
-			if TimerService.active_timers().has(convert_id):
-				if TimerService.is_done(convert_id, now):
-					var done_payload: Dictionary = (TimerService.active_timers()[convert_id] as Dictionary).get("payload", {})
-					var done_outputs := ConvertModel.outputs_for(DataDefs.buildings, island, occupant, String(done_payload.get("recipe", "")))
-					var batch := Button.new()
-					batch.text = "Collect (%s)" % _cost_text(done_outputs) if not done_outputs.is_empty() else "Collect"
-					batch.pressed.connect(_on_batch_collect_pressed.bind(occupant))
-					row.add_child(batch)
-			else:
-				for recipe_v in ConvertModel.recipes(DataDefs.buildings, occupant):
-					var recipe_id := String((recipe_v as Dictionary).get("id", ""))
-					var start_batch := Button.new()
-					start_batch.text = _batch_button_text(occupant, recipe_id)
-					start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, occupant, recipe_id)
-					start_batch.pressed.connect(_on_batch_start_pressed.bind(occupant, recipe_id))
-					row.add_child(start_batch)
-		rows.add_child(row)
+		var node := IslandPlotNode.new(plot)
+		node.plot_tapped.connect(_on_plot_tapped)
+		node.position = _layout_pos(plot_positions.get(plot)) - node.custom_minimum_size / 2.0
+		$MapScroll/Map/Plots.add_child(node)
+		node.render(_plot_state(plot, now))
+		_plot_nodes[plot] = node
+	var islet_layout: Dictionary = layout.get("islets", {})
+	var bridges: Array = []
 	for row_v in IsletModel.islets(DataDefs.islets):
 		var islet := row_v as Dictionary
 		var islet_id := String(islet.get("id", ""))
-		var islet_row := HBoxContainer.new()
-		islet_row.custom_minimum_size = Vector2(0, 64)
-		var islet_art := "res://game/art/buildings/islet_%s_%s.png" % [
-			islet_id, "restored" if IsletModel.is_restored(GameState.data, islet_id) else "ruined"]
-		if ResourceLoader.exists(islet_art):
-			var thumb := TextureRect.new()
-			thumb.texture = load(islet_art)
-			thumb.custom_minimum_size = Vector2(56, 56)
-			thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			islet_row.add_child(thumb)
-		var islet_label := Label.new()
-		islet_label.custom_minimum_size = Vector2(320, 0)
-		islet_label.text = _islet_row_text(islet, now)
-		islet_row.add_child(islet_label)
-		_islet_labels[islet_id] = islet_label
-		match _islet_state(islet_id, now):
-			"o":
-				var restore := Button.new()
-				restore.text = "Restore"
-				restore.pressed.connect(_on_restore_pressed.bind(islet_id))
-				islet_row.add_child(restore)
-			"d":
-				var cross := Button.new()
-				cross.text = "Cross over!"
-				cross.pressed.connect(_on_restore_collect_pressed.bind(islet_id))
-				islet_row.add_child(cross)
-			"R":
-				var read := Button.new()
-				read.text = "Read letter"
-				read.pressed.connect(_on_read_letter_pressed.bind(islet_id))
-				islet_row.add_child(read)
-		rows.add_child(islet_row)
+		var islet_node := IslandIsletNode.new(islet_id)
+		islet_node.islet_tapped.connect(_on_islet_tapped)
+		var entry: Dictionary = islet_layout.get(islet_id, {})
+		islet_node.position = _layout_pos(entry.get("pos")) - islet_node.custom_minimum_size / 2.0
+		$MapScroll/Map/Islets.add_child(islet_node)
+		islet_node.render(_islet_visual_state(islet, now))
+		_islet_nodes[islet_id] = islet_node
+		var bridge_points: Array = entry.get("bridge", [])
+		if bridge_points.size() == 2:
+			bridges.append({
+				"from": _layout_pos(bridge_points[0]),
+				"to": _layout_pos(bridge_points[1]),
+				"state": _bridge_state(islet_id, now),
+			})
+	$MapScroll/Map/Backdrop.set_bridges(bridges)
+	var band: Dictionary = layout.get("crew_band", {})
+	var index := 0
 	for row_v in CrewModel.members(DataDefs.crew):
 		var member := row_v as Dictionary
 		var member_id := String(member.get("id", ""))
-		var crew_row := HBoxContainer.new()
-		crew_row.custom_minimum_size = Vector2(0, 56)
-		var portrait_path := "res://game/art/crew/%s.png" % member_id
-		var portrait: TextureRect = null
-		if ResourceLoader.exists(portrait_path):
-			portrait = TextureRect.new()
-			portrait.texture = load(portrait_path)
-			portrait.custom_minimum_size = Vector2(48, 48)
-			portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			crew_row.add_child(portrait)
-		var crew_label := Label.new()
-		crew_label.custom_minimum_size = Vector2(320, 0)
-		crew_label.text = _crew_row_text(member)
-		crew_row.add_child(crew_label)
-		if CrewModel.is_rescued(GameState.data, member_id):
-			var assign_button := Button.new()
-			assign_button.text = _assign_text(member_id)
-			assign_button.pressed.connect(_on_assign_pressed.bind(member_id))
-			crew_row.add_child(assign_button)
-		else:
-			crew_label.modulate.a = 0.5
-			if portrait != null:
-				portrait.modulate.a = 0.5
-		rows.add_child(crew_row)
+		var token := IslandCrewToken.new(member_id)
+		token.crew_tapped.connect(_on_assign_pressed)
+		token.position = Vector2(
+			float(band.get("start_x", 64)) + float(band.get("spacing", 82)) * float(index),
+			float(band.get("y", 940))) - token.custom_minimum_size / 2.0
+		$MapScroll/Map/CrewBand.add_child(token)
+		token.render(_crew_visual_state(member))
+		_crew_tokens[member_id] = token
+		index += 1
+	if $PlotSheet.visible:
+		_render_sheet()
 	_refresh_static_controls(now)
+
+
+func _layout_pos(value: Variant) -> Vector2:
+	# A plot id missing from island_layout.json must degrade to a visible
+	# misplacement, never a crash; the defs test catches the authoring hole.
+	if not (value is Array) or (value as Array).size() < 2:
+		return Vector2.ZERO
+	var arr := value as Array
+	return Vector2(float(arr[0]), float(arr[1]))
+
+
+func _plot_state(plot: String, now: int) -> Dictionary:
+	var island: Dictionary = GameState.data["island"]
+	var plots: Dictionary = island.get("plots", {})
+	var defs: Dictionary = DataDefs.buildings.get("defs", {})
+	var timer_id := "build_" + plot
+	if TimerService.active_timers().has(timer_id):
+		var payload: Dictionary = (TimerService.active_timers()[timer_id] as Dictionary).get("payload", {})
+		var building := String(payload.get("building", ""))
+		var def: Dictionary = defs.get(building, {})
+		var state := {
+			"kind": "constructing",
+			"art": "res://game/art/buildings/%s.png" % building,
+			"name": String(def.get("name", building)),
+			"status": "%ds" % TimerService.remaining(timer_id, now),
+			"ready": false,
+		}
+		if TimerService.is_done(timer_id, now):
+			state["status"] = "Tap to collect!"
+			state["ready"] = true
+		return state
+	if plots.has(plot):
+		var entry: Dictionary = plots[plot]
+		var building := String(entry.get("building", ""))
+		var def: Dictionary = defs.get(building, {})
+		var state := {
+			"kind": "built",
+			"art": "res://game/art/buildings/%s.png" % building,
+			"name": "%s Lv %d" % [String(def.get("name", building)), int(entry.get("level", 0))],
+			"status": "",
+			"ready": false,
+		}
+		var worker := CrewModel.crew_at(GameState.data, building)
+		if worker != "":
+			state["worker_portrait"] = "res://game/art/crew/%s.png" % worker
+		var convert_id := "convert_" + building
+		if TimerService.active_timers().has(convert_id):
+			if TimerService.is_done(convert_id, now):
+				state["status"] = "Batch ready!"
+				state["ready"] = true
+			else:
+				state["status"] = "batch %ds" % TimerService.remaining(convert_id, now)
+		return state
+	return {"kind": "empty", "name": "(empty)", "status": "Tap to build", "ready": false}
+
+
+func _islet_visual_state(islet: Dictionary, now: int) -> Dictionary:
+	var islet_id := String(islet.get("id", ""))
+	var restored := IsletModel.is_restored(GameState.data, islet_id)
+	return {
+		"art": "res://game/art/buildings/islet_%s_%s.png" % [islet_id, "restored" if restored else "ruined"],
+		"name": String(islet.get("name", islet_id)),
+		"status": _islet_status_text(islet, now),
+		"dim": _islet_state(islet_id, now) == "L",
+	}
+
+
+func _islet_status_text(islet: Dictionary, now: int) -> String:
+	var islet_id := String(islet.get("id", ""))
+	match _islet_state(islet_id, now):
+		"R":
+			return "restored"
+		"r":
+			return "restoring (%ds)" % TimerService.remaining("restore_" + islet_id, now)
+		"d":
+			return "the bridge is ready"
+		"o":
+			return _cost_text(islet.get("cost", {}))
+	return "beyond a broken bridge"
+
+
+func _islet_row_text(islet: Dictionary, now: int) -> String:
+	return "%s: %s" % [String(islet.get("name", String(islet.get("id", "")))), _islet_status_text(islet, now)]
+
+
+func _crew_visual_state(member: Dictionary) -> Dictionary:
+	var member_id := String(member.get("id", ""))
+	var rescued := CrewModel.is_rescued(GameState.data, member_id)
+	var line := ""
+	if rescued:
+		var building := CrewModel.building_of(GameState.data, member_id)
+		if building == "":
+			var specialty := String(member.get("specialty", ""))
+			var spec_def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(specialty, {})
+			line = "knows the %s" % String(spec_def.get("name", specialty))
+		else:
+			line = String(((DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {}) as Dictionary).get("name", building))
+	return {
+		"portrait": "res://game/art/crew/%s.png" % member_id,
+		"name": String(member.get("name", member_id)) if rescued else "???",
+		"line": line,
+		"rescued": rescued,
+	}
+
+
+func _bridge_state(islet_id: String, now: int) -> String:
+	match _islet_state(islet_id, now):
+		"R":
+			return "restored"
+		"r", "d":
+			return "scaffold"
+	return "broken"
+
+
+func _on_plot_tapped(plot: String) -> void:
+	var now := TimeUtil.now()
+	var timer_id := "build_" + plot
+	if TimerService.active_timers().has(timer_id):
+		if TimerService.is_done(timer_id, now):
+			_on_collect_pressed(plot)
+		else:
+			_open_plot_sheet(plot)
+		return
+	var plots: Dictionary = (GameState.data["island"] as Dictionary).get("plots", {})
+	if not plots.has(plot):
+		_open_build_modal(plot)
+		return
+	var building := String((plots[plot] as Dictionary).get("building", ""))
+	var convert_id := "convert_" + building
+	if TimerService.active_timers().has(convert_id) and TimerService.is_done(convert_id, now):
+		_on_batch_collect_pressed(building)
+		return
+	_open_plot_sheet(plot)
+
+
+func _on_islet_tapped(islet_id: String) -> void:
+	match _islet_state(islet_id, TimeUtil.now()):
+		"o":
+			_on_restore_pressed(islet_id)
+		"d":
+			_on_restore_collect_pressed(islet_id)
+		"R":
+			_on_read_letter_pressed(islet_id)
+
+
+func _open_plot_sheet(plot: String) -> void:
+	_sheet_plot = plot
+	_render_sheet()
+	if _sheet_plot != "":
+		$PlotSheet.visible = true
+
+
+func _render_sheet() -> void:
+	# Task 6 fills in the action buttons; this stub renders title and info
+	# so tap routing stands alone.
+	var now := TimeUtil.now()
+	var plots: Dictionary = (GameState.data["island"] as Dictionary).get("plots", {})
+	var timer_id := "build_" + _sheet_plot
+	var constructing := TimerService.active_timers().has(timer_id)
+	if _sheet_plot == "" or (not plots.has(_sheet_plot) and not constructing):
+		_close_sheet()
+		return
+	var building := ""
+	var level := 0
+	if plots.has(_sheet_plot):
+		var entry: Dictionary = plots[_sheet_plot]
+		building = String(entry.get("building", ""))
+		level = int(entry.get("level", 0))
+	if constructing:
+		var payload: Dictionary = (TimerService.active_timers()[timer_id] as Dictionary).get("payload", {})
+		building = String(payload.get("building", building))
+	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {})
+	var display := String(def.get("name", building))
+	if constructing:
+		if TimerService.is_done(timer_id, now):
+			$PlotSheet/VBox/SheetTitle.text = "%s: ready!" % display
+		else:
+			$PlotSheet/VBox/SheetTitle.text = "Building %s (%ds)" % [display, TimerService.remaining(timer_id, now)]
+	else:
+		$PlotSheet/VBox/SheetTitle.text = "%s Lv %d" % [display, level]
+	var info_lines := PackedStringArray()
+	var worker := CrewModel.crew_at(GameState.data, building)
+	if worker != "":
+		info_lines.append("%s is working here" % String(CrewModel.entry(DataDefs.crew, worker).get("name", worker)))
+	if level >= 1 and String(def.get("teaser", "")) != "":
+		info_lines.append(String(def.get("teaser", "")))
+	$PlotSheet/VBox/SheetInfo.text = "\n".join(info_lines)
+	$PlotSheet/VBox/SheetInfo.visible = not info_lines.is_empty()
+
+
+func _close_sheet() -> void:
+	_sheet_plot = ""
+	$PlotSheet.visible = false
+
+
+func _on_sheet_close_pressed() -> void:
+	_close_sheet()
+
+
+func _update_modal_block() -> void:
+	$ModalBlock.visible = $BuildModal.visible or $LetterPanel.visible or $PlotSheet.visible
 
 
 func _refresh_static_controls(now: int) -> void:
@@ -260,29 +401,6 @@ func _refresh_static_controls(now: int) -> void:
 	$BonusCrateButton.add_theme_constant_override("icon_max_width", 40)
 	$SlotButton.icon = load("res://game/art/icons/build_slot.png")
 	$SlotButton.add_theme_constant_override("icon_max_width", 32)
-
-
-func _row_text(plot: String, island: Dictionary, now: int) -> String:
-	var timer_id := "build_" + plot
-	var plots: Dictionary = island.get("plots", {})
-	if TimerService.active_timers().has(timer_id):
-		var payload: Dictionary = TimerService.active_timers()[timer_id].get("payload", {})
-		var remaining := TimerService.remaining(timer_id, now)
-		return "%s: building %s (%ds)" % [plot, String(payload.get("building", "?")), remaining]
-	if plots.has(plot):
-		var entry: Dictionary = plots[plot]
-		var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary).get(String(entry["building"]), {})
-		var text := "%s: %s Lv %d" % [plot, String(def.get("name", entry["building"])), int(entry["level"])]
-		var worker := CrewModel.crew_at(GameState.data, String(entry["building"]))
-		if worker != "":
-			text += ", %s working" % String(CrewModel.entry(DataDefs.crew, worker).get("name", worker))
-		var convert_id := "convert_" + String(entry["building"])
-		if TimerService.active_timers().has(convert_id) and not TimerService.is_done(convert_id, now):
-			text += "  (batch %ds)" % TimerService.remaining(convert_id, now)
-		if String(entry["building"]) == "observatory" and int(entry["level"]) >= 1:
-			text += "\n    %s" % String(def.get("teaser", ""))
-		return text
-	return "%s: (empty)" % plot
 
 
 func _open_build_modal(plot: String) -> void:
@@ -414,43 +532,11 @@ func _on_modal_cancel_pressed() -> void:
 	$BuildModal.visible = false
 
 
-func _islet_row_text(islet: Dictionary, now: int) -> String:
-	var islet_id := String(islet.get("id", ""))
-	var islet_name := String(islet.get("name", islet_id))
-	match _islet_state(islet_id, now):
-		"R":
-			return "%s: restored" % islet_name
-		"r":
-			return "%s: restoring (%ds)" % [islet_name, TimerService.remaining("restore_" + islet_id, now)]
-		"d":
-			return "%s: the bridge is ready" % islet_name
-		"o":
-			return "%s: %s" % [islet_name, _cost_text(islet.get("cost", {}))]
-	return "%s: beyond a broken bridge" % islet_name
-
-
 func _cost_text(cost: Dictionary) -> String:
 	var parts := PackedStringArray()
 	for currency in cost:
 		parts.append("%d %s" % [int(cost[currency]), String(currency)])
 	return ", ".join(parts)
-
-
-func _crew_row_text(member: Dictionary) -> String:
-	var member_id := String(member.get("id", ""))
-	if not CrewModel.is_rescued(GameState.data, member_id):
-		return "Someone is still out there..."
-	var specialty := String(member.get("specialty", ""))
-	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(specialty, {})
-	return "%s (knows the %s)" % [String(member.get("name", member_id)), String(def.get("name", specialty))]
-
-
-func _assign_text(crew_id: String) -> String:
-	var building := CrewModel.building_of(GameState.data, crew_id)
-	if building == "":
-		return "Assign: (idle)"
-	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {})
-	return "Assign: %s" % String(def.get("name", building))
 
 
 func _batch_button_text(building_id: String, recipe_id: String) -> String:
@@ -609,8 +695,8 @@ func _on_skip_pressed(timer_id: String) -> void:
 
 
 func _grant_skip(timer_id: String) -> void:
-	# skip() emits no signal; the rebuild surfaces Complete! and the player
-	# collects through the normal button.
+	# skip() emits no signal; the rebuild surfaces the ready state and the
+	# player collects with a tap on the pad.
 	TimerService.skip(timer_id)
 	GameState.save_game()
 	_rebuild()
