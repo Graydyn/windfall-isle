@@ -63,6 +63,21 @@ func test_boon_flywheel_end_to_end() -> void:
 	assert_eq(scene.model.drops_remaining(), drops_before + 2)
 	assert_eq(scene.model.boons, ["barge_bounty", "spare_pods"], "pick order preserved")
 
+func test_offer_waits_for_pods_in_flight() -> void:
+	# Two pods in the air; the first catch crosses the quota tier while the
+	# second is still falling. The offer must wait for the board to clear
+	# instead of popping over a live pod.
+	scene._on_drop_requested(300.0)
+	scene._on_drop_requested(420.0)
+	var pods: Array = get_tree().get_nodes_in_group("pods")
+	scene._on_pod_caught(pods[0], {"scrap": 25}, "barge")
+	assert_eq(scene.model.tier, 1, "the crossing catch lifts the tier")
+	assert_false(scene.get_node("UI/BoonOffer").visible, "offer waits while a pod is still falling")
+	scene._on_pod_caught(pods[1], {"scrap": 1}, "barge")
+	assert_true(scene.get_node("UI/BoonOffer").visible, "offer appears once the last pod lands")
+	assert_false(scene.get_node("DropController").enabled)
+
+
 func test_organic_offer_is_seed_deterministic() -> void:
 	scene._on_tier_reached(1)
 	var first: Array = (scene._current_offer as Array).duplicate()

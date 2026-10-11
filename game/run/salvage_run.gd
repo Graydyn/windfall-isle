@@ -127,6 +127,9 @@ func _on_pod_caught(pod: Node, payout: Dictionary, source: String = "barge") -> 
 	for currency in payout:
 		Economy.add(currency, int(payout[currency]))
 	model.resolve_pod(payout)
+	# A deferred offer (queued while this or another pod was falling) can
+	# serve now if this was the last pod on the board.
+	_maybe_show_offer()
 	_refresh_hud()
 
 
@@ -538,8 +541,16 @@ func _on_tier_reached(_tier: int) -> void:
 	# Spec 3.2 step 4: each tier crossing offers a boon. One rich catch can
 	# cross two tiers; the offers queue and serve one at a time.
 	_pending_offers += 1
-	if not $UI/BoonOffer.visible:
-		_show_next_offer()
+	_maybe_show_offer()
+
+
+func _maybe_show_offer() -> void:
+	# A tier crossed while another pod is still falling (an earlier catch of
+	# a multi-pod volley, or mid-flight gizmo loot) must not pop the offer
+	# over a live pod; it waits until the board clears.
+	if model.pods_in_flight > 0 or $UI/BoonOffer.visible:
+		return
+	_show_next_offer()
 
 
 func _show_next_offer() -> void:
