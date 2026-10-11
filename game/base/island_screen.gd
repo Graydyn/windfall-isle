@@ -332,15 +332,18 @@ func _open_plot_sheet(plot: String) -> void:
 
 
 func _render_sheet() -> void:
-	# Task 6 fills in the action buttons; this stub renders title and info
-	# so tap routing stands alone.
 	var now := TimeUtil.now()
-	var plots: Dictionary = (GameState.data["island"] as Dictionary).get("plots", {})
+	var island: Dictionary = GameState.data["island"]
+	var plots: Dictionary = island.get("plots", {})
 	var timer_id := "build_" + _sheet_plot
 	var constructing := TimerService.active_timers().has(timer_id)
 	if _sheet_plot == "" or (not plots.has(_sheet_plot) and not constructing):
 		_close_sheet()
 		return
+	var actions: VBoxContainer = $PlotSheet/VBox/SheetActions
+	for child in actions.get_children():
+		actions.remove_child(child)
+		child.queue_free()
 	var building := ""
 	var level := 0
 	if plots.has(_sheet_plot):
@@ -367,6 +370,41 @@ func _render_sheet() -> void:
 		info_lines.append(String(def.get("teaser", "")))
 	$PlotSheet/VBox/SheetInfo.text = "\n".join(info_lines)
 	$PlotSheet/VBox/SheetInfo.visible = not info_lines.is_empty()
+	if constructing:
+		if TimerService.is_done(timer_id, now):
+			var complete := Button.new()
+			complete.text = "Complete!"
+			complete.pressed.connect(_on_sheet_collect_pressed)
+			actions.add_child(complete)
+		elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
+			var skip := Button.new()
+			skip.text = "Skip (ad)"
+			skip.pressed.connect(_on_skip_pressed.bind(timer_id))
+			actions.add_child(skip)
+		return
+	var upgrade := Button.new()
+	var max_level := int(def.get("max_level", 1))
+	upgrade.text = "Upgrade..." if level < max_level else "Max level"
+	upgrade.disabled = level >= max_level
+	upgrade.pressed.connect(_on_sheet_upgrade_pressed)
+	actions.add_child(upgrade)
+	var convert_id := "convert_" + building
+	if TimerService.active_timers().has(convert_id):
+		if TimerService.is_done(convert_id, now):
+			var payload: Dictionary = (TimerService.active_timers()[convert_id] as Dictionary).get("payload", {})
+			var outputs := ConvertModel.outputs_for(DataDefs.buildings, island, building, String(payload.get("recipe", "")))
+			var batch := Button.new()
+			batch.text = "Collect (%s)" % _cost_text(outputs) if not outputs.is_empty() else "Collect"
+			batch.pressed.connect(_on_sheet_batch_collect_pressed.bind(building))
+			actions.add_child(batch)
+	else:
+		for recipe_v in ConvertModel.recipes(DataDefs.buildings, building):
+			var recipe_id := String((recipe_v as Dictionary).get("id", ""))
+			var start_batch := Button.new()
+			start_batch.text = _batch_button_text(building, recipe_id)
+			start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, building, recipe_id)
+			start_batch.pressed.connect(_on_sheet_batch_start_pressed.bind(building, recipe_id))
+			actions.add_child(start_batch)
 
 
 func _close_sheet() -> void:
@@ -376,6 +414,26 @@ func _close_sheet() -> void:
 
 func _on_sheet_close_pressed() -> void:
 	_close_sheet()
+
+
+func _on_sheet_collect_pressed() -> void:
+	var plot := _sheet_plot
+	_close_sheet()
+	_on_collect_pressed(plot)
+
+
+func _on_sheet_upgrade_pressed() -> void:
+	var plot := _sheet_plot
+	_close_sheet()
+	_open_build_modal(plot)
+
+
+func _on_sheet_batch_start_pressed(building_id: String, recipe_id: String) -> void:
+	_on_batch_start_pressed(building_id, recipe_id)
+
+
+func _on_sheet_batch_collect_pressed(building_id: String) -> void:
+	_on_batch_collect_pressed(building_id)
 
 
 func _update_modal_block() -> void:

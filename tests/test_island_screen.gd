@@ -615,3 +615,63 @@ func test_sheet_close_hides_sheet_and_block() -> void:
 	screen._on_sheet_close_pressed()
 	assert_false(screen.get_node("PlotSheet").visible)
 	assert_false(screen.get_node("ModalBlock").visible)
+
+
+func test_sheet_upgrade_opens_the_locked_modal() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	GameState.data["currencies"]["cloudsilk"] = 20
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_eq(upgrade.text, "Upgrade...")
+	upgrade.pressed.emit()
+	assert_false(screen.get_node("PlotSheet").visible, "the sheet yields to the modal")
+	assert_true(screen.get_node("BuildModal").visible)
+	assert_eq((screen._modal_ids as Array).size(), 1, "locked on the plot's own building")
+	assert_string_contains(String(screen.get_node("BuildModal/VBox/ActionRow/ConfirmButton").text), "Upgrade to Lv 2")
+
+
+func test_sheet_max_level_disables_upgrade() -> void:
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_3")
+	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_true(upgrade.disabled)
+	assert_eq(upgrade.text, "Max level")
+
+
+func test_sheet_lists_batch_buttons_and_starts_one() -> void:
+	with_smeltery(1)
+	screen._on_plot_tapped("plot_1")
+	var actions: VBoxContainer = screen.get_node("PlotSheet/VBox/SheetActions")
+	assert_eq(actions.get_child_count(), 2, "Upgrade plus the smelt recipe")
+	var smelt: Button = actions.get_child(1)
+	assert_string_contains(smelt.text, "Smelt (")
+	smelt.pressed.emit()
+	assert_true(TimerService.active_timers().has("convert_smeltery"))
+	assert_eq(Economy.balance("scrap"), 2000 - 40)
+
+
+func test_sheet_rerenders_to_collect_when_the_batch_finishes() -> void:
+	with_smeltery(1)
+	screen._on_batch_start_pressed("smeltery", "smelt")
+	screen._on_plot_tapped("plot_1")
+	assert_true(screen.get_node("PlotSheet").visible)
+	TimerService._state.data["timers"]["convert_smeltery"]["ends_at"] = 0
+	screen._refresh_tick()
+	var actions: VBoxContainer = screen.get_node("PlotSheet/VBox/SheetActions")
+	var collect: Button = actions.get_child(actions.get_child_count() - 1)
+	assert_string_contains(collect.text, "Collect")
+	collect.pressed.emit()
+	assert_eq(Economy.balance("parts"), 1)
+
+
+func test_sheet_skip_ad_completes_the_construction() -> void:
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._on_plot_tapped("plot_0")
+	var skip: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_eq(skip.text, "Skip (ad)")
+	skip.pressed.emit()
+	assert_true(TimerService.is_done("build_plot_0", TimeUtil.now()),
+		"spec 6 placement 1: an ad skips the timer; the player still collects")
