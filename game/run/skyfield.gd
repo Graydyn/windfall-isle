@@ -19,12 +19,29 @@ func build(region_defs: Dictionary, run_defs: Dictionary, region_id: String = ""
 	_peg_art_prefix = "peg_r" + region_id.trim_prefix("region_") if region_id != "" else ""
 	sea_payout = (region_defs.get("sea_payout", run_defs.get("sea_payout", {"scrap": 1})) as Dictionary).duplicate()
 	var board: Dictionary = region_defs.get("board", {})
+	_build_background(region_id)
 	_build_walls(board)
 	_build_pegs(region_defs.get("pegs", []))
 	_build_barges(region_defs.get("barges", []))
 	_build_sea(board)
 	_build_slots(region_defs.get("gizmo_slots", []))
 	_build_drift_zones(region_defs.get("drift_zones", []))
+
+
+func _build_background(region_id: String) -> void:
+	# Region backdrop (audit 2.1), authored at 2x the 720x1280 design size with
+	# the cloud sea painted into its bottom band. Drawn first so the whole
+	# board sits on top; regions without art keep the clear color.
+	var path := "res://game/art/regions/%s_bg.png" % region_id
+	if region_id == "" or not ResourceLoader.exists(path):
+		return
+	var bg := Sprite2D.new()
+	bg.name = "Background"
+	bg.texture = load(path)
+	bg.centered = false
+	bg.scale = Vector2(720.0, 1280.0) / bg.texture.get_size()
+	add_child(bg)
+	move_child(bg, 0)
 
 
 func _build_walls(board: Dictionary) -> void:
@@ -163,15 +180,15 @@ func _build_barges(barges: Array) -> void:
 
 
 func _barge_visual(art: String, half: Vector2) -> Node2D:
-	# Barge sprites are authored 100x100 with the hull in the lower half, so the
-	# balloons float above the catch rect while the hull spans it. The "art"
-	# tier lets high-payout barges look richer (audit 1.3); anything without a
-	# matching sprite falls back to the old placeholder rectangle.
-	var path := "res://game/assets/sprites/barge%s.png" % ("_" + art if art != "" else "")
+	# Barge sprites are authored square at 2x (200x200) with the hull in the
+	# lower half, so the balloons float above the catch rect while the hull
+	# spans it. The "art" tier lets high-payout barges look richer (audit 1.3);
+	# anything without a matching sprite falls back to the old placeholder rectangle.
+	var path := "res://game/art/run/barge%s.png" % ("_" + art if art != "" else "")
 	if ResourceLoader.exists(path):
 		var sprite := Sprite2D.new()
 		sprite.texture = load(path)
-		sprite.scale = Vector2.ONE * (half.x / 50.0)
+		sprite.scale = Vector2.ONE * (half.x * 2.0 / sprite.texture.get_width())
 		return sprite
 	var visual := Polygon2D.new()
 	visual.polygon = PackedVector2Array([

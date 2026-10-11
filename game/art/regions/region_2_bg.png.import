@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqk5pi3eglphx"
-path="res://.godot/imported/barge_fanciest.png-4100c562a03f319f7c991824f215c674.ctex"
+uid="uid://dcnqromo45am1"
+path="res://.godot/imported/region_2_bg.png-bc51c727d9a5703f911e1988b745c0a7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://game/assets/sprites/barge_fanciest.png"
-dest_files=["res://.godot/imported/barge_fanciest.png-4100c562a03f319f7c991824f215c674.ctex"]
+source_file="res://game/art/regions/region_2_bg.png"
+dest_files=["res://.godot/imported/region_2_bg.png-bc51c727d9a5703f911e1988b745c0a7.ctex"]
 
 [params]
 

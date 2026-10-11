@@ -30,21 +30,20 @@ sheet.save(sys.argv[1] if len(sys.argv) > 1 else "/tmp/sheet.png")
 groups = {}
 for p in files:
     groups.setdefault(os.path.dirname(p), []).append(p)
-blocked = sorted(M.BLOCKED)
 out = ['<!doctype html><meta charset="utf-8"><title>Windfall Art Review</title><style>',
        'body{font:14px system-ui;background:#1d2330;color:#e8e8ee;margin:16px}h2{margin-top:32px}',
        '.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}',
        '.c{background:#2a3242;border-radius:8px;padding:8px}.c img{display:block;margin:auto;max-width:100%;max-height:220px;image-rendering:auto;',
        'background:repeating-conic-gradient(#556 0 25%,#445 0 50%) 0 0/16px 16px;padding:6px;border-radius:4px}',
        '.n{font-weight:600;margin-top:6px}.s{color:#9aa;font-size:12px}details{font-size:12px;color:#bbc}</style>',
-       f'<h1>Windfall Isles art review</h1><p>{len(files)} images from jig, 2026-10-07/08. Checkerboard = transparency. Expand "prompt" for the exact text sent.</p>',
-       '<p><b>Not generated (jig limits):</b> ' + ", ".join(blocked) + '. Also skipped by design: barges (already delivered), gizmo icons (crop from sprites), island vista.</p>']
+       f'<h1>Windfall Isles art review</h1><p>{len(files)} images from jig. Checkerboard = transparency. Expand "prompt" for the exact text sent.</p>',
+       '<p>Style v2 (bright cartoon), 2026-10-09. Prompts and what was left out: <a href="../style-v2-prompts.md">style-v2-prompts.md</a>. Crew portraits are from v1.</p>']
 for g, ps in groups.items():
     out.append(f"<h2>{html.escape(g)}</h2><div class=g>")
     for p in ps:
         im = Image.open(p)
         e = log.get(p, {})
-        prompt = e.get("prompt") or ("hand-picked from review/balloon_cluster (job 48ad0b86)" if "balloon_cluster.png" in p else "")
+        prompt = e.get("prompt") or ""
         out.append(f'<div class=c><img src="../../../{p}"><div class=n>{html.escape(os.path.basename(p))}</div>'
                    f'<div class=s>{im.width}×{im.height} · job {html.escape(str(e.get("job_id", ""))[:8])}</div>'
                    f'<details><summary>prompt</summary>{html.escape(prompt)}</details></div>')

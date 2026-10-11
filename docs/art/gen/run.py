@@ -1,7 +1,8 @@
 """Run one manifest entry through jig (foreground) and log the result.
 
 usage: python3 docs/art/gen/run.py <key> [--overwrite]
-       python3 docs/art/gen/run.py --list   (pending keys, in order)
+       python3 docs/art/gen/run.py --list   (keys with no result for this manifest VERSION, in order)
+       python3 docs/art/gen/run.py --wait <key>   (collect a background that outlived its timeout)
 """
 import json
 import os
@@ -13,8 +14,6 @@ import manifest as M  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 LOG = os.path.join(ROOT, "docs/art/gen/log.jsonl")
-# Jobs made outside this runner that edits may start from.
-KNOWN_JOBS = {"balloon_cluster": "48ad0b86-c01c-4179-9e46-5b6e2ab512ea"}
 
 
 def log_entries():
@@ -24,28 +23,49 @@ def log_entries():
         return [json.loads(line) for line in f if line.strip()]
 
 
-def job_for(key):
+def job_for(key, pending=False):
+    """Latest job for `key` made under the current manifest VERSION."""
     for e in reversed(log_entries()):
-        if e["key"] == key and e.get("ok"):
+        if e["key"] == key and e.get("v") == M.VERSION and (e.get("ok") or (pending and e.get("job_id"))):
             return e["job_id"]
-    return KNOWN_JOBS.get(key)
+    return None
 
 
 def out_of(key):
-    return M.A[key][0] if key in M.A else M.EDITS[key][0]
+    for table in (M.A, M.EDITS, M.BACKGROUNDS, M.STRIPS):
+        if key in table:
+            return table[key][0]
+    raise KeyError(key)
+
+
+def all_keys():
+    return M.REQUIRED_ORDER + list(M.BACKGROUNDS) + list(M.STRIPS) + M.NICE_ORDER
 
 
 def main():
     if sys.argv[1] == "--list":
-        for k in M.REQUIRED_ORDER + M.NICE_ORDER:
-            if not os.path.exists(os.path.join(ROOT, out_of(k))):
+        for k in all_keys():
+            if not job_for(k):
                 print(k)
         return
-    key = sys.argv[1]
+    key = sys.argv[2] if sys.argv[1] == "--wait" else sys.argv[1]
     overwrite = "--overwrite" in sys.argv
     out = out_of(key)
     os.makedirs(os.path.join(ROOT, os.path.dirname(out)), exist_ok=True)
-    if key in M.A:
+    if sys.argv[1] == "--wait":
+        cmd = ["jig", "wait", job_for(key, pending=True), "--out", out, "--timeout", "540", "--overwrite"]
+    elif key in M.BACKGROUNDS or key in M.STRIPS:
+        # Match the pilot sprites so the backdrop sits with the art on it.
+        styles = [j for j in (job_for(k) for k in M.PILOT) if j]
+        if key in M.STRIPS:
+            _, size, desc = M.STRIPS[key]
+        else:
+            size, desc = M.BG_SIZE, M.BG_STYLE + " " + M.BACKGROUNDS[key][1]
+        cmd = ["jig", "background", "--description", desc,
+               "--size", size, "--style", "painted", "--out", out, "--timeout", "540"]
+        for j in styles:
+            cmd += ["--style-job", j]
+    elif key in M.A:
         _, size, subject, theme, spec_name = M.A[key]
         spec = dict(M.SPECS[spec_name], canvas_size=size)
         cmd = ["jig", "generate", "--subject", subject, "--theme", M.THEMES[theme],
@@ -70,7 +90,7 @@ def main():
         result = {"error": {"kind": "unparsed", "message": proc.stdout[-500:] + proc.stderr[-500:]}}
     err = result.get("error")
     entry = {
-        "key": key, "out": out, "exit": proc.returncode, "ok": proc.returncode == 0,
+        "key": key, "v": M.VERSION, "out": out, "exit": proc.returncode, "ok": proc.returncode == 0,
         "job_id": result.get("id") or (err or {}).get("job_id"),
         "prompt": result.get("prompt"), "seed": result.get("seed"),
         "error": err,

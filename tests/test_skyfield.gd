@@ -156,3 +156,24 @@ func test_duplicate_barge_ids_are_flagged() -> void:
 func test_region_1_has_no_duplicate_barge_ids() -> void:
 	var region := DataDefs.skyfield("region_1")
 	assert_eq(Skyfield.duplicate_barge_ids(region.get("barges", [])), [])
+
+func test_region_background_fills_the_screen_behind_the_board() -> void:
+	var board: Skyfield = add_child_autofree(SkyfieldScene.instantiate())
+	board.build(DataDefs.skyfield("region_1"), run_defs, "region_1")
+	var bg: Sprite2D = board.get_node_or_null("Background")
+	assert_not_null(bg, "region_1 has a background sprite")
+	assert_eq(board.get_child(0), bg, "background is drawn first")
+	assert_false(bg.centered)
+	assert_eq(bg.texture.get_size() * bg.scale, Vector2(720, 1280), "background covers the design resolution")
+
+func test_no_background_without_a_region_id() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	assert_null(board.get_node_or_null("Background"))
+
+func test_barge_sprite_spans_the_catch_width() -> void:
+	var board := build_board(DataDefs.skyfield("region_1"))
+	for barge in board.get_node("Barges").get_children():
+		var sprite := barge.get_child(1) as Sprite2D
+		assert_not_null(sprite, "%s uses barge art" % barge.name)
+		var half: Vector2 = ((barge.get_child(0) as CollisionShape2D).shape as RectangleShape2D).size / 2.0
+		assert_almost_eq(sprite.texture.get_width() * sprite.scale.x, half.x * 2.0, 0.01, "%s art is as wide as its catch rect" % barge.name)
