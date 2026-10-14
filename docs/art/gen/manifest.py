@@ -216,6 +216,10 @@ EDITS = {
     "daily_crate_open": (I + "daily_crate_open.png", "daily_crate", "open the lid with bright golden light, coins and gems spilling out"),
     "slot_socket_hover": (R + "slot_socket_hover.png", "slot_socket", "make the ring glow bright sunny yellow as if highlighted"),
 }
+# Note (2026-10-14): re-framing island_home via `jig edit` failed, the edit's
+# sampled chroma key removed the plateau interior along with the backdrop
+# (job 5a78060f). Framing fixes for transparent landmasses must go through a
+# fresh `jig generate` with a reworded subject instead.
 # Balloon Cluster had no manifest entry in v1 (hand-picked). In v2 it is a
 # normal entry so the spent edit can start from it.
 add("balloon_cluster", Z + "balloon_cluster.png", [104, 104], "a bunch of four round shiny cartoon balloons in coral red, sunny yellow, sky blue and pink, tied together with curly strings, round silhouette")
@@ -229,6 +233,23 @@ for mat, s in [("cloudsilk", "pale pink"), ("brasswork", "golden yellow"), ("rim
     add(f"pennant_{mat}", R + f"barge_pennant_{mat}.png", [48, 64], f"a small plain triangular cloth pennant flag that is entirely one solid {s} colour with no stripes and no other colours, on a short white pole with a gold ball on top")
 add("seal_lantern", U + "seal_lantern.png", [96, 96], "a round bright coral red wax seal stamped with a little lantern shape", "icon")
 add("clasp_foundry", U + "clasp_foundry.png", [96, 96], "a small shiny gold book clasp with a cog shape and a turquoise gem", "icon")
+
+# ------------------------------------------------- 8. island map (plan 15)
+# The 720x2000 vista cannot come out of `jig generate` in one piece (1024 px
+# canvas cap, and backgrounds need the missing `jig background` command), so
+# the map backdrop is layered instead: the sky, cloud sea and layout stay
+# code-drawn in island_backdrop.gd, and these transparent pieces draw over
+# them. island_home and islet_rock are 1x (the landmass already fills the
+# canvas cap); everything else keeps the 2x rule.
+add("island_home", B + "island_home.png", [720, 880], "a huge wide floating sky island seen from high above at a steep three-quarter angle: a broad oval plateau of bright green grass filling almost the entire image from top to bottom, winding cream stone paths and little white flowers scattered across the grass, and only a shallow rim of pale sand-yellow rock with two tiny white waterfalls peeking out along the bottom edge")
+add("islet_rock", B + "islet_rock.png", [288, 400], "a small bare floating sky island: a rounded knob of pale lilac-grey rock with a cap of soft mint green grass on top, a rocky underside tapering to a rounded point below, front view")
+add("plot_pad", B + "plot_pad.png", [192, 192], "an empty round building foundation pad of pale cream flagstones with a turquoise painted wooden border and four little gold corner stakes, a tuft of bright green grass at its edge, seen from a three-quarter top-down view, clearly an empty spot ready to build on")
+add("bridge_broken", B + "bridge_broken.png", [400, 160], "a broken cartoon rope bridge over a gap: two short stubs of sunny yellow planks with coral red ropes reaching toward each other from the left edge and the right edge, snapped rope ends dangling into the empty middle gap, side view")
+add("bridge_scaffold", B + "bridge_scaffold.png", [400, 160], "a half-built cartoon rope bridge crossing from the left edge to the right edge: sunny yellow planks with a few still missing, coral red ropes, two turquoise scaffold poles and a little gold pulley wheel in the middle, side view")
+add("bridge_restored", B + "bridge_restored.png", [400, 160], "a complete cheerful cartoon rope bridge crossing from the left edge to the right edge: sunny yellow planks, coral red rope railings strung with tiny pink and turquoise pennant flags, side view")
+# First ready_glow attempt (job 39b1b7d8) hit the known soft-overlay limit:
+# muddy semi-transparent edges keyed out badly. Solid starburst shape instead.
+add("ready_glow", U + "ready_glow.png", [192, 192], "a chunky cartoon starburst badge of shiny sunny yellow rays with rounded tips around a glossy gold circle, a bright white four-pointed sparkle at its centre, solid flat shapes with clean bold outlines", "icon")
 
 # Not regenerated, known jig limits from v1 (still true for `jig generate`):
 # soft translucent overlays come back with binary alpha (job 9cb071b6) and

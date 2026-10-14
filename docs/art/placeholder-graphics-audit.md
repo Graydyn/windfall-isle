@@ -188,18 +188,18 @@ The old loadout screen (`game/ui/loadout_screen.tscn`) no longer exists.
 - **Placeholder:** the main-screen RegionButton is text ("Region: Home Skies (1 fuel)").
 - **Art needed:** four 96 px emblems or postcard thumbnails (Home Skies, Brasswork Reach, Rimefall Shallows, Stormglass Verge) for region selection, plus a **locked** treatment (shared padlock / fog overlay) for regions still gated behind Dock level.
 
-### 4.6 Island map screen (CHANGED: layout shipped 2026-10-11)
-The island screen is now a vertically scrollable 720 x 2000 map ([island_screen.tscn](../../game/base/island_screen.tscn)); every coordinate lives in [island_layout.json](../../game/data/island_layout.json), so art is painted AROUND those authored positions. The backdrop is code-drawn (sky gradient, plateau and islet silhouettes, cloud band) until the vista lands; the fallback lives in [island_backdrop.gd](../../game/base/island_backdrop.gd) and swaps itself out the moment `game/art/regions/island_vista.png` exists.
+### 4.6 Island map screen (art DONE 2026-10-14, layered; layout shipped 2026-10-11)
+The island screen is a vertically scrollable 720 x 2000 map ([island_screen.tscn](../../game/base/island_screen.tscn)); every coordinate lives in [island_layout.json](../../game/data/island_layout.json), so art is painted AROUND those authored positions. The 2026-10-14 jig batch (manifest section 8) delivered the map as LAYERS instead of one vista piece, because `jig generate` caps at 1024 px and the CLI's `background` command is unavailable: the sky gradient and cloud sea stay code-drawn in [island_backdrop.gd](../../game/base/island_backdrop.gd), with `island_home.png` (720x880, plateau-dominant framing) stretched over the plateau zone, `islet_rock.png` under each islet, and the three bridge sprites rotated onto the layout's bridge segments with code-line fallbacks. A full hand-painted `game/art/regions/island_vista.png` still overrides everything if ever produced.
 
 | Asset | Size (design px, deliver 2x) | Notes |
 |---|---|---|
-| Island vista map background | 720 x 2000 | Sky top band (y 0..200), home plateau (plots centered per island_layout.json, y 200..1050), Lantern Shoal rock (~y 1150..1450 left), Foundry Rock (~y 1500..1800 right), cloud-sea bottom band (y 1850..2000). File: `game/art/regions/island_vista.png`. |
-| Empty plot pad | 128 x 128 | Cleared foundation (stone circle / timber deck) that reads as "build here". File: `game/art/buildings/plot_pad.png`; the dashed-outline fallback draws until it exists. |
-| Bridge, broken | ~200 x 80 | Snapped rope-bridge stub pair; one generic set serves both islets. Replaces the code-drawn stubs in island_backdrop.gd. |
-| Bridge, scaffold | ~200 x 80 | Half-built planks and rigging (shown while a restoration timer runs). |
-| Bridge, restored | ~200 x 80 | Whole rope bridge. |
-| Ready glow badge | 96 x 96 | Soft gold burst behind "Tap to collect!"; nice-to-have, the gold "!" label ships first. |
-| Shore band dressing | 720 x 160 | Optional dock planks under the crew tokens (band centered at y 940). |
+| Island vista map background | 720 x 2000 | DONE as layers (2026-10-14): `island_home.png` + `islet_rock.png` over the code sky. A single hand-painted `game/art/regions/island_vista.png` remains an optional future upgrade. |
+| Empty plot pad | 128 x 128 | DONE (2026-10-14): `game/art/buildings/plot_pad.png`, a turquoise ring pad with gold stakes. |
+| Bridge, broken | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_broken.png`, wired with rotation onto the layout segments. |
+| Bridge, scaffold | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_scaffold.png`. |
+| Bridge, restored | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_restored.png`. |
+| Ready glow badge | 96 x 96 | DONE (2026-10-14): `game/art/ui/ready_glow.png`, a solid starburst badge (a soft glow hit the known binary-alpha limit, job 39b1b7d8); it replaces the "!" label on pads. |
+| Shore band dressing | 720 x 160 | Still optional and undelivered; the crew now stand on island_home's painted rocky rim, which carries the band fine. |
 
 Wired by the map rework (previously delivered): `construction_overlay.png` now scaffolds constructing pads; building illustrations double as pad sprites; islet ruined/restored art marks the islets; crew portraits became shore tokens and worker badges on pads.
 

@@ -33,6 +33,8 @@ func test_ready_state_shows_the_badge() -> void:
 	node.render({"kind": "constructing", "art": "res://game/art/buildings/workshop.png",
 		"name": "Workshop", "status": "Tap to collect!", "ready": true})
 	assert_true(node._ready_badge.visible)
+	assert_true(node._ready_glow.visible, "the starburst badge art is wired")
+	assert_not_null(node._ready_glow.texture)
 
 
 func test_built_state_shows_the_worker_badge() -> void:

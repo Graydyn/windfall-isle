@@ -9,6 +9,7 @@ signal plot_tapped(plot_id: String)
 
 const PAD_ART := "res://game/art/buildings/plot_pad.png"
 const OVERLAY_ART := "res://game/art/buildings/construction_overlay.png"
+const GLOW_ART := "res://game/art/ui/ready_glow.png"
 const PLOT_SIZE := 128.0
 
 var plot_id := ""
@@ -19,6 +20,7 @@ var _overlay: TextureRect
 var _name_label: Label
 var _status_label: Label
 var _worker_badge: TextureRect
+var _ready_glow: TextureRect
 var _ready_badge: Label
 
 
@@ -38,8 +40,13 @@ func _init(id: String) -> void:
 	_name_label = _child_label(Rect2(0, 100, 128, 22), 13)
 	_status_label = _child_label(Rect2(0, 122, 128, 20), 12)
 	_status_label.modulate.a = 0.85
+	_ready_glow = _child_texture_rect(Rect2(76, -8, 52, 52))
+	if ResourceLoader.exists(GLOW_ART):
+		_ready_glow.texture = load(GLOW_ART)
+	_ready_glow.visible = false
 	_ready_badge = _child_label(Rect2(96, 0, 28, 28), 26)
-	_ready_badge.text = "!"
+	# The starburst badge art replaces the lettered fallback when delivered.
+	_ready_badge.text = "" if _ready_glow.texture != null else "!"
 	_ready_badge.modulate = Color(1.0, 0.85, 0.2)
 	_ready_badge.visible = false
 
@@ -66,6 +73,7 @@ func render(state: Dictionary) -> void:
 		_worker_badge.texture = null
 		_worker_badge.visible = false
 	_ready_badge.visible = bool(state.get("ready", false))
+	_ready_glow.visible = _ready_badge.visible and _ready_glow.texture != null
 	queue_redraw()
 
 

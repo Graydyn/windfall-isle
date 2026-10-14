@@ -28,3 +28,10 @@ func test_set_bridges_stores_and_requests_a_redraw() -> void:
 		{"from": Vector2(330, 1400), "to": Vector2(480, 1510), "state": "restored"},
 	])
 	assert_eq(node._bridges.size(), 2)
+
+
+func test_landmass_and_bridge_art_load() -> void:
+	var node := make_backdrop()
+	assert_not_null(node._island, "island_home.png wired as the plateau")
+	assert_not_null(node._rock, "islet_rock.png wired under the islets")
+	assert_eq(node._bridge_art.size(), 3, "all three bridge states have art")
