@@ -15,6 +15,9 @@ var _line_label: Label
 func _init(id: String) -> void:
 	crew_id = id
 	flat = true
+	# PASS, not STOP: drags must climb to the ScrollContainer so a pan can
+	# start on a button (same ancestor-walk rule as the Plan 9/12 DnD lesson).
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	custom_minimum_size = Vector2(72.0, 104.0)
 	size = custom_minimum_size
 	pressed.connect(func() -> void: crew_tapped.emit(crew_id))

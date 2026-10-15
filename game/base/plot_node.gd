@@ -31,6 +31,9 @@ var _ready_badge: Label
 func _init(id: String) -> void:
 	plot_id = id
 	flat = true
+	# PASS, not STOP: drags must climb to the ScrollContainer so a pan can
+	# start on a button (same ancestor-walk rule as the Plan 9/12 DnD lesson).
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	custom_minimum_size = Vector2(PLOT_SIZE, PLOT_SIZE)
 	size = custom_minimum_size
 	pressed.connect(func() -> void: plot_tapped.emit(plot_id))

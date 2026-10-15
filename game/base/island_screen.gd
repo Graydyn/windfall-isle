@@ -18,6 +18,7 @@ var _islet_nodes: Dictionary = {}
 var _crew_tokens: Dictionary = {}
 var _letter_islet := ""
 var _sheet_plot := ""
+var _sheet_islet := ""
 var _sheet_button_styles: Dictionary = {}
 
 const BUTTON_ART := "res://game/art/ui/button.png"
@@ -323,7 +324,7 @@ func _on_plot_tapped(plot: String) -> void:
 func _on_islet_tapped(islet_id: String) -> void:
 	match _islet_state(islet_id, TimeUtil.now()):
 		"o":
-			_on_restore_pressed(islet_id)
+			_open_islet_sheet(islet_id)
 		"d":
 			_on_restore_collect_pressed(islet_id)
 		"R":
@@ -331,13 +332,66 @@ func _on_islet_tapped(islet_id: String) -> void:
 
 
 func _open_plot_sheet(plot: String) -> void:
+	_sheet_islet = ""
 	_sheet_plot = plot
 	_render_sheet()
 	if _sheet_plot != "":
 		$PlotSheet.visible = true
 
 
+func _open_islet_sheet(islet_id: String) -> void:
+	_sheet_plot = ""
+	_sheet_islet = islet_id
+	_render_sheet()
+	if _sheet_islet != "":
+		$PlotSheet.visible = true
+
+
+func _render_islet_sheet() -> void:
+	# Restoration spends real currency, so an offered islet confirms through
+	# the sheet instead of spending on the map tap (owner report, 2026-10-15).
+	if _islet_state(_sheet_islet, TimeUtil.now()) != "o":
+		_close_sheet()
+		return
+	var islet := IsletModel.entry(DataDefs.islets, _sheet_islet)
+	var actions: VBoxContainer = $PlotSheet/VBox/SheetActions
+	for child in actions.get_children():
+		actions.remove_child(child)
+		child.queue_free()
+	var picture: TextureRect = $PlotSheet/VBox/SheetPicture
+	var art_path := "res://game/art/buildings/islet_%s_ruined.png" % _sheet_islet
+	if ResourceLoader.exists(art_path):
+		picture.texture = load(art_path)
+	else:
+		picture.texture = null
+	picture.visible = picture.texture != null
+	$PlotSheet/VBox/SheetTitle.text = String(islet.get("name", _sheet_islet))
+	$PlotSheet/VBox/SheetInfo.text = "Mend the bridge to open new ground."
+	$PlotSheet/VBox/SheetInfo.visible = true
+	var restore := Button.new()
+	restore.text = "Restore (%s)" % _cost_text(islet.get("cost", {}))
+	restore.pressed.connect(_on_sheet_restore_pressed)
+	_style_sheet_button(restore)
+	actions.add_child(restore)
+	_fit_sheet()
+
+
+func _on_sheet_restore_pressed() -> void:
+	var reason := IsletModel.restore_rejection(GameState.data, DataDefs.islets, Economy, TimerService, _sheet_islet)
+	if reason != "":
+		# The refusal lives beside the button that earned it.
+		$PlotSheet/VBox/SheetInfo.text = reason
+		$PlotSheet/VBox/SheetInfo.visible = true
+		return
+	var islet_id := _sheet_islet
+	_close_sheet()
+	_on_restore_pressed(islet_id)
+
+
 func _render_sheet() -> void:
+	if _sheet_islet != "":
+		_render_islet_sheet()
+		return
 	var now := TimeUtil.now()
 	var island: Dictionary = GameState.data["island"]
 	var plots: Dictionary = island.get("plots", {})
@@ -476,6 +530,7 @@ func _fit_sheet_now() -> void:
 
 func _close_sheet() -> void:
 	_sheet_plot = ""
+	_sheet_islet = ""
 	$PlotSheet.visible = false
 
 

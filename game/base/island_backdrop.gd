@@ -45,18 +45,22 @@ func set_bridges(bridges: Array) -> void:
 func _draw() -> void:
 	if _vista != null:
 		draw_texture_rect(_vista, Rect2(Vector2.ZERO, size), false)
-	else:
-		_draw_fallback()
-	for bridge_v in _bridges:
-		_draw_bridge(bridge_v as Dictionary)
-
-
-func _draw_fallback() -> void:
+		for bridge_v in _bridges:
+			_draw_bridge(bridge_v as Dictionary)
+		return
 	# Sky: a vertical gradient from deep day blue to a warm horizon.
 	draw_polygon(
 		PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), size, Vector2(0, size.y)]),
 		PackedColorArray([Color(0.45, 0.65, 0.9), Color(0.45, 0.65, 0.9),
 			Color(0.85, 0.8, 0.75), Color(0.85, 0.8, 0.75)]))
+	# Bridges draw UNDER the landmasses so their ends tuck behind the rock
+	# silhouettes instead of dangling in the sky (owner report, 2026-10-15).
+	for bridge_v in _bridges:
+		_draw_bridge(bridge_v as Dictionary)
+	_draw_landmasses()
+
+
+func _draw_landmasses() -> void:
 	# The home plateau behind the plots (grass carries the pads; the rocky
 	# rim lands under the crew band).
 	if _island != null:

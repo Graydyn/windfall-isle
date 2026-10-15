@@ -567,10 +567,28 @@ func test_unknown_plot_position_falls_back_to_origin_without_crashing() -> void:
 	assert_eq(screen._layout_pos(null), Vector2.ZERO)
 
 
-func test_islet_tap_restores_when_offered() -> void:
+func test_islet_tap_opens_a_restore_confirm_without_spending() -> void:
 	GameState.data["currencies"]["cloudsilk"] = 10
 	screen._on_islet_tapped("lantern_shoal")
+	assert_false(TimerService.active_timers().has("restore_lantern_shoal"),
+		"a map tap must never spend by itself (owner report, 2026-10-15)")
+	assert_true(screen.get_node("PlotSheet").visible)
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetTitle").text), "Lantern Shoal")
+	var restore: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_string_contains(restore.text, "Restore (")
+	restore.pressed.emit()
 	assert_true(TimerService.active_timers().has("restore_lantern_shoal"))
+	assert_false(screen.get_node("PlotSheet").visible)
+
+
+func test_unaffordable_restore_explains_in_the_sheet() -> void:
+	GameState.data["currencies"]["scrap"] = 0
+	screen._on_islet_tapped("lantern_shoal")
+	var restore: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	restore.pressed.emit()
+	assert_false(TimerService.active_timers().has("restore_lantern_shoal"))
+	assert_true(screen.get_node("PlotSheet").visible, "the sheet stays open to explain")
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetInfo").text), "Not enough")
 
 
 func test_islet_tap_is_a_noop_while_locked() -> void:
@@ -715,3 +733,12 @@ func test_map_mist_softens_the_fold_without_eating_taps() -> void:
 	var mist: TextureRect = screen.get_node("MapMist")
 	assert_not_null(mist.texture, "the cloud fade marks that the map continues below")
 	assert_eq(mist.mouse_filter, Control.MOUSE_FILTER_IGNORE, "the mist never blocks map taps or scrolling")
+
+
+func test_map_buttons_pass_drags_to_the_scroll() -> void:
+	assert_eq((screen._plot_nodes["plot_0"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS,
+		"pads PASS so a pan can start on them")
+	assert_eq((screen._islet_nodes["lantern_shoal"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
+	assert_eq((screen._crew_tokens["odo"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
+	assert_eq(screen.get_node("MapScroll/Map").mouse_filter, Control.MOUSE_FILTER_PASS,
+		"the map itself must not swallow the drag before the ScrollContainer")
