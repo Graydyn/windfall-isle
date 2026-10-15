@@ -9,14 +9,15 @@ func make_node(id := "plot_0") -> IslandPlotNode:
 	return node
 
 
-func test_empty_state_invites_building() -> void:
+func test_empty_state_is_a_quiet_pad() -> void:
 	var node := make_node()
-	node.render({"kind": "empty", "name": "(empty)", "status": "Tap to build", "ready": false})
-	assert_eq(node._name_label.text, "(empty)")
-	assert_eq(node._status_label.text, "Tap to build")
+	node.render({"kind": "empty", "status": "", "ready": false})
+	assert_not_null(node._art.texture, "the pad art alone marks the build spot")
+	assert_eq(node._status_label.text, "", "no words on an empty pad (owner request, 2026-10-15)")
 	assert_false(node._overlay.visible)
 	assert_false(node._worker_badge.visible)
 	assert_false(node._ready_badge.visible)
+	assert_false(node._upgrade_badge.visible)
 
 
 func test_constructing_state_dims_art_and_shows_the_scaffold() -> void:
@@ -66,3 +67,16 @@ func test_children_never_block_the_tap() -> void:
 	for child in node.get_children():
 		assert_eq((child as Control).mouse_filter, Control.MOUSE_FILTER_IGNORE,
 			"repo lesson: children of a tappable Button must ignore the mouse")
+
+
+func test_upgrade_badge_follows_the_state_flag() -> void:
+	var node := make_node()
+	node.render({"kind": "built", "art": "res://game/art/buildings/workshop.png",
+		"status": "", "ready": false, "upgrade": true})
+	assert_true(node._upgrade, "the node remembers an affordable upgrade")
+	assert_eq(node._upgrade_badge.visible, node._upgrade_badge.texture != null,
+		"icon art shows when delivered; the drawn arrow fallback carries it otherwise")
+	node.render({"kind": "built", "art": "res://game/art/buildings/workshop.png",
+		"status": "", "ready": false, "upgrade": false})
+	assert_false(node._upgrade)
+	assert_false(node._upgrade_badge.visible)

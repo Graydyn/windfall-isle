@@ -199,6 +199,7 @@ add("ad_badge", I + "ad_badge.png", [64, 64], "a small round coral red badge wit
 add("timer", I + "timer.png", [64, 64], "a small hourglass with a turquoise frame and bright pink sand", "icon")
 add("build_slot", I + "build_slot.png", [96, 96], "an empty patch of bright green grass with a little wooden stake, a red flag and a yellow hammer", "icon")
 add("level_pip", I + "level_pip.png", [32, 32], "a small chunky bright yellow star with a white shine", "icon")
+add("upgrade_ready", I + "upgrade_ready.png", [64, 64], "a small chunky upward-pointing arrow in bright mint green with a white shine, on a round sunny yellow badge with a gold rim", "icon")
 
 # ---------------------------------------------------------------- 7. theme
 add("ui_panel", U + "panel.png", [512, 512], "a blank square UI panel with rounded corners: a thick sky-blue painted wooden frame with small gold corner caps around a solid opaque butter-yellow canvas face with a fine woven cloth texture and soft peach shading toward the frame, no objects or pictures on the face, flat front view, suitable for a nine-slice UI panel", "icon")

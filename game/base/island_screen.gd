@@ -18,6 +18,9 @@ var _islet_nodes: Dictionary = {}
 var _crew_tokens: Dictionary = {}
 var _letter_islet := ""
 var _sheet_plot := ""
+var _sheet_button_styles: Dictionary = {}
+
+const BUTTON_ART := "res://game/art/ui/button.png"
 
 
 func _ready() -> void:
@@ -37,6 +40,8 @@ func _ready() -> void:
 	$BuildModal.visibility_changed.connect(_update_modal_block)
 	$LetterPanel.visibility_changed.connect(_update_modal_block)
 	$PlotSheet.visibility_changed.connect(_update_modal_block)
+	_build_sheet_button_styles()
+	_style_sheet_button($PlotSheet/VBox/SheetClose)
 	_rebuild()
 
 
@@ -198,16 +203,15 @@ func _plot_state(plot: String, now: int) -> Dictionary:
 	if TimerService.active_timers().has(timer_id):
 		var payload: Dictionary = (TimerService.active_timers()[timer_id] as Dictionary).get("payload", {})
 		var building := String(payload.get("building", ""))
-		var def: Dictionary = defs.get(building, {})
 		var state := {
 			"kind": "constructing",
 			"art": "res://game/art/buildings/%s.png" % building,
-			"name": String(def.get("name", building)),
 			"status": "%ds" % TimerService.remaining(timer_id, now),
 			"ready": false,
 		}
 		if TimerService.is_done(timer_id, now):
-			state["status"] = "Tap to collect!"
+			# The starburst badge says it all; words stay off the map.
+			state["status"] = ""
 			state["ready"] = true
 		return state
 	if plots.has(plot):
@@ -217,22 +221,24 @@ func _plot_state(plot: String, now: int) -> Dictionary:
 		var state := {
 			"kind": "built",
 			"art": "res://game/art/buildings/%s.png" % building,
-			"name": "%s Lv %d" % [String(def.get("name", building)), int(entry.get("level", 0))],
 			"status": "",
 			"ready": false,
 		}
+		var level := int(entry.get("level", 0))
+		var rows: Array = def.get("levels", [])
+		if level < int(def.get("max_level", 1)) and level < rows.size():
+			state["upgrade"] = Economy.can_afford((rows[level] as Dictionary).get("cost", {}))
 		var worker := CrewModel.crew_at(GameState.data, building)
 		if worker != "":
 			state["worker_portrait"] = "res://game/art/crew/%s.png" % worker
 		var convert_id := "convert_" + building
 		if TimerService.active_timers().has(convert_id):
 			if TimerService.is_done(convert_id, now):
-				state["status"] = "Batch ready!"
 				state["ready"] = true
 			else:
 				state["status"] = "batch %ds" % TimerService.remaining(convert_id, now)
 		return state
-	return {"kind": "empty", "name": "(empty)", "status": "Tap to build", "ready": false}
+	return {"kind": "empty", "status": "", "ready": false}
 
 
 func _islet_visual_state(islet: Dictionary, now: int) -> Dictionary:
@@ -355,6 +361,13 @@ func _render_sheet() -> void:
 		building = String(payload.get("building", building))
 	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building, {})
 	var display := String(def.get("name", building))
+	var art_path := "res://game/art/buildings/%s.png" % building
+	var picture: TextureRect = $PlotSheet/VBox/SheetPicture
+	if ResourceLoader.exists(art_path):
+		picture.texture = load(art_path)
+	else:
+		picture.texture = null
+	picture.visible = picture.texture != null
 	if constructing:
 		if TimerService.is_done(timer_id, now):
 			$PlotSheet/VBox/SheetTitle.text = "%s: ready!" % display
@@ -375,18 +388,22 @@ func _render_sheet() -> void:
 			var complete := Button.new()
 			complete.text = "Complete!"
 			complete.pressed.connect(_on_sheet_collect_pressed)
+			_style_sheet_button(complete)
 			actions.add_child(complete)
 		elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
 			var skip := Button.new()
 			skip.text = "Skip (ad)"
 			skip.pressed.connect(_on_skip_pressed.bind(timer_id))
+			_style_sheet_button(skip)
 			actions.add_child(skip)
+		_fit_sheet()
 		return
 	var upgrade := Button.new()
 	var max_level := int(def.get("max_level", 1))
 	upgrade.text = "Upgrade..." if level < max_level else "Max level"
 	upgrade.disabled = level >= max_level
 	upgrade.pressed.connect(_on_sheet_upgrade_pressed)
+	_style_sheet_button(upgrade)
 	actions.add_child(upgrade)
 	var convert_id := "convert_" + building
 	if TimerService.active_timers().has(convert_id):
@@ -396,6 +413,7 @@ func _render_sheet() -> void:
 			var batch := Button.new()
 			batch.text = "Collect (%s)" % _cost_text(outputs) if not outputs.is_empty() else "Collect"
 			batch.pressed.connect(_on_sheet_batch_collect_pressed.bind(building))
+			_style_sheet_button(batch)
 			actions.add_child(batch)
 	else:
 		for recipe_v in ConvertModel.recipes(DataDefs.buildings, building):
@@ -404,7 +422,56 @@ func _render_sheet() -> void:
 			start_batch.text = _batch_button_text(building, recipe_id)
 			start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, building, recipe_id)
 			start_batch.pressed.connect(_on_sheet_batch_start_pressed.bind(building, recipe_id))
+			_style_sheet_button(start_batch)
 			actions.add_child(start_batch)
+	_fit_sheet()
+
+
+func _build_sheet_button_styles() -> void:
+	# ui/button.png wired for the sheet's buttons (audit section 7); the
+	# full theme pass still owns the rest of the game's chrome.
+	if not ResourceLoader.exists(BUTTON_ART):
+		return
+	var art: Texture2D = load(BUTTON_ART)
+	var tints := {
+		"normal": Color.WHITE,
+		"hover": Color(1.06, 1.06, 1.06),
+		"pressed": Color(0.88, 0.88, 0.88),
+		"disabled": Color(0.72, 0.72, 0.72, 0.9),
+	}
+	for state in tints:
+		var style := StyleBoxTexture.new()
+		style.texture = art
+		style.set_texture_margin_all(44.0)
+		style.set_content_margin_all(8.0)
+		style.content_margin_left = 20.0
+		style.content_margin_right = 20.0
+		style.modulate_color = tints[state]
+		_sheet_button_styles[String(state)] = style
+
+
+func _style_sheet_button(button: Button) -> void:
+	if _sheet_button_styles.is_empty():
+		return
+	for state in _sheet_button_styles:
+		button.add_theme_stylebox_override(String(state), _sheet_button_styles[state])
+	button.add_theme_color_override("font_color", Color(0.12, 0.16, 0.3))
+	button.add_theme_color_override("font_hover_color", Color(0.12, 0.16, 0.3))
+	button.add_theme_color_override("font_pressed_color", Color(0.12, 0.16, 0.3))
+	button.add_theme_color_override("font_disabled_color", Color(0.12, 0.16, 0.3, 0.5))
+	button.custom_minimum_size = Vector2(0, 52)
+
+
+func _fit_sheet() -> void:
+	# The panel hugs its content and docks just above the HUD bar; a fixed
+	# rect either clips a busy sheet or leaves a quiet one swimming in frame.
+	# Deferred: container minimums settle only after the queued sort pass.
+	_fit_sheet_now.call_deferred()
+
+
+func _fit_sheet_now() -> void:
+	$PlotSheet.reset_size()
+	$PlotSheet.position = Vector2(40.0, 1150.0 - $PlotSheet.size.y)
 
 
 func _close_sheet() -> void:

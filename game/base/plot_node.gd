@@ -4,22 +4,26 @@ class_name IslandPlotNode
 ## island screen computes a state dictionary from the models and this node
 ## only renders it. Children all ignore the mouse so the Button receives
 ## every tap (repo lesson: never block the input walk with child filters).
+## No name label: the art is the identity, and the sheet carries the words
+## (owner request, 2026-10-15). The status label shows only countdowns.
 
 signal plot_tapped(plot_id: String)
 
 const PAD_ART := "res://game/art/buildings/plot_pad.png"
 const OVERLAY_ART := "res://game/art/buildings/construction_overlay.png"
 const GLOW_ART := "res://game/art/ui/ready_glow.png"
+const UPGRADE_ART := "res://game/art/icons/upgrade_ready.png"
 const PLOT_SIZE := 128.0
 
 var plot_id := ""
 var _empty := true
+var _upgrade := false
 
 var _art: TextureRect
 var _overlay: TextureRect
-var _name_label: Label
 var _status_label: Label
 var _worker_badge: TextureRect
+var _upgrade_badge: TextureRect
 var _ready_glow: TextureRect
 var _ready_badge: Label
 
@@ -27,7 +31,7 @@ var _ready_badge: Label
 func _init(id: String) -> void:
 	plot_id = id
 	flat = true
-	custom_minimum_size = Vector2(PLOT_SIZE, PLOT_SIZE + 44.0)
+	custom_minimum_size = Vector2(PLOT_SIZE, PLOT_SIZE)
 	size = custom_minimum_size
 	pressed.connect(func() -> void: plot_tapped.emit(plot_id))
 	_art = _child_texture_rect(Rect2(16, 4, 96, 96))
@@ -37,9 +41,12 @@ func _init(id: String) -> void:
 	_overlay.visible = false
 	_worker_badge = _child_texture_rect(Rect2(92, 68, 32, 32))
 	_worker_badge.visible = false
-	_name_label = _child_label(Rect2(0, 100, 128, 22), 13)
-	_status_label = _child_label(Rect2(0, 122, 128, 20), 12)
+	_status_label = _child_label(Rect2(0, 100, 128, 22), 12)
 	_status_label.modulate.a = 0.85
+	_upgrade_badge = _child_texture_rect(Rect2(0, -4, 36, 36))
+	if ResourceLoader.exists(UPGRADE_ART):
+		_upgrade_badge.texture = load(UPGRADE_ART)
+	_upgrade_badge.visible = false
 	_ready_glow = _child_texture_rect(Rect2(76, -8, 52, 52))
 	if ResourceLoader.exists(GLOW_ART):
 		_ready_glow.texture = load(GLOW_ART)
@@ -63,7 +70,6 @@ func render(state: Dictionary) -> void:
 		_art.texture = null
 	_art.modulate.a = 0.5 if kind == "constructing" else 1.0
 	_overlay.visible = kind == "constructing" and _overlay.texture != null
-	_name_label.text = String(state.get("name", ""))
 	_status_label.text = String(state.get("status", ""))
 	var worker_path := String(state.get("worker_portrait", ""))
 	if worker_path != "" and ResourceLoader.exists(worker_path):
@@ -72,6 +78,8 @@ func render(state: Dictionary) -> void:
 	else:
 		_worker_badge.texture = null
 		_worker_badge.visible = false
+	_upgrade = bool(state.get("upgrade", false))
+	_upgrade_badge.visible = _upgrade and _upgrade_badge.texture != null
 	_ready_badge.visible = bool(state.get("ready", false))
 	_ready_glow.visible = _ready_badge.visible and _ready_glow.texture != null
 	queue_redraw()
@@ -82,6 +90,10 @@ func _draw() -> void:
 	# reads as a build site.
 	if _empty and _art.texture == null:
 		draw_rect(Rect2(18, 6, 92, 92), Color(1, 1, 1, 0.5), false, 2.0)
+	# Upgrade-badge fallback: a little mint arrow until the icon lands.
+	if _upgrade and _upgrade_badge.texture == null:
+		draw_polygon(PackedVector2Array([Vector2(6, 28), Vector2(17, 8), Vector2(28, 28)]),
+			PackedColorArray([Color(0.3, 0.85, 0.5)]))
 
 
 func _child_texture_rect(rect: Rect2) -> TextureRect:

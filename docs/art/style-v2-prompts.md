@@ -120,7 +120,7 @@ Each description is sent as the shared background brief followed by the region l
 | `islet_foundry_ruined` | 384x384 | sprite | a small floating island of pale rock with cold unlit gold-and-teal chimney stacks, tangled pipes and a broken balloon line, sleepy and quiet but still cute, soft pastel colours |
 | `islet_foundry_restored` | 384x384 | sprite | a small floating island of pale rock with shiny gold-and-teal chimney stacks puffing fluffy white clouds, glowing orange windows and a mended balloon line with a red balloon, busy and cheerful |
 | `construction` | 192x192 | sprite | cartoon scaffolding of turquoise poles with orange ropes, a yellow ladder, a striped orange and white safety cone and a little pink tarp, nothing else |
-| `island_home` | 720x880 | sprite | a huge wide floating sky island seen from the front: a broad oval plateau of bright green grass with winding cream stone paths and little white flowers on top, a thick pale sand-yellow rocky underside tapering to a rounded point below, two small white waterfalls spilling off the edges into soft mist, tufts of grass hanging over the rim |
+| `island_home` | 720x880 | sprite | a huge wide floating sky island seen from high above at a steep three-quarter angle: a broad oval plateau of bright green grass filling almost the entire image from top to bottom, winding cream stone paths and little white flowers scattered across the grass, and only a shallow rim of pale sand-yellow rock with two tiny white waterfalls peeking out along the bottom edge |
 | `islet_rock` | 288x400 | sprite | a small bare floating sky island: a rounded knob of pale lilac-grey rock with a cap of soft mint green grass on top, a rocky underside tapering to a rounded point below, front view |
 | `plot_pad` | 192x192 | sprite | an empty round building foundation pad of pale cream flagstones with a turquoise painted wooden border and four little gold corner stakes, a tuft of bright green grass at its edge, seen from a three-quarter top-down view, clearly an empty spot ready to build on |
 | `bridge_broken` | 400x160 | sprite | a broken cartoon rope bridge over a gap: two short stubs of sunny yellow planks with coral red ropes reaching toward each other from the left edge and the right edge, snapped rope ends dangling into the empty middle gap, side view |
@@ -155,6 +155,7 @@ Each description is sent as the shared background brief followed by the region l
 | `timer` | 64x64 | icon | a small hourglass with a turquoise frame and bright pink sand |
 | `build_slot` | 96x96 | icon | an empty patch of bright green grass with a little wooden stake, a red flag and a yellow hammer |
 | `level_pip` | 32x32 | icon | a small chunky bright yellow star with a white shine |
+| `upgrade_ready` | 64x64 | icon | a small chunky upward-pointing arrow in bright mint green with a white shine, on a round sunny yellow badge with a gold rim |
 
 ## UI
 
@@ -166,7 +167,7 @@ Each description is sent as the shared background brief followed by the region l
 | `ui_button` | 384x112 | icon | a blank wide rounded pill-shaped cartoon game button in sunny yellow with a darker orange bottom edge and a glossy white highlight on top, empty face, flat front view |
 | `seal_lantern` | 96x96 | icon | a round bright coral red wax seal stamped with a little lantern shape |
 | `clasp_foundry` | 96x96 | icon | a small shiny gold book clasp with a cog shape and a turquoise gem |
-| `ready_glow` | 192x192 | effect | a soft round burst of glowing sunny yellow light with little gold sparkles and tiny white four-pointed stars radiating gently from the centre |
+| `ready_glow` | 192x192 | icon | a chunky cartoon starburst badge of shiny sunny yellow rays with rounded tips around a glossy gold circle, a bright white four-pointed sparkle at its centre, solid flat shapes with clean bold outlines |
 
 ## Variants (`jig edit` of the base image)
 

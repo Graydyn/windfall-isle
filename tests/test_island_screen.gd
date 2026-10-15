@@ -675,3 +675,37 @@ func test_sheet_skip_ad_completes_the_construction() -> void:
 	skip.pressed.emit()
 	assert_true(TimerService.is_done("build_plot_0", TimeUtil.now()),
 		"spec 6 placement 1: an ad skips the timer; the player still collects")
+
+
+func test_affordable_upgrade_flags_the_pad() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	GameState.data["currencies"]["cloudsilk"] = 20
+	screen._rebuild()
+	assert_true(bool(screen._plot_state("plot_0", TimeUtil.now()).get("upgrade", false)),
+		"scrap 2000 + cloudsilk 20 affords Lv 2 (owner request, 2026-10-15)")
+	GameState.data["currencies"]["scrap"] = 0
+	assert_false(bool(screen._plot_state("plot_0", TimeUtil.now()).get("upgrade", false)),
+		"broke means no badge")
+
+
+func test_maxed_building_never_flags_an_upgrade() -> void:
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	screen._rebuild()
+	assert_false(bool(screen._plot_state("plot_3", TimeUtil.now()).get("upgrade", false)))
+
+
+func test_sheet_shows_the_building_picture() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	assert_not_null(screen.get_node("PlotSheet/VBox/SheetPicture").texture,
+		"the sheet leads with the building illustration")
+
+
+func test_sheet_buttons_carry_the_pill_style() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_true(upgrade.has_theme_stylebox_override("normal"), "ui/button.png wired on sheet buttons")
+	assert_true(screen.get_node("PlotSheet/VBox/SheetClose").has_theme_stylebox_override("normal"))
