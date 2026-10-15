@@ -709,3 +709,9 @@ func test_sheet_buttons_carry_the_pill_style() -> void:
 	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
 	assert_true(upgrade.has_theme_stylebox_override("normal"), "ui/button.png wired on sheet buttons")
 	assert_true(screen.get_node("PlotSheet/VBox/SheetClose").has_theme_stylebox_override("normal"))
+
+
+func test_map_mist_softens_the_fold_without_eating_taps() -> void:
+	var mist: TextureRect = screen.get_node("MapMist")
+	assert_not_null(mist.texture, "the cloud fade marks that the map continues below")
+	assert_eq(mist.mouse_filter, Control.MOUSE_FILTER_IGNORE, "the mist never blocks map taps or scrolling")

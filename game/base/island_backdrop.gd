@@ -66,12 +66,12 @@ func _draw_fallback() -> void:
 			PackedColorArray([Color(0.45, 0.58, 0.38)]))
 	# Islet rocks.
 	if _rock != null:
-		draw_texture_rect(_rock, Rect2(70, 1040, 240, 340), false)
-		draw_texture_rect(_rock, Rect2(410, 1380, 260, 360), false)
+		draw_texture_rect(_rock, Rect2(70, 1110, 240, 340), false)
+		draw_texture_rect(_rock, Rect2(410, 1450, 260, 360), false)
 	else:
-		draw_polygon(_island_points(Vector2(190, 1210), 120.0, 170.0),
+		draw_polygon(_island_points(Vector2(190, 1280), 120.0, 170.0),
 			PackedColorArray([Color(0.5, 0.52, 0.45)]))
-		draw_polygon(_island_points(Vector2(540, 1560), 130.0, 180.0),
+		draw_polygon(_island_points(Vector2(540, 1630), 130.0, 180.0),
 			PackedColorArray([Color(0.48, 0.46, 0.44)]))
 	# The cloud sea closes the bottom of the map.
 	draw_rect(Rect2(0, size.y - 160, size.x, 160), Color(0.92, 0.93, 0.96, 0.9))
