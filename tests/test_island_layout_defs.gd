@@ -40,17 +40,13 @@ func test_no_two_pads_crowd_each_other() -> void:
 			assert_true(dist >= 150.0, "%s and %s are %d px apart (need 150)" % [String(ids[i]), String(ids[j]), int(dist)])
 
 
-func test_every_islet_has_a_pos_and_a_two_point_bridge() -> void:
+func test_every_islet_has_a_position() -> void:
 	var islets_layout: Dictionary = layout()["islets"]
 	for islet_v in IsletModel.islets(DataDefs.islets):
 		var islet_id := String((islet_v as Dictionary).get("id", ""))
 		assert_true(islets_layout.has(islet_id), "%s has a layout entry" % islet_id)
 		var entry: Dictionary = islets_layout[islet_id]
 		assert_eq((entry.get("pos", []) as Array).size(), 2, "%s pos is [x, y]" % islet_id)
-		var bridge: Array = entry.get("bridge", [])
-		assert_eq(bridge.size(), 2, "%s bridge has two endpoints" % islet_id)
-		for point_v in bridge:
-			assert_eq((point_v as Array).size(), 2, "%s bridge point is [x, y]" % islet_id)
 
 
 func test_crew_band_fits_the_whole_cast_on_screen() -> void:

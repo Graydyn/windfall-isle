@@ -189,15 +189,15 @@ The old loadout screen (`game/ui/loadout_screen.tscn`) no longer exists.
 - **Art needed:** four 96 px emblems or postcard thumbnails (Home Skies, Brasswork Reach, Rimefall Shallows, Stormglass Verge) for region selection, plus a **locked** treatment (shared padlock / fog overlay) for regions still gated behind Dock level.
 
 ### 4.6 Island map screen (art DONE 2026-10-14, layered; layout shipped 2026-10-11)
-The island screen is a vertically scrollable 720 x 2000 map ([island_screen.tscn](../../game/base/island_screen.tscn)); every coordinate lives in [island_layout.json](../../game/data/island_layout.json), so art is painted AROUND those authored positions. The 2026-10-14 jig batch (manifest section 8) delivered the map as LAYERS instead of one vista piece, because `jig generate` caps at 1024 px and the CLI's `background` command is unavailable: the sky gradient and cloud sea stay code-drawn in [island_backdrop.gd](../../game/base/island_backdrop.gd), with `island_home.png` (720x880, plateau-dominant framing) stretched over the plateau zone, `islet_rock.png` under each islet, and the three bridge sprites rotated onto the layout's bridge segments with code-line fallbacks. A full hand-painted `game/art/regions/island_vista.png` still overrides everything if ever produced.
+The island screen is a vertically scrollable 720 x 2000 map ([island_screen.tscn](../../game/base/island_screen.tscn)); every coordinate lives in [island_layout.json](../../game/data/island_layout.json), so art is painted AROUND those authored positions. The 2026-10-14 jig batch (manifest section 8) delivered the map as LAYERS instead of one vista piece, because `jig generate` caps at 1024 px and the CLI's `background` command is unavailable: the sky gradient and cloud sea stay code-drawn in [island_backdrop.gd](../../game/base/island_backdrop.gd), with `island_home.png` (720x880, plateau-dominant framing) stretched over the plateau zone, the islets rendering their own art large in IslandIsletNode (the generic `islet_rock.png` underlay and the rotated bridge sprites were retired 2026-10-15). A full hand-painted `game/art/regions/island_vista.png` still overrides everything if ever produced.
 
 | Asset | Size (design px, deliver 2x) | Notes |
 |---|---|---|
-| Island vista map background | 720 x 2000 | DONE as layers (2026-10-14): `island_home.png` + `islet_rock.png` over the code sky. A single hand-painted `game/art/regions/island_vista.png` remains an optional future upgrade. |
+| Island vista map background | 720 x 1750 | DONE as layers (2026-10-14): `island_home.png` + `islet_rock.png` over the code sky. A single hand-painted `game/art/regions/island_vista.png` remains an optional future upgrade. |
 | Empty plot pad | 128 x 128 | DONE (2026-10-14): `game/art/buildings/plot_pad.png`, a turquoise ring pad with gold stakes. |
-| Bridge, broken | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_broken.png`, wired with rotation onto the layout segments. |
-| Bridge, scaffold | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_scaffold.png`. |
-| Bridge, restored | ~200 x 80 | DONE (2026-10-14): `game/art/buildings/bridge_restored.png`. |
+| Bridge, broken | ~200 x 80 | RETIRED (2026-10-15): drawn bridges never read well rotated on the map; the sprite stays in `game/art/buildings/` unused. Restoration state lives in the islet art and sheet. |
+| Bridge, scaffold | ~200 x 80 | RETIRED (2026-10-15), sprite kept unused. |
+| Bridge, restored | ~200 x 80 | RETIRED (2026-10-15), sprite kept unused. |
 | Ready glow badge | 96 x 96 | DONE (2026-10-14): `game/art/ui/ready_glow.png`, a solid starburst badge (a soft glow hit the known binary-alpha limit, job 39b1b7d8); it replaces the "!" label on pads. |
 | Shore band dressing | 720 x 160 | Still optional and undelivered; the crew now stand on island_home's painted rocky rim, which carries the band fine. |
 

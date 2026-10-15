@@ -149,7 +149,6 @@ func _rebuild() -> void:
 		node.render(_plot_state(plot, now))
 		_plot_nodes[plot] = node
 	var islet_layout: Dictionary = layout.get("islets", {})
-	var bridges: Array = []
 	for row_v in IsletModel.islets(DataDefs.islets):
 		var islet := row_v as Dictionary
 		var islet_id := String(islet.get("id", ""))
@@ -160,14 +159,6 @@ func _rebuild() -> void:
 		$MapScroll/Map/Islets.add_child(islet_node)
 		islet_node.render(_islet_visual_state(islet, now))
 		_islet_nodes[islet_id] = islet_node
-		var bridge_points: Array = entry.get("bridge", [])
-		if bridge_points.size() == 2:
-			bridges.append({
-				"from": _layout_pos(bridge_points[0]),
-				"to": _layout_pos(bridge_points[1]),
-				"state": _bridge_state(islet_id, now),
-			})
-	$MapScroll/Map/Backdrop.set_bridges(bridges)
 	var band: Dictionary = layout.get("crew_band", {})
 	var index := 0
 	for row_v in CrewModel.members(DataDefs.crew):
@@ -289,15 +280,6 @@ func _crew_visual_state(member: Dictionary) -> Dictionary:
 		"line": line,
 		"rescued": rescued,
 	}
-
-
-func _bridge_state(islet_id: String, now: int) -> String:
-	match _islet_state(islet_id, now):
-		"R":
-			return "restored"
-		"r", "d":
-			return "scaffold"
-	return "broken"
 
 
 func _on_plot_tapped(plot: String) -> void:

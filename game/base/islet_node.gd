@@ -18,18 +18,18 @@ func _init(id: String) -> void:
 	# PASS, not STOP: drags must climb to the ScrollContainer so a pan can
 	# start on a button (same ancestor-walk rule as the Plan 9/12 DnD lesson).
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	custom_minimum_size = Vector2(160.0, 164.0)
+	custom_minimum_size = Vector2(200.0, 220.0)
 	size = custom_minimum_size
 	pressed.connect(func() -> void: islet_tapped.emit(islet_id))
 	_art = TextureRect.new()
-	_art.position = Vector2(24, 0)
-	_art.size = Vector2(112, 112)
+	_art.position = Vector2(12, 0)
+	_art.size = Vector2(176, 176)
 	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_art)
-	_name_label = _make_label(Rect2(0, 112, 160, 24), 14)
-	_status_label = _make_label(Rect2(0, 136, 160, 26), 12)
+	_name_label = _make_label(Rect2(0, 176, 200, 24), 14)
+	_status_label = _make_label(Rect2(0, 200, 200, 20), 12)
 	_status_label.modulate.a = 0.85
 
 

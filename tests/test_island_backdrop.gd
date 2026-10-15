@@ -21,17 +21,8 @@ func test_vista_art_is_not_delivered_yet_so_fallback_draws() -> void:
 	assert_null(node._vista, "no island_vista.png in the repo yet; code fallback carries the screen")
 
 
-func test_set_bridges_stores_and_requests_a_redraw() -> void:
-	var node := make_backdrop()
-	node.set_bridges([
-		{"from": Vector2(240, 1040), "to": Vector2(180, 1160), "state": "broken"},
-		{"from": Vector2(330, 1400), "to": Vector2(480, 1510), "state": "restored"},
-	])
-	assert_eq(node._bridges.size(), 2)
 
 
-func test_landmass_and_bridge_art_load() -> void:
+func test_landmass_art_loads() -> void:
 	var node := make_backdrop()
 	assert_not_null(node._island, "island_home.png wired as the plateau")
-	assert_not_null(node._rock, "islet_rock.png wired under the islets")
-	assert_eq(node._bridge_art.size(), 3, "all three bridge states have art")
