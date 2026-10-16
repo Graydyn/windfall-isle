@@ -46,8 +46,8 @@ func _ready() -> void:
 	_style_sheet_button($LetterPanel/VBox/LetterClose)
 	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton"]:
 		var modal_button: Button = $BuildModal/VBox.get_node(NodePath(path))
-		_style_sheet_button(modal_button)
-		modal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_style_sheet_button(modal_button, 210.0)
+		modal_button.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
 	_rebuild()
 
 
@@ -499,7 +499,7 @@ func _build_sheet_button_styles() -> void:
 		_sheet_button_styles[String(state)] = style
 
 
-func _style_sheet_button(button: Button) -> void:
+func _style_sheet_button(button: Button, min_width := 280.0) -> void:
 	if _sheet_button_styles.is_empty():
 		return
 	for state in _sheet_button_styles:
@@ -508,7 +508,10 @@ func _style_sheet_button(button: Button) -> void:
 	button.add_theme_color_override("font_hover_color", Color(0.12, 0.16, 0.3))
 	button.add_theme_color_override("font_pressed_color", Color(0.12, 0.16, 0.3))
 	button.add_theme_color_override("font_disabled_color", Color(0.12, 0.16, 0.3, 0.5))
-	button.custom_minimum_size = Vector2(0, 60)
+	# Pills hold a modest width and center; edge-to-edge buttons crowd the
+	# painted frame (owner request, 2026-10-16).
+	button.custom_minimum_size = Vector2(min_width, 60)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 
 func _fit_modal() -> void:
