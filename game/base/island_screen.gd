@@ -164,16 +164,16 @@ func _rebuild() -> void:
 		$MapScroll/Map/Islets.add_child(islet_node)
 		islet_node.render(_islet_visual_state(islet, now))
 		_islet_nodes[islet_id] = islet_node
-	var band: Dictionary = layout.get("crew_band", {})
+	# Authored shore positions: the band arcs along the island's painted rim
+	# so no token floats on open sky (owner report, 2026-10-16).
+	var band_positions: Array = (layout.get("crew_band", {}) as Dictionary).get("positions", [])
 	var index := 0
 	for row_v in CrewModel.members(DataDefs.crew):
 		var member := row_v as Dictionary
 		var member_id := String(member.get("id", ""))
 		var token := IslandCrewToken.new(member_id)
 		token.crew_tapped.connect(_on_assign_pressed)
-		token.position = Vector2(
-			float(band.get("start_x", 64)) + float(band.get("spacing", 82)) * float(index),
-			float(band.get("y", 940))) - token.custom_minimum_size / 2.0
+		token.position = _layout_pos(band_positions[index] if index < band_positions.size() else null) - token.custom_minimum_size / 2.0
 		$MapScroll/Map/CrewBand.add_child(token)
 		token.render(_crew_visual_state(member))
 		_crew_tokens[member_id] = token

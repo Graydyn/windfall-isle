@@ -50,8 +50,26 @@ func test_every_islet_has_a_position() -> void:
 
 
 func test_crew_band_fits_the_whole_cast_on_screen() -> void:
-	var band: Dictionary = layout()["crew_band"]
+	var positions: Array = (layout()["crew_band"] as Dictionary)["positions"]
 	var count := CrewModel.members(DataDefs.crew).size()
-	var last_center := float(band["start_x"]) + float(band["spacing"]) * float(count - 1)
-	assert_true(last_center + 36.0 <= float((layout()["map_size"] as Array)[0]),
-		"the last crew token stays inside the map width")
+	assert_true(positions.size() >= count, "a shore position per crew member")
+	for pos_v in positions:
+		var pos := pos_v as Array
+		assert_between(float(pos[0]), 36.0, float((layout()["map_size"] as Array)[0]) - 36.0,
+			"crew token x inside the map")
+
+
+func test_crew_tokens_stand_on_the_painted_shore() -> void:
+	# The straight band regression: the island art curves away at the sides,
+	# leaving outer tokens floating on sky. Every token's feet must land on
+	# opaque island_home pixels.
+	var image: Image = (load(IslandBackdrop.ISLAND_PATH) as Texture2D).get_image()
+	image.decompress()
+	var rect := IslandBackdrop.ISLAND_RECT
+	for pos_v in (layout()["crew_band"] as Dictionary)["positions"]:
+		var pos := pos_v as Array
+		var feet := Vector2(float(pos[0]), float(pos[1]) + 52.0)
+		var tex_x := int((feet.x - rect.position.x) * image.get_width() / rect.size.x)
+		var tex_y := int((feet.y - rect.position.y) * image.get_height() / rect.size.y)
+		assert_true(image.get_pixel(tex_x, tex_y).a > 0.5,
+			"crew feet at map (%d, %d) stand on island art" % [int(feet.x), int(feet.y)])

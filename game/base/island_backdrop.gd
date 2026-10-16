@@ -8,6 +8,9 @@ class_name IslandBackdrop
 
 const VISTA_PATH := "res://game/art/regions/island_vista.png"
 const ISLAND_PATH := "res://game/art/buildings/island_home.png"
+## Where the home landmass art lands on the map; layout authoring (the crew
+## shore positions) and their tests measure against this same rect.
+const ISLAND_RECT := Rect2(25, 60, 670, 860)
 
 var _vista: Texture2D = null
 var _island: Texture2D = null
@@ -33,7 +36,7 @@ func _draw() -> void:
 	# The home plateau behind the plots (grass carries the pads; the rocky
 	# rim lands under the crew band).
 	if _island != null:
-		draw_texture_rect(_island, Rect2(25, 60, 670, 860), false)
+		draw_texture_rect(_island, ISLAND_RECT, false)
 	else:
 		draw_polygon(_island_points(Vector2(360, 490), 335.0, 430.0),
 			PackedColorArray([Color(0.45, 0.58, 0.38)]))
