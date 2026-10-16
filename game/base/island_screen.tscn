@@ -11,9 +11,9 @@ texture_margin_left = 48.0
 texture_margin_top = 48.0
 texture_margin_right = 48.0
 texture_margin_bottom = 48.0
-content_margin_left = 128.0
+content_margin_left = 152.0
 content_margin_top = 148.0
-content_margin_right = 128.0
+content_margin_right = 152.0
 content_margin_bottom = 104.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sheet"]
@@ -22,9 +22,9 @@ texture_margin_left = 72.0
 texture_margin_top = 72.0
 texture_margin_right = 72.0
 texture_margin_bottom = 72.0
-content_margin_left = 96.0
+content_margin_left = 116.0
 content_margin_top = 82.0
-content_margin_right = 96.0
+content_margin_right = 116.0
 content_margin_bottom = 96.0
 
 [sub_resource type="Gradient" id="Gradient_mist"]
@@ -169,7 +169,7 @@ horizontal_scroll_mode = 0
 
 [node name="LetterBody" type="Label" parent="LetterPanel/VBox/LetterScroll"]
 theme_override_colors/font_color = Color(0.3, 0.21, 0.12, 1)
-custom_minimum_size = Vector2(400, 0)
+custom_minimum_size = Vector2(360, 0)
 autowrap_mode = 3
 
 [node name="LetterClose" type="Button" parent="LetterPanel/VBox"]
@@ -209,18 +209,18 @@ vertical_alignment = 1
 [node name="ModalFlavor" type="Label" parent="BuildModal/VBox"]
 modulate = Color(1, 1, 1, 0.7)
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
-custom_minimum_size = Vector2(460, 0)
+custom_minimum_size = Vector2(430, 0)
 horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="ModalDescription" type="Label" parent="BuildModal/VBox"]
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
-custom_minimum_size = Vector2(460, 0)
+custom_minimum_size = Vector2(430, 0)
 autowrap_mode = 3
 
 [node name="ModalStats" type="Label" parent="BuildModal/VBox"]
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
-custom_minimum_size = Vector2(460, 0)
+custom_minimum_size = Vector2(430, 0)
 autowrap_mode = 3
 
 [node name="ModalCost" type="Label" parent="BuildModal/VBox"]
@@ -273,7 +273,7 @@ horizontal_alignment = 1
 
 [node name="SheetInfo" type="Label" parent="PlotSheet/VBox"]
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 0.8)
-custom_minimum_size = Vector2(460, 0)
+custom_minimum_size = Vector2(430, 0)
 horizontal_alignment = 1
 autowrap_mode = 3
 
