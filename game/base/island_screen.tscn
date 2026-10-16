@@ -11,10 +11,10 @@ texture_margin_left = 48.0
 texture_margin_top = 48.0
 texture_margin_right = 48.0
 texture_margin_bottom = 48.0
-content_margin_left = 122.0
-content_margin_top = 84.0
-content_margin_right = 122.0
-content_margin_bottom = 96.0
+content_margin_left = 128.0
+content_margin_top = 148.0
+content_margin_right = 128.0
+content_margin_bottom = 104.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sheet"]
 texture = ExtResource("4_panel")
@@ -22,10 +22,10 @@ texture_margin_left = 72.0
 texture_margin_top = 72.0
 texture_margin_right = 72.0
 texture_margin_bottom = 72.0
-content_margin_left = 84.0
-content_margin_top = 78.0
-content_margin_right = 84.0
-content_margin_bottom = 88.0
+content_margin_left = 96.0
+content_margin_top = 82.0
+content_margin_right = 96.0
+content_margin_bottom = 96.0
 
 [sub_resource type="Gradient" id="Gradient_mist"]
 offsets = PackedFloat32Array(0, 1)
@@ -142,10 +142,10 @@ color = Color(0, 0, 0, 0.45)
 
 [node name="LetterPanel" type="PanelContainer" parent="."]
 visible = false
-offset_left = 40.0
-offset_top = 120.0
-offset_right = 680.0
-offset_bottom = 810.0
+offset_left = 24.0
+offset_top = 95.0
+offset_right = 696.0
+offset_bottom = 835.0
 theme_override_styles/panel = SubResource("StyleBoxTexture_letter")
 
 [node name="VBox" type="VBoxContainer" parent="LetterPanel"]
@@ -164,12 +164,12 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="LetterScroll" type="ScrollContainer" parent="LetterPanel/VBox"]
-custom_minimum_size = Vector2(0, 330)
+custom_minimum_size = Vector2(0, 318)
 horizontal_scroll_mode = 0
 
 [node name="LetterBody" type="Label" parent="LetterPanel/VBox/LetterScroll"]
 theme_override_colors/font_color = Color(0.3, 0.21, 0.12, 1)
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(400, 0)
 autowrap_mode = 3
 
 [node name="LetterClose" type="Button" parent="LetterPanel/VBox"]
@@ -177,10 +177,10 @@ text = "Close"
 
 [node name="BuildModal" type="PanelContainer" parent="."]
 visible = false
-custom_minimum_size = Vector2(640, 0)
-offset_left = 40.0
+custom_minimum_size = Vector2(672, 0)
+offset_left = 24.0
 offset_top = 160.0
-offset_right = 680.0
+offset_right = 696.0
 offset_bottom = 820.0
 theme_override_styles/panel = SubResource("StyleBoxTexture_sheet")
 
@@ -251,10 +251,10 @@ text = "Cancel"
 
 [node name="PlotSheet" type="PanelContainer" parent="."]
 visible = false
-custom_minimum_size = Vector2(640, 0)
-offset_left = 40.0
+custom_minimum_size = Vector2(672, 0)
+offset_left = 24.0
 offset_top = 700.0
-offset_right = 680.0
+offset_right = 696.0
 offset_bottom = 1150.0
 theme_override_styles/panel = SubResource("StyleBoxTexture_sheet")
 

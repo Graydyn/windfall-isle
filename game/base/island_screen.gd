@@ -533,7 +533,7 @@ func _fit_sheet() -> void:
 
 func _fit_sheet_now() -> void:
 	$PlotSheet.reset_size()
-	$PlotSheet.position = Vector2(40.0, 1150.0 - $PlotSheet.size.y)
+	$PlotSheet.position = Vector2((720.0 - $PlotSheet.size.x) / 2.0, 1150.0 - $PlotSheet.size.y)
 
 
 func _close_sheet() -> void:
