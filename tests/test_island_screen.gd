@@ -798,3 +798,15 @@ func test_long_letters_scroll_inside_the_parchment() -> void:
 	screen._on_read_letter_pressed("lantern_shoal")
 	var scroll: ScrollContainer = screen.get_node("LetterPanel/VBox/LetterScroll")
 	assert_true(scroll.custom_minimum_size.y > 0, "Plan 8 parked polish: long letters scroll at last")
+
+
+func test_sheet_panel_nine_slices_only_the_painted_art() -> void:
+	# panel.png carries transparent jig padding (wider on the right), so a
+	# stylebox without a used-rect region draws the frame off-center and lets
+	# the top content overlap the painted border.
+	for node_path in ["BuildModal", "PlotSheet"]:
+		var style: StyleBoxTexture = screen.get_node(node_path).get_theme_stylebox("panel")
+		var used := Rect2(style.texture.get_image().get_used_rect())
+		assert_eq(style.region_rect, used, "%s panel 9-slice starts from the painted art" % node_path)
+		assert_eq(style.texture_margin_left, style.texture_margin_right,
+			"%s frame slices stay symmetric so content centers in the frame" % node_path)

@@ -18,10 +18,11 @@ content_margin_bottom = 104.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sheet"]
 texture = ExtResource("4_panel")
-texture_margin_left = 72.0
-texture_margin_top = 72.0
-texture_margin_right = 72.0
-texture_margin_bottom = 72.0
+region_rect = Rect2(17, 27, 452, 463)
+texture_margin_left = 64.0
+texture_margin_top = 64.0
+texture_margin_right = 64.0
+texture_margin_bottom = 64.0
 content_margin_left = 116.0
 content_margin_top = 82.0
 content_margin_right = 116.0
