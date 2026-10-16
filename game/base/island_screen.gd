@@ -353,7 +353,11 @@ func _render_islet_sheet() -> void:
 		picture.texture = null
 	picture.visible = picture.texture != null
 	$PlotSheet/VBox/SheetTitle.text = String(islet.get("name", _sheet_islet))
-	$PlotSheet/VBox/SheetInfo.text = "Mend the bridge to open new ground."
+	var info := "Mend the bridge to open new ground."
+	var unlock := IsletModel.unlock_text(DataDefs.buildings, _sheet_islet)
+	if unlock != "":
+		info += " " + unlock
+	$PlotSheet/VBox/SheetInfo.text = info
 	$PlotSheet/VBox/SheetInfo.visible = true
 	var restore := Button.new()
 	restore.text = "Restore (%s)" % _cost_text(islet.get("cost", {}))
@@ -820,6 +824,9 @@ func _open_letter(islet_id: String) -> void:
 	var lines := PackedStringArray()
 	for line in vignette.get("lines", []):
 		lines.append(String(line))
+	var unlock := IsletModel.unlock_text(DataDefs.buildings, islet_id)
+	if unlock != "":
+		lines.append(unlock)
 	$LetterPanel/VBox/LetterScroll/LetterBody.text = "\n\n".join(lines)
 	# Each letter carries its own ornament: a wax seal for the shoal's letter,
 	# a brass clasp for the foundry log (audit 4.3).

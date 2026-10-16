@@ -256,6 +256,17 @@ func test_restore_collect_marks_restored_and_opens_the_letter() -> void:
 	assert_true(screen.get_node("LetterPanel").visible)
 	assert_string_contains(String(screen.get_node("LetterPanel/VBox/LetterScroll/LetterBody").text), "lanterns were never for us")
 
+func test_islet_sheet_names_what_restoring_unlocks() -> void:
+	screen._on_islet_tapped("lantern_shoal")
+	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetInfo").text),
+		"Unlocks a plot for the Lens Array.")
+
+func test_letter_names_what_the_islet_unlocked() -> void:
+	restore_lantern()
+	screen._on_read_letter_pressed("lantern_shoal")
+	assert_string_contains(String(screen.get_node("LetterPanel/VBox/LetterScroll/LetterBody").text),
+		"Unlocks a plot for the Lens Array.")
+
 func test_letter_close_records_letters_seen() -> void:
 	restore_lantern()
 	screen._on_read_letter_pressed("lantern_shoal")

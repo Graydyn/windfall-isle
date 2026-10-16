@@ -98,6 +98,16 @@ static func complete_restore(data: Dictionary, payload: Dictionary) -> void:
 	(section["restored"] as Dictionary)[islet_id] = true
 
 
+static func unlock_text(building_defs: Dictionary, islet_id: String) -> String:
+	# Player-facing purpose line: the islet's whole payoff is the exclusive
+	# building its plot allows, so name it wherever the islet speaks.
+	for def_v in (building_defs.get("defs", {}) as Dictionary).values():
+		var def := def_v as Dictionary
+		if String(def.get("islet", "")) == islet_id:
+			return "Unlocks a plot for the %s." % String(def.get("name", ""))
+	return ""
+
+
 static func duplicate_plot_ids(defs: Dictionary) -> Array:
 	# Authoring guard for islet 3+ (mirrors Skyfield.duplicate_barge_ids).
 	var seen := {}

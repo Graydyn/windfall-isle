@@ -91,6 +91,14 @@ func test_islet_of_plot_maps_both_ways() -> void:
 	assert_eq(IsletModel.islet_of_plot(defs, "islet_lantern_0"), "lantern_shoal")
 	assert_eq(IsletModel.islet_of_plot(defs, "plot_0"), "")
 
+func test_unlock_text_names_the_islet_building() -> void:
+	assert_eq(IsletModel.unlock_text(DataDefs.buildings, "lantern_shoal"),
+		"Unlocks a plot for the Lens Array.")
+	assert_eq(IsletModel.unlock_text(DataDefs.buildings, "foundry_rock"),
+		"Unlocks a plot for the Foundry Annex.")
+	assert_eq(IsletModel.unlock_text(DataDefs.buildings, "atlantis"), "",
+		"an islet with no exclusive building stays silent")
+
 func test_shipped_data_has_no_duplicate_plot_ids() -> void:
 	assert_eq(IsletModel.duplicate_plot_ids(DataDefs.islets), [],
 		"authoring guard, mirrors the barge-id uniqueness check")
