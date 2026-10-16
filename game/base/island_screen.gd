@@ -353,6 +353,7 @@ func _render_islet_sheet() -> void:
 		picture.texture = null
 	picture.visible = picture.texture != null
 	$PlotSheet/VBox/SheetTitle.text = String(islet.get("name", _sheet_islet))
+	_set_sheet_lore("", "")
 	var info := "Mend the bridge to open new ground."
 	var unlock := IsletModel.unlock_text(DataDefs.buildings, _sheet_islet)
 	if unlock != "":
@@ -420,6 +421,9 @@ func _render_sheet() -> void:
 			$PlotSheet/VBox/SheetTitle.text = "Building %s (%ds)" % [display, TimerService.remaining(timer_id, now)]
 	else:
 		$PlotSheet/VBox/SheetTitle.text = "%s Lv %d" % [display, level]
+	# The sheet owns the building's lore; the upgrade modal keeps only the
+	# numbers (owner request, 2026-10-16).
+	_set_sheet_lore(String(def.get("flavor", "")), String(def.get("description", "")))
 	var info_lines := PackedStringArray()
 	var worker := CrewModel.crew_at(GameState.data, building)
 	if worker != "":
@@ -470,6 +474,13 @@ func _render_sheet() -> void:
 			_style_sheet_button(start_batch)
 			actions.add_child(start_batch)
 	_fit_sheet()
+
+
+func _set_sheet_lore(flavor: String, description: String) -> void:
+	$PlotSheet/VBox/SheetFlavor.text = flavor
+	$PlotSheet/VBox/SheetFlavor.visible = flavor != ""
+	$PlotSheet/VBox/SheetDescription.text = description
+	$PlotSheet/VBox/SheetDescription.visible = description != ""
 
 
 func _build_sheet_button_styles() -> void:
@@ -637,8 +648,14 @@ func _render_modal() -> void:
 	else:
 		$BuildModal/VBox/ModalPicture.texture = null
 		$BuildModal/VBox/ModalPicture/PictureLetter.text = display.left(1)
+	# An occupied plot already told its story in the plot sheet, so the
+	# upgrade modal keeps only the numbers (owner request, 2026-10-16); an
+	# empty plot has no sheet before the modal, so the lore stays here.
+	var upgrading: bool = (GameState.data["island"].get("plots", {}) as Dictionary).has(_modal_plot)
 	$BuildModal/VBox/ModalFlavor.text = String(def.get("flavor", ""))
+	$BuildModal/VBox/ModalFlavor.visible = not upgrading and String(def.get("flavor", "")) != ""
 	$BuildModal/VBox/ModalDescription.text = String(def.get("description", ""))
+	$BuildModal/VBox/ModalDescription.visible = not upgrading and String(def.get("description", "")) != ""
 	var stats := _stats_text(building_id, def)
 	$BuildModal/VBox/ModalStats.text = stats
 	$BuildModal/VBox/ModalStats.visible = stats != ""

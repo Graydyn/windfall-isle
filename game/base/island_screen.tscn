@@ -271,6 +271,19 @@ theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 
+[node name="SheetFlavor" type="Label" parent="PlotSheet/VBox"]
+modulate = Color(1, 1, 1, 0.7)
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(430, 0)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SheetDescription" type="Label" parent="PlotSheet/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(430, 0)
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="SheetInfo" type="Label" parent="PlotSheet/VBox"]
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 0.8)
 custom_minimum_size = Vector2(430, 0)

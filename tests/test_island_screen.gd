@@ -83,6 +83,38 @@ func test_built_observatory_shows_its_teaser_in_the_sheet() -> void:
 	assert_string_contains(String(screen.get_node("PlotSheet/VBox/SheetInfo").text), "Brasswork Reach",
 		"spec 4.1: the Observatory reveals upcoming regions")
 
+func test_plot_sheet_carries_the_building_flavor_and_description() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	var def: Dictionary = (DataDefs.buildings["defs"] as Dictionary)["workshop"]
+	assert_eq(String(screen.get_node("PlotSheet/VBox/SheetFlavor").text), String(def["flavor"]))
+	assert_eq(String(screen.get_node("PlotSheet/VBox/SheetDescription").text), String(def["description"]))
+	assert_true(screen.get_node("PlotSheet/VBox/SheetFlavor").visible)
+	assert_true(screen.get_node("PlotSheet/VBox/SheetDescription").visible)
+
+func test_upgrade_modal_leaves_lore_to_the_sheet() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._open_build_modal("plot_0")
+	assert_false(screen.get_node("BuildModal/VBox/ModalFlavor").visible,
+		"the sheet already told the story; the upgrade modal is just for upgrading")
+	assert_false(screen.get_node("BuildModal/VBox/ModalDescription").visible)
+
+func test_build_modal_still_shows_lore_for_an_empty_plot() -> void:
+	screen._open_build_modal("plot_0")
+	assert_true(screen.get_node("BuildModal/VBox/ModalFlavor").visible,
+		"an empty plot has no sheet before the modal, so the lore stays")
+	assert_true(screen.get_node("BuildModal/VBox/ModalDescription").visible)
+
+func test_islet_sheet_hides_building_lore_labels() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	screen._on_islet_tapped("lantern_shoal")
+	assert_false(screen.get_node("PlotSheet/VBox/SheetFlavor").visible,
+		"the shared sheet must not leak the last building's lore onto an islet")
+	assert_false(screen.get_node("PlotSheet/VBox/SheetDescription").visible)
+
 func test_gardens_collect_credits_scrap() -> void:
 	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
 	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
