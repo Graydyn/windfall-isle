@@ -64,11 +64,6 @@ offset_right = 720.0
 offset_bottom = 1750.0
 mouse_filter = 2
 
-[node name="CrewBand" type="Control" parent="MapScroll/Map"]
-offset_right = 720.0
-offset_bottom = 1750.0
-mouse_filter = 2
-
 [node name="Plots" type="Control" parent="MapScroll/Map"]
 offset_right = 720.0
 offset_bottom = 1750.0
@@ -110,19 +105,26 @@ text = "Bonus crate (ad)"
 [node name="SlotButton" type="Button" parent="."]
 offset_left = 10.0
 offset_top = 1160.0
-offset_right = 320.0
+offset_right = 280.0
 offset_bottom = 1216.0
 text = "Unlock 2nd build slot"
 
-[node name="WorkshopButton" type="Button" parent="."]
-offset_left = 330.0
+[node name="CrewButton" type="Button" parent="."]
+offset_left = 290.0
 offset_top = 1160.0
-offset_right = 520.0
+offset_right = 420.0
+offset_bottom = 1216.0
+text = "Crew"
+
+[node name="WorkshopButton" type="Button" parent="."]
+offset_left = 430.0
+offset_top = 1160.0
+offset_right = 560.0
 offset_bottom = 1216.0
 text = "Workshop"
 
 [node name="BackButton" type="Button" parent="."]
-offset_left = 530.0
+offset_left = 570.0
 offset_top = 1160.0
 offset_right = 710.0
 offset_bottom = 1216.0
@@ -295,4 +297,28 @@ autowrap_mode = 3
 theme_override_constants/separation = 8
 
 [node name="SheetClose" type="Button" parent="PlotSheet/VBox"]
+text = "Close"
+
+[node name="CrewSheet" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(672, 0)
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 696.0
+offset_bottom = 1060.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_sheet")
+
+[node name="VBox" type="VBoxContainer" parent="CrewSheet"]
+theme_override_constants/separation = 10
+
+[node name="CrewTitle" type="Label" parent="CrewSheet/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "Crew"
+
+[node name="CrewRows" type="VBoxContainer" parent="CrewSheet/VBox"]
+theme_override_constants/separation = 6
+
+[node name="CrewClose" type="Button" parent="CrewSheet/VBox"]
 text = "Close"

@@ -15,7 +15,7 @@ var _modal_ids: Array[String] = []
 var _modal_index := 0
 var _plot_nodes: Dictionary = {}
 var _islet_nodes: Dictionary = {}
-var _crew_tokens: Dictionary = {}
+var _crew_rows: Dictionary = {}
 var _letter_islet := ""
 var _sheet_plot := ""
 var _sheet_islet := ""
@@ -38,12 +38,16 @@ func _ready() -> void:
 	$BuildModal/VBox/ActionRow/ConfirmButton.pressed.connect(_on_modal_confirm_pressed)
 	$BuildModal/VBox/ActionRow/CancelButton.pressed.connect(_on_modal_cancel_pressed)
 	$PlotSheet/VBox/SheetClose.pressed.connect(_on_sheet_close_pressed)
+	$CrewButton.pressed.connect(_open_crew_sheet)
+	$CrewSheet/VBox/CrewClose.pressed.connect(func() -> void: $CrewSheet.visible = false)
 	$BuildModal.visibility_changed.connect(_update_modal_block)
 	$LetterPanel.visibility_changed.connect(_update_modal_block)
 	$PlotSheet.visibility_changed.connect(_update_modal_block)
+	$CrewSheet.visibility_changed.connect(_update_modal_block)
 	_build_sheet_button_styles()
 	_style_sheet_button($PlotSheet/VBox/SheetClose)
 	_style_sheet_button($LetterPanel/VBox/LetterClose)
+	_style_sheet_button($CrewSheet/VBox/CrewClose)
 	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton"]:
 		var modal_button: Button = $BuildModal/VBox.get_node(NodePath(path))
 		_style_sheet_button(modal_button, 210.0)
@@ -135,13 +139,12 @@ func _refresh_labels(now: int) -> void:
 
 
 func _rebuild() -> void:
-	for container in [$MapScroll/Map/Plots, $MapScroll/Map/Islets, $MapScroll/Map/CrewBand]:
+	for container in [$MapScroll/Map/Plots, $MapScroll/Map/Islets]:
 		for child in (container as Control).get_children():
 			(container as Control).remove_child(child)
 			child.queue_free()
 	_plot_nodes.clear()
 	_islet_nodes.clear()
-	_crew_tokens.clear()
 	var now := TimeUtil.now()
 	_last_signature = _signature(now)
 	var layout: Dictionary = DataDefs.island_layout
@@ -164,22 +167,10 @@ func _rebuild() -> void:
 		$MapScroll/Map/Islets.add_child(islet_node)
 		islet_node.render(_islet_visual_state(islet, now))
 		_islet_nodes[islet_id] = islet_node
-	# Authored shore positions: the band arcs along the island's painted rim
-	# so no token floats on open sky (owner report, 2026-10-16).
-	var band_positions: Array = (layout.get("crew_band", {}) as Dictionary).get("positions", [])
-	var index := 0
-	for row_v in CrewModel.members(DataDefs.crew):
-		var member := row_v as Dictionary
-		var member_id := String(member.get("id", ""))
-		var token := IslandCrewToken.new(member_id)
-		token.crew_tapped.connect(_on_assign_pressed)
-		token.position = _layout_pos(band_positions[index] if index < band_positions.size() else null) - token.custom_minimum_size / 2.0
-		$MapScroll/Map/CrewBand.add_child(token)
-		token.render(_crew_visual_state(member))
-		_crew_tokens[member_id] = token
-		index += 1
 	if $PlotSheet.visible:
 		_render_sheet()
+	if $CrewSheet.visible:
+		_render_crew_sheet()
 	_refresh_static_controls(now)
 
 
@@ -554,6 +545,74 @@ func _fit_sheet_now() -> void:
 	$PlotSheet.position = Vector2((720.0 - $PlotSheet.size.x) / 2.0, 1150.0 - $PlotSheet.size.y)
 
 
+func _open_crew_sheet() -> void:
+	_render_crew_sheet()
+	$CrewSheet.visible = true
+	_fit_crew_sheet()
+
+
+func _render_crew_sheet() -> void:
+	# The crew roster and the assign cycle live here; the map stays scenery
+	# (owner request, 2026-10-16). Rows rebuild on every render: eight rows
+	# is cheap and the assign button label must track the current cycle stop.
+	var rows: VBoxContainer = $CrewSheet/VBox/CrewRows
+	for child in rows.get_children():
+		rows.remove_child(child)
+		child.queue_free()
+	_crew_rows.clear()
+	for row_v in CrewModel.members(DataDefs.crew):
+		var member := row_v as Dictionary
+		var member_id := String(member.get("id", ""))
+		var state := _crew_visual_state(member)
+		var rescued := bool(state.get("rescued", false))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 14)
+		var portrait := TextureRect.new()
+		portrait.custom_minimum_size = Vector2(56, 56)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var portrait_path := String(state.get("portrait", ""))
+		if portrait_path != "" and ResourceLoader.exists(portrait_path):
+			portrait.texture = load(portrait_path)
+		portrait.modulate.a = 1.0 if rescued else 0.5
+		row.add_child(portrait)
+		var text_box := VBoxContainer.new()
+		text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var name_label := Label.new()
+		name_label.text = String(state.get("name", ""))
+		name_label.add_theme_color_override("font_color", Color(0.13, 0.17, 0.32))
+		name_label.add_theme_font_size_override("font_size", 17)
+		text_box.add_child(name_label)
+		var line_label := Label.new()
+		line_label.text = String(state.get("line", ""))
+		line_label.add_theme_color_override("font_color", Color(0.13, 0.17, 0.32, 0.75))
+		line_label.add_theme_font_size_override("font_size", 13)
+		text_box.add_child(line_label)
+		row.add_child(text_box)
+		var assign := Button.new()
+		assign.text = "Assign" if rescued else "Lost at sea"
+		assign.disabled = not rescued
+		assign.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_style_sheet_button(assign, 180.0)
+		assign.pressed.connect(_on_assign_pressed.bind(member_id))
+		row.add_child(assign)
+		rows.add_child(row)
+		_crew_rows[member_id] = assign
+
+
+func _fit_crew_sheet() -> void:
+	# Same contract as _fit_modal: hug the content, centered, after the sort.
+	_fit_crew_sheet_now.call_deferred()
+
+
+func _fit_crew_sheet_now() -> void:
+	$CrewSheet.reset_size()
+	$CrewSheet.position = Vector2(
+		(720.0 - $CrewSheet.size.x) / 2.0,
+		maxf(60.0, (1280.0 - $CrewSheet.size.y) / 2.0 - 60.0))
+
+
 func _close_sheet() -> void:
 	_sheet_plot = ""
 	_sheet_islet = ""
@@ -585,7 +644,8 @@ func _on_sheet_batch_collect_pressed(building_id: String) -> void:
 
 
 func _update_modal_block() -> void:
-	$ModalBlock.visible = $BuildModal.visible or $LetterPanel.visible or $PlotSheet.visible
+	$ModalBlock.visible = ($BuildModal.visible or $LetterPanel.visible
+		or $PlotSheet.visible or $CrewSheet.visible)
 
 
 func _refresh_static_controls(now: int) -> void:
@@ -599,7 +659,9 @@ func _refresh_static_controls(now: int) -> void:
 	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
 	var slot_cost := int(slots_cfg.get("second_slot_crystal_cost", 20))
 	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
-	$SlotButton.text = "Unlock 2nd build slot (%d crystals)" % slot_cost
+	# Shorter label since the Crew button joined the row; the long form
+	# overflowed the 270px button.
+	$SlotButton.text = "2nd slot (%d crystals)" % slot_cost
 	$SlotButton.disabled = not Economy.can_afford({"crystals": slot_cost})
 	$BonusCrateButton.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE)
 	$BonusCrateButton.disabled = not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)

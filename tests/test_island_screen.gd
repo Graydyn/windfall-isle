@@ -29,8 +29,8 @@ func test_builds_map_nodes_for_plots_islets_and_crew() -> void:
 		int(DataDefs.buildings["plot_count"]), "fresh save: one pad per home plot")
 	assert_eq(screen.get_node("MapScroll/Map/Islets").get_child_count(),
 		IsletModel.islets(DataDefs.islets).size(), "one marker per islet")
-	assert_eq(screen.get_node("MapScroll/Map/CrewBand").get_child_count(),
-		CrewModel.members(DataDefs.crew).size(), "one token per crew def, rescued or not")
+	assert_null(screen.get_node_or_null("MapScroll/Map/CrewBand"),
+		"crew left the map for the crew sheet (owner request, 2026-10-16)")
 
 func test_choose_opens_the_modal_on_the_first_candidate() -> void:
 	screen._open_build_modal("plot_0")
@@ -349,20 +349,29 @@ func rescue_and_rebuild(ids: Array) -> void:
 	screen._rebuild()
 
 
-func crew_token_count() -> int:
-	return screen.get_node("MapScroll/Map/CrewBand").get_child_count()
+func open_crew_sheet() -> void:
+	screen._open_crew_sheet()
 
 
-func test_crew_tokens_exist_for_the_whole_cast() -> void:
-	assert_eq(crew_token_count(), CrewModel.members(DataDefs.crew).size(),
-		"every crew def gets a token, rescued or not")
+func test_crew_button_opens_the_crew_sheet() -> void:
+	screen.get_node("CrewButton").pressed.emit()
+	assert_true(screen.get_node("CrewSheet").visible)
+	assert_true(screen.get_node("ModalBlock").visible, "the sheet dims the map behind it")
+
+
+func test_crew_sheet_lists_the_whole_cast() -> void:
+	open_crew_sheet()
+	assert_eq(screen.get_node("CrewSheet/VBox/CrewRows").get_child_count(),
+		CrewModel.members(DataDefs.crew).size(), "every crew def gets a row, rescued or not")
+
 
 func test_unrescued_crew_show_as_disabled_silhouettes() -> void:
 	var state: Dictionary = screen._crew_visual_state(CrewModel.entry(DataDefs.crew, "odo"))
 	assert_eq(String(state["name"]), "???")
 	assert_false(bool(state["rescued"]))
-	var token: Button = screen._crew_tokens["odo"]
-	assert_true(token.disabled)
+	open_crew_sheet()
+	var button: Button = screen._crew_rows["odo"]
+	assert_true(button.disabled, "an unrescued crewmember cannot be assigned")
 
 
 func test_rescued_crew_show_name_and_specialty() -> void:
@@ -370,8 +379,18 @@ func test_rescued_crew_show_name_and_specialty() -> void:
 	var state: Dictionary = screen._crew_visual_state(CrewModel.entry(DataDefs.crew, "odo"))
 	assert_eq(String(state["name"]), "Odo")
 	assert_string_contains(String(state["line"]), "Gardens")
-	var token: Button = screen._crew_tokens["odo"]
-	assert_false(token.disabled)
+	open_crew_sheet()
+	var button: Button = screen._crew_rows["odo"]
+	assert_false(button.disabled)
+
+
+func test_crew_sheet_assign_button_cycles_the_assignment() -> void:
+	rescue_and_rebuild(["odo"])
+	open_crew_sheet()
+	(screen._crew_rows["odo"] as Button).pressed.emit()
+	assert_eq(CrewModel.building_of(GameState.data, "odo"), "gardens",
+		"the row button drives the same assign cycle as the old shore tap")
+	assert_true(screen.get_node("CrewSheet").visible, "the sheet stays open to keep cycling")
 
 func test_assign_cycle_walks_workable_then_idle() -> void:
 	rescue_and_rebuild(["odo"])
@@ -782,7 +801,6 @@ func test_map_buttons_pass_drags_to_the_scroll() -> void:
 	assert_eq((screen._plot_nodes["plot_0"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS,
 		"pads PASS so a pan can start on them")
 	assert_eq((screen._islet_nodes["lantern_shoal"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
-	assert_eq((screen._crew_tokens["odo"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
 	assert_eq(screen.get_node("MapScroll/Map").mouse_filter, Control.MOUSE_FILTER_PASS,
 		"the map itself must not swallow the drag before the ScrollContainer")
 
