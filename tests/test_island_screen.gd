@@ -254,7 +254,7 @@ func test_restore_collect_marks_restored_and_opens_the_letter() -> void:
 	screen._on_restore_collect_pressed("lantern_shoal")
 	assert_true(IsletModel.is_restored(GameState.data, "lantern_shoal"))
 	assert_true(screen.get_node("LetterPanel").visible)
-	assert_string_contains(String(screen.get_node("LetterPanel/VBox/LetterBody").text), "lanterns were never for us")
+	assert_string_contains(String(screen.get_node("LetterPanel/VBox/LetterScroll/LetterBody").text), "lanterns were never for us")
 
 func test_letter_close_records_letters_seen() -> void:
 	restore_lantern()
@@ -742,3 +742,16 @@ func test_map_buttons_pass_drags_to_the_scroll() -> void:
 	assert_eq((screen._crew_tokens["odo"] as Control).mouse_filter, Control.MOUSE_FILTER_PASS)
 	assert_eq(screen.get_node("MapScroll/Map").mouse_filter, Control.MOUSE_FILTER_PASS,
 		"the map itself must not swallow the drag before the ScrollContainer")
+
+
+func test_modal_and_letter_buttons_carry_the_pill_style() -> void:
+	assert_true(screen.get_node("BuildModal/VBox/ActionRow/ConfirmButton").has_theme_stylebox_override("normal"))
+	assert_true(screen.get_node("BuildModal/VBox/NavRow/PrevButton").has_theme_stylebox_override("normal"))
+	assert_true(screen.get_node("LetterPanel/VBox/LetterClose").has_theme_stylebox_override("normal"))
+
+
+func test_long_letters_scroll_inside_the_parchment() -> void:
+	restore_lantern()
+	screen._on_read_letter_pressed("lantern_shoal")
+	var scroll: ScrollContainer = screen.get_node("LetterPanel/VBox/LetterScroll")
+	assert_true(scroll.custom_minimum_size.y > 0, "Plan 8 parked polish: long letters scroll at last")

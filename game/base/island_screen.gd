@@ -43,6 +43,11 @@ func _ready() -> void:
 	$PlotSheet.visibility_changed.connect(_update_modal_block)
 	_build_sheet_button_styles()
 	_style_sheet_button($PlotSheet/VBox/SheetClose)
+	_style_sheet_button($LetterPanel/VBox/LetterClose)
+	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton"]:
+		var modal_button: Button = $BuildModal/VBox.get_node(NodePath(path))
+		_style_sheet_button(modal_button)
+		modal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_rebuild()
 
 
@@ -478,10 +483,18 @@ func _build_sheet_button_styles() -> void:
 	for state in tints:
 		var style := StyleBoxTexture.new()
 		style.texture = art
-		style.set_texture_margin_all(44.0)
-		style.set_content_margin_all(8.0)
-		style.content_margin_left = 20.0
-		style.content_margin_right = 20.0
+		# button.png is a small rounded square centered on a mostly
+		# transparent 384x112 canvas (jig centers its subjects), so the
+		# nine-patch must slice the PAINTED region, not the whole canvas,
+		# and its margins must stay under half the smallest drawn button.
+		style.region_rect = Rect2(136, 2, 112, 108)
+		style.texture_margin_left = 34.0
+		style.texture_margin_right = 34.0
+		style.texture_margin_top = 26.0
+		style.texture_margin_bottom = 30.0
+		style.set_content_margin_all(10.0)
+		style.content_margin_left = 24.0
+		style.content_margin_right = 24.0
 		style.modulate_color = tints[state]
 		_sheet_button_styles[String(state)] = style
 
@@ -495,7 +508,20 @@ func _style_sheet_button(button: Button) -> void:
 	button.add_theme_color_override("font_hover_color", Color(0.12, 0.16, 0.3))
 	button.add_theme_color_override("font_pressed_color", Color(0.12, 0.16, 0.3))
 	button.add_theme_color_override("font_disabled_color", Color(0.12, 0.16, 0.3, 0.5))
-	button.custom_minimum_size = Vector2(0, 52)
+	button.custom_minimum_size = Vector2(0, 60)
+
+
+func _fit_modal() -> void:
+	# Same contract as _fit_sheet: the card hugs its content, centered,
+	# deferred past the container sort pass.
+	_fit_modal_now.call_deferred()
+
+
+func _fit_modal_now() -> void:
+	$BuildModal.reset_size()
+	$BuildModal.position = Vector2(
+		(720.0 - $BuildModal.size.x) / 2.0,
+		maxf(80.0, (1280.0 - $BuildModal.size.y) / 2.0 - 80.0))
 
 
 func _fit_sheet() -> void:
@@ -616,11 +642,13 @@ func _render_modal() -> void:
 		$BuildModal/VBox/ModalCost.text = "Max level reached"
 		$BuildModal/VBox/ActionRow/ConfirmButton.text = "Max level"
 		$BuildModal/VBox/ActionRow/ConfirmButton.disabled = true
+		_fit_modal()
 		return
 	var next_row: Dictionary = level_rows[level]
 	$BuildModal/VBox/ModalCost.text = "Cost: %s" % _cost_text(next_row.get("cost", {}))
 	$BuildModal/VBox/ActionRow/ConfirmButton.text = ("Upgrade to Lv %d" % (level + 1)) if level > 0 else "Build"
 	$BuildModal/VBox/ActionRow/ConfirmButton.disabled = false
+	_fit_modal()
 
 
 func _stats_text(building_id: String, def: Dictionary) -> String:
@@ -789,7 +817,7 @@ func _open_letter(islet_id: String) -> void:
 	var lines := PackedStringArray()
 	for line in vignette.get("lines", []):
 		lines.append(String(line))
-	$LetterPanel/VBox/LetterBody.text = "\n\n".join(lines)
+	$LetterPanel/VBox/LetterScroll/LetterBody.text = "\n\n".join(lines)
 	# Each letter carries its own ornament: a wax seal for the shoal's letter,
 	# a brass clasp for the foundry log (audit 4.3).
 	var seal_path := String({

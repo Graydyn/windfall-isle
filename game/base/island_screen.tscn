@@ -11,10 +11,10 @@ texture_margin_left = 48.0
 texture_margin_top = 48.0
 texture_margin_right = 48.0
 texture_margin_bottom = 48.0
-content_margin_left = 32.0
-content_margin_top = 32.0
-content_margin_right = 32.0
-content_margin_bottom = 32.0
+content_margin_left = 122.0
+content_margin_top = 84.0
+content_margin_right = 122.0
+content_margin_bottom = 96.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sheet"]
 texture = ExtResource("4_panel")
@@ -23,9 +23,9 @@ texture_margin_top = 72.0
 texture_margin_right = 72.0
 texture_margin_bottom = 72.0
 content_margin_left = 84.0
-content_margin_top = 64.0
+content_margin_top = 78.0
 content_margin_right = 84.0
-content_margin_bottom = 84.0
+content_margin_bottom = 88.0
 
 [sub_resource type="Gradient" id="Gradient_mist"]
 offsets = PackedFloat32Array(0, 1)
@@ -143,14 +143,19 @@ color = Color(0, 0, 0, 0.45)
 [node name="LetterPanel" type="PanelContainer" parent="."]
 visible = false
 offset_left = 40.0
-offset_top = 200.0
+offset_top = 120.0
 offset_right = 680.0
-offset_bottom = 700.0
+offset_bottom = 810.0
 theme_override_styles/panel = SubResource("StyleBoxTexture_letter")
 
 [node name="VBox" type="VBoxContainer" parent="LetterPanel"]
+theme_override_constants/separation = 10
 
 [node name="LetterTitle" type="Label" parent="LetterPanel/VBox"]
+theme_override_colors/font_color = Color(0.28, 0.19, 0.11, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+autowrap_mode = 3
 text = "A letter"
 
 [node name="LetterSeal" type="TextureRect" parent="LetterPanel/VBox"]
@@ -158,8 +163,13 @@ custom_minimum_size = Vector2(48, 48)
 expand_mode = 1
 stretch_mode = 5
 
-[node name="LetterBody" type="Label" parent="LetterPanel/VBox"]
-custom_minimum_size = Vector2(600, 0)
+[node name="LetterScroll" type="ScrollContainer" parent="LetterPanel/VBox"]
+custom_minimum_size = Vector2(0, 330)
+horizontal_scroll_mode = 0
+
+[node name="LetterBody" type="Label" parent="LetterPanel/VBox/LetterScroll"]
+theme_override_colors/font_color = Color(0.3, 0.21, 0.12, 1)
+custom_minimum_size = Vector2(380, 0)
 autowrap_mode = 3
 
 [node name="LetterClose" type="Button" parent="LetterPanel/VBox"]
@@ -167,17 +177,23 @@ text = "Close"
 
 [node name="BuildModal" type="PanelContainer" parent="."]
 visible = false
-offset_left = 60.0
-offset_top = 180.0
-offset_right = 660.0
-offset_bottom = 780.0
+custom_minimum_size = Vector2(640, 0)
+offset_left = 40.0
+offset_top = 160.0
+offset_right = 680.0
+offset_bottom = 820.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_sheet")
 
 [node name="VBox" type="VBoxContainer" parent="BuildModal"]
+theme_override_constants/separation = 8
 
 [node name="ModalTitle" type="Label" parent="BuildModal/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
 
 [node name="ModalPicture" type="TextureRect" parent="BuildModal/VBox"]
-custom_minimum_size = Vector2(96, 96)
+custom_minimum_size = Vector2(112, 112)
 expand_mode = 1
 stretch_mode = 5
 
@@ -185,27 +201,38 @@ stretch_mode = 5
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_font_sizes/font_size = 40
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ModalFlavor" type="Label" parent="BuildModal/VBox"]
 modulate = Color(1, 1, 1, 0.7)
-custom_minimum_size = Vector2(560, 0)
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(460, 0)
+horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="ModalDescription" type="Label" parent="BuildModal/VBox"]
-custom_minimum_size = Vector2(560, 0)
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(460, 0)
 autowrap_mode = 3
 
 [node name="ModalStats" type="Label" parent="BuildModal/VBox"]
-custom_minimum_size = Vector2(560, 0)
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(460, 0)
 autowrap_mode = 3
 
 [node name="ModalCost" type="Label" parent="BuildModal/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+horizontal_alignment = 1
 
 [node name="ModalStatus" type="Label" parent="BuildModal/VBox"]
+theme_override_colors/font_color = Color(0.62, 0.15, 0.1, 1)
+horizontal_alignment = 1
 
 [node name="NavRow" type="HBoxContainer" parent="BuildModal/VBox"]
+theme_override_constants/separation = 12
 
 [node name="PrevButton" type="Button" parent="BuildModal/VBox/NavRow"]
 text = "< Prev"
@@ -214,6 +241,7 @@ text = "< Prev"
 text = "Next >"
 
 [node name="ActionRow" type="HBoxContainer" parent="BuildModal/VBox"]
+theme_override_constants/separation = 12
 
 [node name="ConfirmButton" type="Button" parent="BuildModal/VBox/ActionRow"]
 text = "Build"
@@ -245,7 +273,7 @@ horizontal_alignment = 1
 
 [node name="SheetInfo" type="Label" parent="PlotSheet/VBox"]
 theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 0.8)
-custom_minimum_size = Vector2(560, 0)
+custom_minimum_size = Vector2(460, 0)
 horizontal_alignment = 1
 autowrap_mode = 3
 
