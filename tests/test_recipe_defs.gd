@@ -56,7 +56,7 @@ func test_smeltery_def_shape() -> void:
 	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get("smeltery", {})
 	assert_eq(int(def.get("max_level", 0)), 3)
 	assert_eq((def.get("levels", []) as Array).size(), 3)
-	assert_eq(int(DataDefs.buildings.get("plot_count", 0)), 7, "seventh plot: no softlock")
+	assert_eq(int(DataDefs.buildings.get("plot_count", 0)), 8, "eighth plot: every home building keeps a pad")
 
 func test_gizmo_repricing_table_is_pinned() -> void:
 	var expected := {
@@ -78,3 +78,19 @@ func test_gizmo_repricing_table_is_pinned() -> void:
 		for currency in want:
 			assert_eq(int(cost.get(currency, -1)), int(want[currency]),
 				"repricing table drifted (chains spec section 4): %s %s" % [gizmo_id, currency])
+
+func test_crew_quarters_def_shape() -> void:
+	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get("crew_quarters", {})
+	assert_eq(String(def.get("name", "")), "Crew Quarters")
+	assert_eq(int(def.get("max_level", 0)), 1, "a pure unlock: nothing to upgrade")
+	var rows: Array = def.get("levels", [])
+	assert_eq(rows.size(), 1)
+	assert_eq(int(((rows[0] as Dictionary).get("cost", {}) as Dictionary).get("scrap", 0)), 40,
+		"cheap on purpose: crew should unlock early (owner request, 2026-10-17)")
+	assert_true(int((rows[0] as Dictionary).get("build_seconds", 0)) <= 60, "a quick first build")
+	assert_eq(String(def.get("islet", "")), "", "a home building")
+	assert_false(def.has("recipes"), "the bunkhouse converts nothing")
+	assert_false((DataDefs.crew.get("workable", []) as Array).has("crew_quarters"),
+		"no one works the bunkhouse")
+	assert_true((DataDefs.island_layout.get("plots", {}) as Dictionary).has("plot_7"),
+		"the new plot has a map position")

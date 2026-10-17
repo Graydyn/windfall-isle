@@ -4,7 +4,7 @@
 		"max": 2,
 		"second_slot_crystal_cost": 20
 	},
-	"plot_count": 7,
+	"plot_count": 8,
 	"defs": {
 		"workshop": {
 			"name": "Workshop",
@@ -317,6 +317,20 @@
 						"brasswork": 14
 					},
 					"build_seconds": 7200
+				}
+			]
+		},
+		"crew_quarters": {
+			"name": "Crew Quarters",
+			"flavor": "Eight bunks, one kettle, no questions asked.",
+			"description": "Gives castaways a place to sleep. Until it stands, survivors drift past your expeditions unseen.",
+			"max_level": 1,
+			"levels": [
+				{
+					"cost": {
+						"scrap": 40
+					},
+					"build_seconds": 45
 				}
 			]
 		}

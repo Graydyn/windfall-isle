@@ -2,9 +2,9 @@ extends GutTest
 
 
 func test_buildings_load_with_nine_defs() -> void:
-	assert_eq((DataDefs.buildings["defs"] as Dictionary).size(), 9,
-		"seven home buildings plus the two islet buildings")
-	for id in ["workshop", "wind_still", "dock", "balloonworks", "observatory", "gardens", "smeltery", "lens_array", "foundry_annex"]:
+	assert_eq((DataDefs.buildings["defs"] as Dictionary).size(), 10,
+		"eight home buildings plus the two islet buildings")
+	for id in ["workshop", "wind_still", "dock", "balloonworks", "observatory", "gardens", "smeltery", "crew_quarters", "lens_array", "foundry_annex"]:
 		assert_has(DataDefs.buildings["defs"], id)
 	for id in DataDefs.buildings["defs"]:
 		var def: Dictionary = DataDefs.buildings["defs"][id]
