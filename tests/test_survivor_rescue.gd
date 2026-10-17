@@ -14,6 +14,7 @@ func before_each() -> void:
 	GameState.data = SaveSchema.default_data(DataDefs.economy, DataDefs.gizmos)
 	GameState.data["created_at"] = 1000
 	GameState.data["fuel"]["updated_at"] = 1000
+	GameState.data["island"]["plots"]["plot_7"] = {"building": "crew_quarters", "level": 1}
 	scene = add_child_autofree(RunScene.instantiate())
 
 
@@ -124,3 +125,15 @@ func test_survivor_drifts_and_frees_itself_offscreen() -> void:
 	await wait_physics_frames(2)
 	assert_eq(get_tree().get_nodes_in_group("survivors").size(), 0,
 		"past the far edge the raft cleans itself up")
+
+func test_no_spawn_scheduling_without_crew_quarters() -> void:
+	# Crew gate (owner request, 2026-10-17): castaways only sign on once
+	# there is somewhere for them to sleep.
+	(GameState.data["island"]["plots"] as Dictionary).erase("plot_7")
+	var survivor_defs: Dictionary = DataDefs.crew["survivor"]
+	var old_chance: float = float(survivor_defs["chance_per_run"])
+	survivor_defs["chance_per_run"] = 1.0
+	scene._on_start_pressed()
+	scene._maybe_schedule_survivor()
+	assert_eq(scene._survivor_id, "", "no quarters, no castaways, even at chance 1.0")
+	survivor_defs["chance_per_run"] = old_chance

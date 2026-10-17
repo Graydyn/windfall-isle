@@ -311,6 +311,10 @@ func _apply_consumable(kit_id: String, entry: Dictionary) -> void:
 func _maybe_schedule_survivor() -> void:
 	# Crew spec section 6: at most one survivor per run, drawn on the scene's
 	# injected rng, only while someone is still out there.
+	# Castaways only sign on once there is somewhere to sleep: the Crew
+	# Quarters gate (owner request, 2026-10-17).
+	if IslandModel.building_level(GameState.data.get("island", {}), "crew_quarters") < 1:
+		return
 	var pool := CrewModel.unrescued_ids(GameState.data, DataDefs.crew)
 	if pool.is_empty():
 		return
