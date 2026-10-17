@@ -71,3 +71,22 @@ static func complete_craft(data: Dictionary, payload: Dictionary) -> void:
 		return
 	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
 	owned[gizmo_id] = int(owned.get(gizmo_id, 0)) + 1
+
+
+static func craftable_ids(data: Dictionary, gizmo_defs: Dictionary, economy: Node) -> Array[String]:
+	# Distinct gizmos the player could craft on resources alone (the workshop
+	# speech bubble, owner request 2026-10-17). Slot occupancy is deliberately
+	# ignored: the bubble advertises what the resources allow, not what the
+	# queue allows this minute.
+	var out: Array[String] = []
+	var owned: Dictionary = (data.get("gizmos", {}) as Dictionary).get("owned", {})
+	for gizmo_id in gizmo_defs.get("defs", {}):
+		var def: Dictionary = (gizmo_defs["defs"] as Dictionary)[gizmo_id]
+		if not rarity_unlocked(data.get("island", {}), gizmo_defs, String(gizmo_id)):
+			continue
+		if int(owned.get(String(gizmo_id), 0)) >= int(gizmo_defs.get("craft_max_level", 5)):
+			continue
+		if not economy.can_afford(def.get("craft_cost", {})):
+			continue
+		out.append(String(gizmo_id))
+	return out

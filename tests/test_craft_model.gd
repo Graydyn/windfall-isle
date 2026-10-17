@@ -141,3 +141,29 @@ func test_owned_but_locked_gizmo_still_cannot_craft() -> void:
 	state.data["currencies"]["cloudsilk"] = 50
 	assert_false(CraftModel.can_craft(state.data, DataDefs.gizmos, econ, timers, "splitter_vane"),
 		"grandfathered ownership never unlocks CRAFTING below the rarity's workshop level")
+
+
+func test_craftable_ids_counts_resource_affordable_distinct_gizmos() -> void:
+	state.data["currencies"]["parts"] = 2
+	state.data["currencies"]["cloudsilk"] = 0
+	var ids: Array[String] = CraftModel.craftable_ids(state.data, DataDefs.gizmos, econ)
+	assert_eq(ids.size(), 3, "workshop level 1 with 2 parts: the three 2-part commons")
+	for id in ["wind_fan", "balloon_cluster", "cargo_net"]:
+		assert_true(ids.has(id), "%s costs 2 parts at an unlocked rarity" % id)
+
+func test_craftable_ids_ignores_slot_occupancy() -> void:
+	CraftModel.start_craft(state.data, DataDefs.gizmos, econ, timers, "wind_fan", 1000)
+	assert_true(CraftModel.craftable_ids(state.data, DataDefs.gizmos, econ).has("balloon_cluster"),
+		"the bubble advertises what resources allow, not what the queue allows this minute")
+
+func test_craftable_ids_respects_rarity_and_max_level() -> void:
+	assert_false(CraftModel.craftable_ids(state.data, DataDefs.gizmos, econ).has("chime_bell"),
+		"uncommon waits for workshop level 2")
+	state.data["gizmos"]["owned"]["wind_fan"] = 5
+	assert_false(CraftModel.craftable_ids(state.data, DataDefs.gizmos, econ).has("wind_fan"),
+		"a maxed gizmo leaves the count")
+
+func test_craftable_ids_empty_without_a_workshop() -> void:
+	state.data["island"]["plots"].clear()
+	assert_eq(CraftModel.craftable_ids(state.data, DataDefs.gizmos, econ).size(), 0,
+		"no workshop means no rarity is unlocked")
