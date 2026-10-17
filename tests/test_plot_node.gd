@@ -80,3 +80,33 @@ func test_upgrade_badge_follows_the_state_flag() -> void:
 		"status": "", "ready": false, "upgrade": false})
 	assert_false(node._upgrade)
 	assert_false(node._upgrade_badge.visible)
+
+
+func test_bubble_shows_and_hides_with_the_state() -> void:
+	var node := make_node()
+	node.render({"kind": "built", "art": "res://game/art/buildings/gardens.png",
+		"status": "", "ready": false, "bubble": "+37 scrap"})
+	assert_true(node._bubble.visible)
+	assert_eq(node._bubble_label.text, "+37 scrap")
+	assert_true(node._bubble.position.y < 0.0, "the bubble floats above the pad")
+	node.render({"kind": "built", "art": "res://game/art/buildings/gardens.png",
+		"status": "", "ready": false})
+	assert_false(node._bubble.visible, "no bubble key, no bubble")
+
+
+func test_missing_built_art_falls_back_to_a_letter() -> void:
+	var node := make_node()
+	node.render({"kind": "built", "art": "res://game/art/buildings/not_a_building.png",
+		"status": "", "ready": false, "letter": "C"})
+	assert_null(node._art.texture)
+	assert_true(node._letter_label.visible, "an artless building still reads on the map")
+	assert_eq(node._letter_label.text, "C")
+	node.render({"kind": "built", "art": "res://game/art/buildings/workshop.png",
+		"status": "", "ready": false, "letter": "W"})
+	assert_false(node._letter_label.visible, "delivered art silences the letter")
+
+
+func test_empty_pad_never_shows_a_letter() -> void:
+	var node := make_node()
+	node.render({"kind": "empty", "status": "", "ready": false, "letter": "X"})
+	assert_false(node._letter_label.visible, "the pad art alone marks an empty build spot")

@@ -26,6 +26,9 @@ var _worker_badge: TextureRect
 var _upgrade_badge: TextureRect
 var _ready_glow: TextureRect
 var _ready_badge: Label
+var _bubble: PanelContainer
+var _bubble_label: Label
+var _letter_label: Label
 
 
 func _init(id: String) -> void:
@@ -59,6 +62,29 @@ func _init(id: String) -> void:
 	_ready_badge.text = "" if _ready_glow.texture != null else "!"
 	_ready_badge.modulate = Color(1.0, 0.85, 0.2)
 	_ready_badge.visible = false
+	_letter_label = _child_label(Rect2(16, 4, 96, 96), 40)
+	_letter_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_letter_label.modulate = Color(1, 1, 1, 0.9)
+	_letter_label.visible = false
+	# Speech bubble (owner request, 2026-10-17): a drawn rounded panel until
+	# bubble art lands in the Phase B art pass.
+	_bubble = PanelContainer.new()
+	_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bubble_style := StyleBoxFlat.new()
+	bubble_style.bg_color = Color(1, 1, 1, 0.92)
+	bubble_style.set_corner_radius_all(12)
+	bubble_style.content_margin_left = 10.0
+	bubble_style.content_margin_right = 10.0
+	bubble_style.content_margin_top = 4.0
+	bubble_style.content_margin_bottom = 4.0
+	_bubble.add_theme_stylebox_override("panel", bubble_style)
+	_bubble_label = Label.new()
+	_bubble_label.add_theme_font_size_override("font_size", 14)
+	_bubble_label.add_theme_color_override("font_color", Color(0.13, 0.17, 0.32))
+	_bubble_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bubble.add_child(_bubble_label)
+	_bubble.visible = false
+	add_child(_bubble)
 
 
 func render(state: Dictionary) -> void:
@@ -72,6 +98,19 @@ func render(state: Dictionary) -> void:
 	else:
 		_art.texture = null
 	_art.modulate.a = 0.5 if kind == "constructing" else 1.0
+	# The lettered fallback keeps an artless BUILT building legible (the Crew
+	# Quarters ships before its illustration); empty pads keep their pad art.
+	if not _empty and _art.texture == null:
+		_letter_label.text = String(state.get("letter", ""))
+		_letter_label.visible = _letter_label.text != ""
+	else:
+		_letter_label.visible = false
+	var bubble_text := String(state.get("bubble", ""))
+	_bubble_label.text = bubble_text
+	_bubble.visible = bubble_text != ""
+	if _bubble.visible:
+		_bubble.reset_size()
+		_bubble.position = Vector2((PLOT_SIZE - _bubble.size.x) / 2.0, -36.0)
 	_overlay.visible = kind == "constructing" and _overlay.texture != null
 	_status_label.text = String(state.get("status", ""))
 	var worker_path := String(state.get("worker_portrait", ""))
