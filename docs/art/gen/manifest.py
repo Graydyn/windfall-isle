@@ -147,6 +147,11 @@ for key, s in [
     ("foundry_annex", "a cartoon factory building with shiny gold-plated walls, a teal roof, round porthole windows glowing orange and curly copper pipes"),
 ]:
     add(f"bld_{key}", B + f"{key}.png", [192, 192], s + ", a single building on a small bright green grassy floating island plot, three-quarter view")
+add("bld_crew_quarters", B + "crew_quarters.png", [192, 192], "a cute cartoon bunkhouse cottage with a coral red roof, cream plank walls, a round porthole window, bunk beds glimpsed through an open yellow door and a little copper kettle chimney puffing a tiny white steam cloud, a single building on a small bright green grassy floating island plot, three-quarter view")
+# Jig lesson (2026-10-17): a WHITE-filled subject gets its whole interior
+# eaten by the background chroma key (job 093f6805 came back as a hollow
+# outline); pick a warm cream fill like the letter parchment instead.
+add("speech_bubble", U + "speech_bubble.png", [256, 112], "a plump rounded rectangle comic speech bubble with a solid opaque warm buttery cream fill, a thin deep navy outline and a hint of soft peach shading along its bottom edge, a short chubby tail pointing down from the bottom center, completely empty inside with no holes, flat front view", "icon")
 add("islet_lantern_ruined", B + "islet_lantern_shoal_ruined.png", [384, 384], "a small floating island of pale rock and faded green grass with a few wobbly unlit lantern posts and a snapped rope bridge dangling off its edge, sleepy and a little lonely but still cute, soft pastel colours")
 add("islet_lantern_restored", B + "islet_lantern_shoal_restored.png", [384, 384], "a small floating island of pale rock and bright green grass strung with lots of glowing yellow, pink and turquoise lanterns on posts, a mended rope bridge leading off its edge, festive and welcoming")
 add("islet_foundry_ruined", B + "islet_foundry_rock_ruined.png", [384, 384], "a small floating island of pale rock with cold unlit gold-and-teal chimney stacks, tangled pipes and a broken balloon line, sleepy and quiet but still cute, soft pastel colours")

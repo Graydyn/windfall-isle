@@ -200,12 +200,12 @@ The island screen is a vertically scrollable 720 x 2000 map ([island_screen.tscn
 | Bridge, restored | ~200 x 80 | RETIRED (2026-10-15), sprite kept unused. |
 | Ready glow badge | 96 x 96 | DONE (2026-10-14): `game/art/ui/ready_glow.png`, a solid starburst badge (a soft glow hit the known binary-alpha limit, job 39b1b7d8); it replaces the "!" label on pads. |
 | Shore band dressing | 720 x 160 | Still optional and undelivered; the crew now stand on island_home's painted rocky rim, which carries the band fine. |
-| Crew Quarters illustration | 256 x 256 | Bunkhouse with a kettle chimney, matching the other home-building illustrations. File: `game/art/buildings/crew_quarters.png`; a lettered pad fallback draws until it exists. |
-| Speech bubble | ~128 x 48 | Rounded comic bubble for the gardens/workshop pending counters. A drawn StyleBoxFlat panel carries it until delivered. |
+| Crew Quarters illustration | 256 x 256 | Bunkhouse with a kettle chimney, matching the other home-building illustrations. File: `game/art/buildings/crew_quarters.png`; a lettered pad fallback draws until it exists. DONE (2026-10-17, jig 478ddf65). |
+| Speech bubble | ~128 x 48 | Rounded comic bubble for the gardens/workshop pending counters. A drawn StyleBoxFlat panel carries it until delivered. DONE (2026-10-17, jig c42e7877, `game/art/ui/speech_bubble.png` wired as a region-sliced StyleBoxTexture; a white fill got chroma-eaten on the first try, cream fill survived). |
 
 Wired by the map rework (previously delivered): `construction_overlay.png` now scaffolds constructing pads; building illustrations double as pad sprites; islet ruined/restored art marks the islets; crew portraits became shore tokens and worker badges on pads.
 
-2026-10-15 polish: pads lost their text labels (the sheet carries the words); the PlotSheet wears `ui/panel.png` and its buttons wear `ui/button.png`; an upgrade-affordable badge marks pads (`game/art/icons/upgrade_ready.png`, QUEUED in manifest section 5 but undelivered, jig's generator was down; a code-drawn mint arrow stands in).
+2026-10-15 polish: pads lost their text labels (the sheet carries the words); the PlotSheet wears `ui/panel.png` and its buttons wear `ui/button.png`; an upgrade-affordable badge marks pads (`game/art/icons/upgrade_ready.png`, DONE 2026-10-17 jig b5bf5804; the code-drawn mint arrow remains only as the missing-file fallback).
 
 ---
 

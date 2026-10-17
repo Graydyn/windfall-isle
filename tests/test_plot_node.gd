@@ -110,3 +110,14 @@ func test_empty_pad_never_shows_a_letter() -> void:
 	var node := make_node()
 	node.render({"kind": "empty", "status": "", "ready": false, "letter": "X"})
 	assert_false(node._letter_label.visible, "the pad art alone marks an empty build spot")
+
+
+func test_bubble_art_nine_slices_only_the_painted_bubble() -> void:
+	# speech_bubble.png shipped 2026-10-17; jig pads subjects with transparent
+	# canvas, so the stylebox must stretch only the painted region.
+	var node := make_node()
+	var style: StyleBox = node._bubble.get_theme_stylebox("panel")
+	assert_true(style is StyleBoxTexture, "delivered bubble art replaces the drawn panel")
+	var tex: Texture2D = (style as StyleBoxTexture).texture
+	assert_eq((style as StyleBoxTexture).region_rect, Rect2(tex.get_image().get_used_rect()),
+		"the stylebox stretches the painted bubble, not the jig padding")

@@ -12,6 +12,7 @@ signal plot_tapped(plot_id: String)
 const PAD_ART := "res://game/art/buildings/plot_pad.png"
 const OVERLAY_ART := "res://game/art/buildings/construction_overlay.png"
 const GLOW_ART := "res://game/art/ui/ready_glow.png"
+const BUBBLE_ART := "res://game/art/ui/speech_bubble.png"
 const UPGRADE_ART := "res://game/art/icons/upgrade_ready.png"
 const PLOT_SIZE := 128.0
 
@@ -66,18 +67,11 @@ func _init(id: String) -> void:
 	_letter_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_letter_label.modulate = Color(1, 1, 1, 0.9)
 	_letter_label.visible = false
-	# Speech bubble (owner request, 2026-10-17): a drawn rounded panel until
-	# bubble art lands in the Phase B art pass.
+	# Speech bubble (owner request, 2026-10-17): delivered bubble art when it
+	# exists, the drawn rounded panel as the fallback.
 	_bubble = PanelContainer.new()
 	_bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var bubble_style := StyleBoxFlat.new()
-	bubble_style.bg_color = Color(1, 1, 1, 0.92)
-	bubble_style.set_corner_radius_all(12)
-	bubble_style.content_margin_left = 10.0
-	bubble_style.content_margin_right = 10.0
-	bubble_style.content_margin_top = 4.0
-	bubble_style.content_margin_bottom = 4.0
-	_bubble.add_theme_stylebox_override("panel", bubble_style)
+	_bubble.add_theme_stylebox_override("panel", _bubble_style())
 	_bubble_label = Label.new()
 	_bubble_label.add_theme_font_size_override("font_size", 14)
 	_bubble_label.add_theme_color_override("font_color", Color(0.13, 0.17, 0.32))
@@ -136,6 +130,31 @@ func _draw() -> void:
 	if _upgrade and _upgrade_badge.texture == null:
 		draw_polygon(PackedVector2Array([Vector2(6, 28), Vector2(17, 8), Vector2(28, 28)]),
 			PackedColorArray([Color(0.3, 0.85, 0.5)]))
+
+
+func _bubble_style() -> StyleBox:
+	# Jig centers subjects on a padded transparent canvas, so the stylebox
+	# must stretch only the painted bubble (region_rect = used rect, the same
+	# lesson as the sheet panel's 9-slice). The bottom margin keeps the label
+	# off the bubble's tail.
+	if ResourceLoader.exists(BUBBLE_ART):
+		var tex: Texture2D = load(BUBBLE_ART)
+		var art_style := StyleBoxTexture.new()
+		art_style.texture = tex
+		art_style.region_rect = Rect2(tex.get_image().get_used_rect())
+		art_style.content_margin_left = 16.0
+		art_style.content_margin_right = 16.0
+		art_style.content_margin_top = 6.0
+		art_style.content_margin_bottom = 16.0
+		return art_style
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1, 1, 1, 0.92)
+	style.set_corner_radius_all(12)
+	style.content_margin_left = 10.0
+	style.content_margin_right = 10.0
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
+	return style
 
 
 func _child_texture_rect(rect: Rect2) -> TextureRect:
