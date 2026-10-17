@@ -44,6 +44,8 @@ func _ready() -> void:
 	$LetterPanel.visibility_changed.connect(_update_modal_block)
 	$PlotSheet.visibility_changed.connect(_update_modal_block)
 	$CrewSheet.visibility_changed.connect(_update_modal_block)
+	$RewardModal.visibility_changed.connect(_update_modal_block)
+	$RewardModal/VBox/RewardClose.pressed.connect(_on_reward_close_pressed)
 	_build_sheet_button_styles()
 	_style_sheet_button($PlotSheet/VBox/SheetClose)
 	_style_sheet_button($LetterPanel/VBox/LetterClose)
@@ -232,30 +234,12 @@ func _plot_state(plot: String, now: int) -> Dictionary:
 func _islet_visual_state(islet: Dictionary, now: int) -> Dictionary:
 	var islet_id := String(islet.get("id", ""))
 	var restored := IsletModel.is_restored(GameState.data, islet_id)
+	# Label-free marker (owner request, 2026-10-16): the sheet and letter
+	# carry the islet's name, cost and progress.
 	return {
 		"art": "res://game/art/buildings/islet_%s_%s.png" % [islet_id, "restored" if restored else "ruined"],
-		"name": String(islet.get("name", islet_id)),
-		"status": _islet_status_text(islet, now),
 		"dim": _islet_state(islet_id, now) == "L",
 	}
-
-
-func _islet_status_text(islet: Dictionary, now: int) -> String:
-	var islet_id := String(islet.get("id", ""))
-	match _islet_state(islet_id, now):
-		"R":
-			return "restored"
-		"r":
-			return "restoring (%ds)" % TimerService.remaining("restore_" + islet_id, now)
-		"d":
-			return "the bridge is ready"
-		"o":
-			return _cost_text(islet.get("cost", {}))
-	return "beyond a broken bridge"
-
-
-func _islet_row_text(islet: Dictionary, now: int) -> String:
-	return "%s: %s" % [String(islet.get("name", String(islet.get("id", "")))), _islet_status_text(islet, now)]
 
 
 func _crew_visual_state(member: Dictionary) -> Dictionary:
@@ -645,7 +629,39 @@ func _on_sheet_batch_collect_pressed(building_id: String) -> void:
 
 func _update_modal_block() -> void:
 	$ModalBlock.visible = ($BuildModal.visible or $LetterPanel.visible
-		or $PlotSheet.visible or $CrewSheet.visible)
+		or $PlotSheet.visible or $CrewSheet.visible or $RewardModal.visible)
+
+
+func _show_reward(title: String, payout: Dictionary) -> void:
+	# Rewards get a proper card, not a status line (owner request, 2026-10-17).
+	$RewardModal/VBox/RewardTitle.text = title
+	var lines := PackedStringArray()
+	for currency in payout:
+		lines.append("+%d %s" % [int(payout[currency]), String(currency)])
+	$RewardModal/VBox/RewardBody.text = "\n".join(lines)
+	var art_path := "res://game/art/icons/daily_crate_open.png"
+	var picture: TextureRect = $RewardModal/VBox/RewardPicture
+	picture.texture = load(art_path) if ResourceLoader.exists(art_path) else null
+	picture.visible = picture.texture != null
+	_style_sheet_button($RewardModal/VBox/RewardClose, 240.0)
+	$RewardModal.visible = true
+	_fit_reward_modal()
+
+
+func _on_reward_close_pressed() -> void:
+	$RewardModal.visible = false
+
+
+func _fit_reward_modal() -> void:
+	# Same contract as _fit_modal: hug the content, centered, after the sort.
+	_fit_reward_modal_now.call_deferred()
+
+
+func _fit_reward_modal_now() -> void:
+	$RewardModal.reset_size()
+	$RewardModal.position = Vector2(
+		(720.0 - $RewardModal.size.x) / 2.0,
+		maxf(80.0, (1280.0 - $RewardModal.size.y) / 2.0 - 80.0))
 
 
 func _refresh_static_controls(now: int) -> void:
@@ -871,12 +887,11 @@ func _on_collect_pressed(plot: String) -> void:
 
 
 func _on_restore_pressed(islet_id: String) -> void:
-	var reason := IsletModel.restore_rejection(GameState.data, DataDefs.islets, Economy, TimerService, islet_id)
-	if reason != "":
-		$StatusLabel.text = reason
+	# Refusals explain themselves in the sheet (SheetInfo); this guard is the
+	# last line of defense and refuses quietly.
+	if IsletModel.restore_rejection(GameState.data, DataDefs.islets, Economy, TimerService, islet_id) != "":
 		return
 	if IsletModel.start_restore(GameState.data, DataDefs.islets, Economy, TimerService, islet_id, TimeUtil.now()):
-		$StatusLabel.text = ""
 		GameState.save_game()
 	_rebuild()
 
@@ -959,6 +974,7 @@ func _on_crate_pressed() -> void:
 		Economy.add(currency, int(payout[currency]))
 	GameState.save_game()
 	_rebuild()
+	_show_reward("Daily crate!", payout)
 
 
 func _on_slot_pressed() -> void:
@@ -999,6 +1015,7 @@ func _grant_bonus_crate() -> void:
 		Economy.add(currency, int(payout[currency]))
 	GameState.save_game()
 	_rebuild()
+	_show_reward("Bonus crate!", payout)
 
 
 func _bonus_crate_limit() -> int:

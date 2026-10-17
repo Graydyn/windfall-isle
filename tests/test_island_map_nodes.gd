@@ -9,20 +9,21 @@ func make_islet(id := "lantern_shoal") -> IslandIsletNode:
 	return node
 
 
-func test_islet_renders_art_name_and_status() -> void:
+func test_islet_renders_art_without_text() -> void:
 	var node := make_islet()
 	node.render({"art": "res://game/art/buildings/islet_lantern_shoal_ruined.png",
-		"name": "Lantern Shoal", "status": "600 scrap, 4 cloudsilk", "dim": false})
+		"dim": false})
 	assert_not_null(node._art.texture)
-	assert_eq(node._name_label.text, "Lantern Shoal")
-	assert_eq(node._status_label.text, "600 scrap, 4 cloudsilk")
 	assert_almost_eq(node.modulate.a, 1.0, 0.01)
+	for child in node.get_children():
+		assert_false(child is Label,
+			"no words on an islet; the sheet carries name and cost (owner request, 2026-10-16)")
 
 
 func test_locked_islet_dims() -> void:
 	var node := make_islet("foundry_rock")
 	node.render({"art": "res://game/art/buildings/islet_foundry_rock_ruined.png",
-		"name": "Foundry Rock", "status": "beyond a broken bridge", "dim": true})
+		"dim": true})
 	assert_almost_eq(node.modulate.a, 0.4, 0.01, "Plan 8 polish: locked islets dim at last")
 
 

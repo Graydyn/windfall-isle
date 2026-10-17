@@ -11,6 +11,11 @@ const ISLAND_PATH := "res://game/art/buildings/island_home.png"
 ## Where the home landmass art lands on the map; layout authoring (the crew
 ## shore positions) and their tests measure against this same rect.
 const ISLAND_RECT := Rect2(25, 60, 670, 860)
+## The cloud sea fades in from a transparent top edge; a flat rect here read
+## as a big white bar when the map was scrolled all the way down.
+const CLOUD_SEA_TOP := Color(0.92, 0.93, 0.96, 0.0)
+const CLOUD_SEA_BOTTOM := Color(0.92, 0.93, 0.96, 0.9)
+const CLOUD_SEA_HEIGHT := 320.0
 
 var _vista: Texture2D = null
 var _island: Texture2D = null
@@ -41,7 +46,10 @@ func _draw() -> void:
 		draw_polygon(_island_points(Vector2(360, 490), 335.0, 430.0),
 			PackedColorArray([Color(0.45, 0.58, 0.38)]))
 	# The cloud sea closes the bottom of the map.
-	draw_rect(Rect2(0, size.y - 160, size.x, 160), Color(0.92, 0.93, 0.96, 0.9))
+	var sea_top := size.y - CLOUD_SEA_HEIGHT
+	draw_polygon(
+		PackedVector2Array([Vector2(0, sea_top), Vector2(size.x, sea_top), size, Vector2(0, size.y)]),
+		PackedColorArray([CLOUD_SEA_TOP, CLOUD_SEA_TOP, CLOUD_SEA_BOTTOM, CLOUD_SEA_BOTTOM]))
 
 
 func _island_points(center: Vector2, rx: float, ry: float) -> PackedVector2Array:

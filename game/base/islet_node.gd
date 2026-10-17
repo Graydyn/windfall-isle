@@ -8,8 +8,6 @@ signal islet_tapped(islet_id: String)
 var islet_id := ""
 
 var _art: TextureRect
-var _name_label: Label
-var _status_label: Label
 
 
 func _init(id: String) -> void:
@@ -28,9 +26,6 @@ func _init(id: String) -> void:
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_art)
-	_name_label = _make_label(Rect2(0, 176, 200, 24), 14)
-	_status_label = _make_label(Rect2(0, 200, 200, 20), 12)
-	_status_label.modulate.a = 0.85
 
 
 func render(state: Dictionary) -> void:
@@ -39,17 +34,4 @@ func render(state: Dictionary) -> void:
 		_art.texture = load(art_path)
 	else:
 		_art.texture = null
-	_name_label.text = String(state.get("name", ""))
-	_status_label.text = String(state.get("status", ""))
 	modulate.a = 0.4 if bool(state.get("dim", false)) else 1.0
-
-
-func _make_label(rect: Rect2, font_size: int) -> Label:
-	var label := Label.new()
-	label.position = rect.position
-	label.size = rect.size
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", font_size)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(label)
-	return label

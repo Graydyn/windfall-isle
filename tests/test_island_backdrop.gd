@@ -26,3 +26,14 @@ func test_vista_art_is_not_delivered_yet_so_fallback_draws() -> void:
 func test_landmass_art_loads() -> void:
 	var node := make_backdrop()
 	assert_not_null(node._island, "island_home.png wired as the plateau")
+
+
+func test_cloud_sea_fades_in_instead_of_cutting_a_hard_edge() -> void:
+	# A flat cloud-sea rect read as a big white bar at the bottom of the map
+	# when scrolled all the way down; the sea must fade in from transparent.
+	assert_eq(IslandBackdrop.CLOUD_SEA_TOP.a, 0.0,
+		"the cloud sea's top edge must be fully transparent so it blends into the sky")
+	assert_gt(IslandBackdrop.CLOUD_SEA_BOTTOM.a, 0.0,
+		"the sea still closes the very bottom of the map")
+	assert_gt(IslandBackdrop.CLOUD_SEA_HEIGHT, 160.0,
+		"a taller fade keeps the blend gradual instead of a short dense band")

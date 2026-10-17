@@ -133,6 +133,29 @@ func test_crate_claims_once() -> void:
 	screen._on_crate_pressed()
 	assert_eq(Economy.balance("scrap"), scrap_before + 40, "second claim same day is a no-op")
 
+func test_crate_opens_a_reward_modal_with_the_payout() -> void:
+	# A silent crate reads as a broken button; a status line read as a debug
+	# log. The reward gets a proper modal (owner request, 2026-10-17).
+	GameState.data["daily_crate"]["last_claim_day"] = 0
+	screen._on_crate_pressed()
+	assert_true(screen.get_node("RewardModal").visible)
+	assert_true(screen.get_node("ModalBlock").visible, "the modal blocks the map under it")
+	var body: String = screen.get_node("RewardModal/VBox/RewardBody").text
+	assert_string_contains(body, "+40 scrap")
+	assert_string_contains(body, "+1 crystals")
+
+func test_reward_modal_closes() -> void:
+	GameState.data["daily_crate"]["last_claim_day"] = 0
+	screen._on_crate_pressed()
+	screen._on_reward_close_pressed()
+	assert_false(screen.get_node("RewardModal").visible)
+	assert_false(screen.get_node("ModalBlock").visible)
+
+func test_bonus_crate_opens_the_reward_modal_too() -> void:
+	screen._on_bonus_crate_pressed()
+	assert_true(screen.get_node("RewardModal").visible)
+	assert_string_contains(screen.get_node("RewardModal/VBox/RewardBody").text, "+40 scrap")
+
 func test_slot_button_unlocks_second_slot() -> void:
 	GameState.data["currencies"]["crystals"] = 30
 	screen._on_slot_pressed()
@@ -265,19 +288,18 @@ func test_restore_pays_and_starts_the_restoration_timer() -> void:
 	screen._on_restore_pressed("lantern_shoal")
 	assert_true(TimerService.active_timers().has("restore_lantern_shoal"))
 	assert_eq(Economy.balance("scrap"), 2000 - 600)
-	assert_eq(screen.get_node("StatusLabel").text, "")
 
-func test_rejected_restore_explains_itself() -> void:
+func test_rejected_restore_is_a_noop() -> void:
+	# The sheet's own restore button explains refusals in SheetInfo; the
+	# handler guard just refuses quietly (StatusLabel removed 2026-10-17).
 	GameState.data["currencies"]["scrap"] = 0
 	screen._on_restore_pressed("lantern_shoal")
 	assert_false(TimerService.active_timers().has("restore_lantern_shoal"))
-	assert_string_contains(screen.get_node("StatusLabel").text, "Not enough")
 
-func test_out_of_order_restore_is_rejected_with_a_reason() -> void:
+func test_out_of_order_restore_is_rejected() -> void:
 	GameState.data["currencies"]["brasswork"] = 50
 	screen._on_restore_pressed("foundry_rock")
 	assert_false(TimerService.active_timers().has("restore_foundry_rock"))
-	assert_string_contains(screen.get_node("StatusLabel").text, "Another islet")
 
 func test_restore_collect_marks_restored_and_opens_the_letter() -> void:
 	GameState.data["currencies"]["cloudsilk"] = 10
@@ -656,7 +678,7 @@ func test_unaffordable_restore_explains_in_the_sheet() -> void:
 func test_islet_tap_is_a_noop_while_locked() -> void:
 	screen._on_islet_tapped("foundry_rock")
 	assert_false(TimerService.active_timers().has("restore_foundry_rock"))
-	assert_eq(screen.get_node("StatusLabel").text, "", "a locked islet tap does not even complain")
+	assert_false(screen.get_node("PlotSheet").visible, "a locked islet tap does not even complain")
 
 
 func test_islet_tap_collects_a_done_restoration_and_opens_the_letter() -> void:
