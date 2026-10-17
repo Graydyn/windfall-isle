@@ -156,11 +156,57 @@ func test_bonus_crate_opens_the_reward_modal_too() -> void:
 	assert_true(screen.get_node("RewardModal").visible)
 	assert_string_contains(screen.get_node("RewardModal/VBox/RewardBody").text, "+40 scrap")
 
-func test_slot_button_unlocks_second_slot() -> void:
+func test_modal_offers_the_second_slot_when_builders_are_busy() -> void:
 	GameState.data["currencies"]["crystals"] = 30
-	screen._on_slot_pressed()
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._open_build_modal("plot_1")
+	var offer: Button = screen.get_node("BuildModal/VBox/ModalSlotButton")
+	assert_true(offer.visible, "every builder busy and a slot still for sale")
+	assert_string_contains(offer.text, "20 crystals")
+	screen._on_modal_slot_pressed()
 	assert_eq(int(GameState.data["island"]["build_slots"]), 2)
 	assert_eq(Economy.balance("crystals"), 10)
+	assert_false(offer.visible, "bought: the offer leaves the modal")
+	assert_true(screen.get_node("BuildModal").visible, "the player carries on building")
+
+func test_modal_slot_offer_disabled_when_crystals_are_short() -> void:
+	GameState.data["currencies"]["crystals"] = 0
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._open_build_modal("plot_1")
+	assert_true(screen.get_node("BuildModal/VBox/ModalSlotButton").visible)
+	assert_true(screen.get_node("BuildModal/VBox/ModalSlotButton").disabled)
+
+func test_modal_hides_the_slot_offer_while_a_builder_is_free() -> void:
+	screen._open_build_modal("plot_0")
+	assert_false(screen.get_node("BuildModal/VBox/ModalSlotButton").visible)
+
+func test_modal_never_offers_a_third_slot() -> void:
+	GameState.data["island"]["build_slots"] = 2
+	GameState.data["currencies"]["crystals"] = 30
+	screen._open_build_modal("plot_0")
+	screen._on_modal_confirm_pressed()
+	screen._open_build_modal("plot_1")
+	screen._on_modal_confirm_pressed()
+	screen._open_build_modal("plot_2")
+	assert_false(screen.get_node("BuildModal/VBox/ModalSlotButton").visible,
+		"both builders busy but there is no third slot to sell")
+
+func test_crate_icons_float_only_while_claimable() -> void:
+	GameState.data["daily_crate"]["last_claim_day"] = 0
+	screen._rebuild()
+	assert_true(screen.get_node("DailyCrateIcon").visible)
+	assert_true(screen.get_node("BonusCrateIcon").visible)
+	screen._on_crate_pressed()
+	assert_false(screen.get_node("DailyCrateIcon").visible, "claimed today: the icon leaves the sky")
+	screen._on_bonus_crate_pressed()
+	assert_false(screen.get_node("BonusCrateIcon").visible, "the ad crate obeys its daily limit")
+
+func test_the_hud_row_is_gone() -> void:
+	for gone in ["GardensButton", "CrateButton", "BonusCrateButton", "SlotButton"]:
+		assert_null(screen.get_node_or_null(String(gone)),
+			"%s dissolved into the map (owner request, 2026-10-17)" % String(gone))
 
 func test_skip_completes_a_construction_timer() -> void:
 	screen._open_build_modal("plot_0")
@@ -209,11 +255,6 @@ func test_tick_rebuilds_when_a_timer_finishes() -> void:
 	screen._refresh_tick()
 	assert_ne(screen._last_signature, running_signature,
 		"done is structural: the Complete! button must appear")
-
-func test_slot_button_disabled_when_crystals_are_short() -> void:
-	GameState.data["currencies"]["crystals"] = 0
-	screen._rebuild()
-	assert_true(screen.get_node("SlotButton").disabled)
 
 func test_rejected_build_explains_itself_inside_the_modal() -> void:
 	GameState.data["currencies"]["scrap"] = 0

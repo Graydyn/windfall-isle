@@ -46,7 +46,7 @@ script = ExtResource("1_is")
 [node name="MapScroll" type="ScrollContainer" parent="."]
 offset_top = 10.0
 offset_right = 720.0
-offset_bottom = 1080.0
+offset_bottom = 1270.0
 horizontal_scroll_mode = 0
 
 [node name="Map" type="Control" parent="MapScroll"]
@@ -70,9 +70,9 @@ offset_bottom = 1750.0
 mouse_filter = 2
 
 [node name="MapMist" type="TextureRect" parent="."]
-offset_top = 950.0
+offset_top = 1140.0
 offset_right = 720.0
-offset_bottom = 1080.0
+offset_bottom = 1270.0
 mouse_filter = 2
 texture = SubResource("GradientTexture2D_mist")
 expand_mode = 1
@@ -81,33 +81,32 @@ expand_mode = 1
 wait_time = 1.0
 autostart = true
 
-[node name="GardensButton" type="Button" parent="."]
-offset_left = 10.0
-offset_top = 1096.0
-offset_right = 245.0
-offset_bottom = 1152.0
-text = "Collect trickle"
+[node name="DailyCrateIcon" type="TextureButton" parent="."]
+visible = false
+offset_left = 640.0
+offset_top = 14.0
+offset_right = 708.0
+offset_bottom = 82.0
+ignore_texture_size = true
+stretch_mode = 5
 
-[node name="CrateButton" type="Button" parent="."]
-offset_left = 250.0
-offset_top = 1096.0
-offset_right = 475.0
-offset_bottom = 1152.0
-text = "Open daily crate"
+[node name="BonusCrateIcon" type="TextureButton" parent="."]
+visible = false
+offset_left = 640.0
+offset_top = 92.0
+offset_right = 708.0
+offset_bottom = 160.0
+ignore_texture_size = true
+stretch_mode = 5
 
-[node name="BonusCrateButton" type="Button" parent="."]
-offset_left = 480.0
-offset_top = 1096.0
-offset_right = 710.0
-offset_bottom = 1152.0
-text = "Bonus crate (ad)"
-
-[node name="SlotButton" type="Button" parent="."]
-offset_left = 10.0
-offset_top = 1160.0
-offset_right = 280.0
-offset_bottom = 1216.0
-text = "Unlock 2nd build slot"
+[node name="AdBadge" type="TextureRect" parent="BonusCrateIcon"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 68.0
+offset_bottom = 68.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="CrewButton" type="Button" parent="."]
 offset_left = 290.0
@@ -124,10 +123,10 @@ offset_bottom = 1216.0
 text = "Workshop"
 
 [node name="BackButton" type="Button" parent="."]
-offset_left = 570.0
-offset_top = 1160.0
-offset_right = 710.0
-offset_bottom = 1216.0
+offset_left = 10.0
+offset_top = 14.0
+offset_right = 150.0
+offset_bottom = 70.0
 text = "Back"
 
 [node name="ModalBlock" type="ColorRect" parent="."]
@@ -227,6 +226,10 @@ horizontal_alignment = 1
 [node name="ModalStatus" type="Label" parent="BuildModal/VBox"]
 theme_override_colors/font_color = Color(0.62, 0.15, 0.1, 1)
 horizontal_alignment = 1
+
+[node name="ModalSlotButton" type="Button" parent="BuildModal/VBox"]
+visible = false
+text = "Hire a second builder"
 
 [node name="NavRow" type="HBoxContainer" parent="BuildModal/VBox"]
 theme_override_constants/separation = 12

@@ -28,10 +28,15 @@ func _ready() -> void:
 	$WorkshopButton.pressed.connect(_on_workshop_pressed)
 	$BackButton.pressed.connect(_on_back_pressed)
 	$RefreshTimer.timeout.connect(_refresh_tick)
-	$GardensButton.pressed.connect(_on_gardens_pressed)
-	$CrateButton.pressed.connect(_on_crate_pressed)
-	$SlotButton.pressed.connect(_on_slot_pressed)
-	$BonusCrateButton.pressed.connect(_on_bonus_crate_pressed)
+	$DailyCrateIcon.pressed.connect(_on_crate_pressed)
+	$BonusCrateIcon.pressed.connect(_on_bonus_crate_pressed)
+	$BuildModal/VBox/ModalSlotButton.pressed.connect(_on_modal_slot_pressed)
+	if ResourceLoader.exists("res://game/art/icons/daily_crate.png"):
+		$DailyCrateIcon.texture_normal = load("res://game/art/icons/daily_crate.png")
+	if ResourceLoader.exists("res://game/art/icons/bonus_crate.png"):
+		$BonusCrateIcon.texture_normal = load("res://game/art/icons/bonus_crate.png")
+	if ResourceLoader.exists("res://game/art/icons/ad_badge.png"):
+		$BonusCrateIcon/AdBadge.texture = load("res://game/art/icons/ad_badge.png")
 	$LetterPanel/VBox/LetterClose.pressed.connect(_on_letter_close_pressed)
 	$BuildModal/VBox/NavRow/PrevButton.pressed.connect(_on_modal_prev_pressed)
 	$BuildModal/VBox/NavRow/NextButton.pressed.connect(_on_modal_next_pressed)
@@ -50,7 +55,7 @@ func _ready() -> void:
 	_style_sheet_button($PlotSheet/VBox/SheetClose)
 	_style_sheet_button($LetterPanel/VBox/LetterClose)
 	_style_sheet_button($CrewSheet/VBox/CrewClose)
-	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton"]:
+	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton", "ModalSlotButton"]:
 		var modal_button: Button = $BuildModal/VBox.get_node(NodePath(path))
 		_style_sheet_button(modal_button, 210.0)
 		modal_button.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
@@ -665,26 +670,12 @@ func _fit_reward_modal_now() -> void:
 
 
 func _refresh_static_controls(now: int) -> void:
-	var pending := TrickleModel.pending(GameState.data, DataDefs.buildings, now, DataDefs.crew)
-	$GardensButton.text = "Collect trickle (%d scrap)" % pending
-	$GardensButton.disabled = pending <= 0
-	$CrateButton.disabled = not DailyCrate.can_claim(GameState.data, now)
-	$CrateButton.text = "Open daily crate" if not $CrateButton.disabled else "Crate opened today"
-	$CrateButton.icon = load("res://game/art/icons/daily_crate_open.png" if $CrateButton.disabled else "res://game/art/icons/daily_crate.png")
-	$CrateButton.add_theme_constant_override("icon_max_width", 40)
-	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
-	var slot_cost := int(slots_cfg.get("second_slot_crystal_cost", 20))
-	$SlotButton.visible = int(GameState.data["island"].get("build_slots", 1)) < int(slots_cfg.get("max", 2))
-	# Shorter label since the Crew button joined the row; the long form
-	# overflowed the 270px button.
-	$SlotButton.text = "2nd slot (%d crystals)" % slot_cost
-	$SlotButton.disabled = not Economy.can_afford({"crystals": slot_cost})
-	$BonusCrateButton.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE)
-	$BonusCrateButton.disabled = not AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)
-	$BonusCrateButton.icon = load("res://game/art/icons/bonus_crate.png")
-	$BonusCrateButton.add_theme_constant_override("icon_max_width", 40)
-	$SlotButton.icon = load("res://game/art/icons/build_slot.png")
-	$SlotButton.add_theme_constant_override("icon_max_width", 32)
+	# The HUD row dissolved into the map (owner request, 2026-10-17): crates
+	# float top right only while claimable; the trickle, the 2nd slot, the
+	# workshop and the crew live on the pads, in the modal and in the sheets.
+	$DailyCrateIcon.visible = DailyCrate.can_claim(GameState.data, now)
+	$BonusCrateIcon.visible = Ads.service.is_available(AdService.Placement.BONUS_CRATE) \
+		and AdLimits.can_use(GameState.data, "bonus_crate", _bonus_crate_limit(), now)
 
 
 func _open_build_modal(plot: String) -> void:
@@ -713,6 +704,7 @@ func _modal_building() -> String:
 
 
 func _render_modal() -> void:
+	_refresh_modal_slot_offer()
 	var building_id := _modal_building()
 	var def: Dictionary = (DataDefs.buildings.get("defs", {}) as Dictionary).get(building_id, {})
 	var display := String(def.get("name", building_id))
@@ -977,10 +969,27 @@ func _on_crate_pressed() -> void:
 	_show_reward("Daily crate!", payout)
 
 
-func _on_slot_pressed() -> void:
+func _refresh_modal_slot_offer() -> void:
+	# The 2nd build slot moved from the HUD into the moment it matters: the
+	# player is trying to build and every builder is busy (owner request,
+	# 2026-10-17).
+	var slots_cfg: Dictionary = DataDefs.buildings.get("build_slots", {})
+	var slots := int(GameState.data["island"].get("build_slots", 1))
+	var offer: Button = $BuildModal/VBox/ModalSlotButton
+	offer.visible = slots < int(slots_cfg.get("max", 2)) \
+		and IslandModel.active_constructions(TimerService, TimeUtil.now()) >= slots
+	if not offer.visible:
+		return
+	var cost := int(slots_cfg.get("second_slot_crystal_cost", 20))
+	offer.text = "Hire a second builder (%d crystals)" % cost
+	offer.disabled = not Economy.can_afford({"crystals": cost})
+
+
+func _on_modal_slot_pressed() -> void:
 	if IslandModel.unlock_second_slot(GameState.data["island"], DataDefs.buildings, Economy):
 		GameState.save_game()
-	_rebuild()
+	$BuildModal/VBox/ModalStatus.text = ""
+	_render_modal()
 
 
 func _on_skip_pressed(timer_id: String) -> void:
