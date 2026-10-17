@@ -25,7 +25,6 @@ const BUTTON_ART := "res://game/art/ui/button.png"
 
 
 func _ready() -> void:
-	$WorkshopButton.pressed.connect(_on_workshop_pressed)
 	$BackButton.pressed.connect(_on_back_pressed)
 	$RefreshTimer.timeout.connect(_refresh_tick)
 	$DailyCrateIcon.pressed.connect(_on_crate_pressed)
@@ -43,7 +42,6 @@ func _ready() -> void:
 	$BuildModal/VBox/ActionRow/ConfirmButton.pressed.connect(_on_modal_confirm_pressed)
 	$BuildModal/VBox/ActionRow/CancelButton.pressed.connect(_on_modal_cancel_pressed)
 	$PlotSheet/VBox/SheetClose.pressed.connect(_on_sheet_close_pressed)
-	$CrewButton.pressed.connect(_open_crew_sheet)
 	$CrewSheet/VBox/CrewClose.pressed.connect(func() -> void: $CrewSheet.visible = false)
 	$BuildModal.visibility_changed.connect(_update_modal_block)
 	$LetterPanel.visibility_changed.connect(_update_modal_block)
@@ -203,6 +201,7 @@ func _plot_state(plot: String, now: int) -> Dictionary:
 			"art": "res://game/art/buildings/%s.png" % building,
 			"status": "%ds" % TimerService.remaining(timer_id, now),
 			"ready": false,
+			"letter": String((defs.get(building, {}) as Dictionary).get("name", building)).left(1),
 		}
 		if TimerService.is_done(timer_id, now):
 			# The starburst badge says it all; words stay off the map.
@@ -232,6 +231,18 @@ func _plot_state(plot: String, now: int) -> Dictionary:
 				state["ready"] = true
 			else:
 				state["status"] = "batch %ds" % TimerService.remaining(convert_id, now)
+		state["letter"] = String(def.get("name", building)).left(1)
+		# Speech bubbles (owner request, 2026-10-17): the gardens advertise
+		# their pending trickle, the workshop its craftable count. Zero means
+		# no bubble, never a zero.
+		if building == "gardens":
+			var pending_scrap := TrickleModel.pending(GameState.data, DataDefs.buildings, now, DataDefs.crew)
+			if pending_scrap > 0:
+				state["bubble"] = "+%d scrap" % pending_scrap
+		elif building == "workshop":
+			var craftable := CraftModel.craftable_ids(GameState.data, DataDefs.gizmos, Economy).size()
+			if craftable > 0:
+				state["bubble"] = "%d craftable" % craftable
 		return state
 	return {"kind": "empty", "status": "", "ready": false}
 
@@ -284,6 +295,16 @@ func _on_plot_tapped(plot: String) -> void:
 	var convert_id := "convert_" + building
 	if TimerService.active_timers().has(convert_id) and TimerService.is_done(convert_id, now):
 		_on_batch_collect_pressed(building)
+		return
+	if building == "gardens" and TrickleModel.pending(GameState.data, DataDefs.buildings, now, DataDefs.crew) > 0:
+		# The trickle collects on the tap itself; the vanishing bubble is the
+		# receipt, and the next tap opens the sheet as before (owner request,
+		# 2026-10-17).
+		_collect_trickle()
+		return
+	if building == "crew_quarters":
+		# The Crew button left the HUD; the quarters' sheet IS the crew sheet.
+		_open_crew_sheet()
 		return
 	_open_plot_sheet(plot)
 
@@ -427,6 +448,14 @@ func _render_sheet() -> void:
 			actions.add_child(skip)
 		_fit_sheet()
 		return
+	if building == "workshop":
+		# The HUD Workshop button moved into the workshop's own sheet
+		# (owner request, 2026-10-17).
+		var enter := Button.new()
+		enter.text = "Enter the workshop"
+		enter.pressed.connect(_on_workshop_pressed)
+		_style_sheet_button(enter)
+		actions.add_child(enter)
 	var upgrade := Button.new()
 	var max_level := int(def.get("max_level", 1))
 	upgrade.text = "Upgrade..." if level < max_level else "Max level"
@@ -950,7 +979,7 @@ func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://game/main.tscn")
 
 
-func _on_gardens_pressed() -> void:
+func _collect_trickle() -> void:
 	var amount := TrickleModel.collect(GameState.data, DataDefs.buildings, TimeUtil.now(), DataDefs.crew)
 	if amount > 0:
 		Economy.add("scrap", amount)

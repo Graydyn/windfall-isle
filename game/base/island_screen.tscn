@@ -108,20 +108,6 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CrewButton" type="Button" parent="."]
-offset_left = 290.0
-offset_top = 1160.0
-offset_right = 420.0
-offset_bottom = 1216.0
-text = "Crew"
-
-[node name="WorkshopButton" type="Button" parent="."]
-offset_left = 430.0
-offset_top = 1160.0
-offset_right = 560.0
-offset_bottom = 1216.0
-text = "Workshop"
-
 [node name="BackButton" type="Button" parent="."]
 offset_left = 10.0
 offset_top = 14.0

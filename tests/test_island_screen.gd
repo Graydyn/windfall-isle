@@ -115,13 +115,54 @@ func test_islet_sheet_hides_building_lore_labels() -> void:
 		"the shared sheet must not leak the last building's lore onto an islet")
 	assert_false(screen.get_node("PlotSheet/VBox/SheetDescription").visible)
 
-func test_gardens_collect_credits_scrap() -> void:
+func test_gardens_tap_collects_the_trickle() -> void:
 	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
 	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
+	screen._rebuild()
 	var scrap_before := Economy.balance("scrap")
-	screen._on_gardens_pressed()
+	screen._on_plot_tapped("plot_2")
 	assert_eq(Economy.balance("scrap"), scrap_before + 20)
 	assert_eq(TrickleModel.pending(GameState.data, DataDefs.buildings, TimeUtil.now()), 0)
+	assert_false(screen.get_node("PlotSheet").visible,
+		"the tap collects; the vanishing bubble is the receipt (owner request, 2026-10-17)")
+
+func test_gardens_tap_with_nothing_pending_opens_the_sheet() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now()
+	screen._rebuild()
+	screen._on_plot_tapped("plot_2")
+	assert_true(screen.get_node("PlotSheet").visible, "collected out: the next tap talks shop")
+
+func test_gardens_bubble_carries_the_pending_scrap() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
+	screen._rebuild()
+	assert_eq(String(screen._plot_state("plot_2", TimeUtil.now()).get("bubble", "")), "+20 scrap")
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now()
+	assert_eq(String(screen._plot_state("plot_2", TimeUtil.now()).get("bubble", "")), "",
+		"nothing pending, no bubble")
+
+func test_trickle_bubble_appears_on_a_plain_tick() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now()
+	screen._rebuild()
+	var node: IslandPlotNode = screen._plot_nodes["plot_2"]
+	assert_false(node._bubble.visible)
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
+	screen._refresh_tick()
+	assert_true(node._bubble.visible,
+		"pending scrap is not structural; the label refresh path must carry the bubble")
+
+func test_done_gardens_batch_outranks_the_trickle_on_one_tap() -> void:
+	GameState.data["island"]["plots"]["plot_2"] = {"building": "gardens", "level": 1}
+	GameState.data["trickle"]["last_collect"] = TimeUtil.now() - 3600
+	screen._rebuild()
+	screen._on_batch_start_pressed("gardens", "put_up_provisions")
+	TimerService._state.data["timers"]["convert_gardens"]["ends_at"] = 0
+	var scrap_before := Economy.balance("scrap")
+	screen._on_plot_tapped("plot_2")
+	assert_eq(Economy.balance("provisions"), 2, "the finished batch collects first")
+	assert_eq(Economy.balance("scrap"), scrap_before, "the trickle stays for the next tap")
 
 func test_crate_claims_once() -> void:
 	GameState.data["daily_crate"]["last_claim_day"] = 0
@@ -204,7 +245,7 @@ func test_crate_icons_float_only_while_claimable() -> void:
 	assert_false(screen.get_node("BonusCrateIcon").visible, "the ad crate obeys its daily limit")
 
 func test_the_hud_row_is_gone() -> void:
-	for gone in ["GardensButton", "CrateButton", "BonusCrateButton", "SlotButton"]:
+	for gone in ["GardensButton", "CrateButton", "BonusCrateButton", "SlotButton", "WorkshopButton", "CrewButton"]:
 		assert_null(screen.get_node_or_null(String(gone)),
 			"%s dissolved into the map (owner request, 2026-10-17)" % String(gone))
 
@@ -416,12 +457,6 @@ func open_crew_sheet() -> void:
 	screen._open_crew_sheet()
 
 
-func test_crew_button_opens_the_crew_sheet() -> void:
-	screen.get_node("CrewButton").pressed.emit()
-	assert_true(screen.get_node("CrewSheet").visible)
-	assert_true(screen.get_node("ModalBlock").visible, "the sheet dims the map behind it")
-
-
 func test_crew_sheet_lists_the_whole_cast() -> void:
 	open_crew_sheet()
 	assert_eq(screen.get_node("CrewSheet/VBox/CrewRows").get_child_count(),
@@ -509,7 +544,7 @@ func test_gardens_collect_pays_the_crewed_rate() -> void:
 	CrewModel.assign(GameState.data, DataDefs.crew, "gardens", "odo", DataDefs.buildings, now - 3600)
 	GameState.data["trickle"]["last_collect"] = now - 3600
 	var scrap_before := Economy.balance("scrap")
-	screen._on_gardens_pressed()
+	screen._on_plot_tapped("plot_2")
 	assert_eq(Economy.balance("scrap"), scrap_before + 30, "20/hour x 1.5 specialist")
 
 func with_smeltery(level: int) -> void:
@@ -571,6 +606,53 @@ func test_balloonworks_row_offers_all_three_recipes() -> void:
 	screen._on_batch_start_pressed("balloonworks", "storm_oil")
 	assert_true(TimerService.active_timers().has("convert_balloonworks"))
 	assert_eq(Economy.balance("parts"), 5 - 2)
+
+func test_workshop_bubble_counts_distinct_craftable_gizmos() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	GameState.data["currencies"]["parts"] = 2
+	screen._rebuild()
+	assert_eq(String(screen._plot_state("plot_0", TimeUtil.now()).get("bubble", "")), "3 craftable",
+		"2 parts afford wind_fan, balloon_cluster and cargo_net at workshop level 1")
+	GameState.data["currencies"]["parts"] = 0
+	assert_eq(String(screen._plot_state("plot_0", TimeUtil.now()).get("bubble", "")), "",
+		"no resources means no bubble, never a zero")
+
+func test_workshop_sheet_offers_the_enter_button() -> void:
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "workshop", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_0")
+	var first: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_eq(first.text, "Enter the workshop",
+		"the HUD Workshop button moved into the workshop's own sheet")
+
+func test_non_workshop_sheet_has_no_enter_button() -> void:
+	with_smeltery(1)
+	screen._on_plot_tapped("plot_1")
+	var first: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	assert_string_contains(first.text, "Upgrade")
+
+func test_crew_quarters_tap_opens_the_crew_sheet() -> void:
+	GameState.data["island"]["plots"]["plot_7"] = {"building": "crew_quarters", "level": 1}
+	screen._rebuild()
+	screen._on_plot_tapped("plot_7")
+	assert_true(screen.get_node("CrewSheet").visible,
+		"the quarters' sheet IS the crew sheet (owner request, 2026-10-17)")
+	assert_false(screen.get_node("PlotSheet").visible)
+
+func test_constructing_crew_quarters_tap_opens_the_plot_sheet() -> void:
+	screen._open_build_modal("plot_7")
+	while screen._modal_building() != "crew_quarters":
+		screen._on_modal_next_pressed()
+	screen._on_modal_confirm_pressed()
+	screen._on_plot_tapped("plot_7")
+	assert_true(screen.get_node("PlotSheet").visible, "a countdown, not a roster")
+	assert_false(screen.get_node("CrewSheet").visible)
+
+func test_built_plot_without_art_states_its_letter() -> void:
+	GameState.data["island"]["plots"]["plot_7"] = {"building": "crew_quarters", "level": 1}
+	screen._rebuild()
+	assert_eq(String(screen._plot_state("plot_7", TimeUtil.now()).get("letter", "")), "C",
+		"the lettered fallback carries the Crew Quarters until its art lands")
 
 func test_legacy_batch_payload_still_offers_a_plain_collect() -> void:
 	with_smeltery(1)
@@ -765,7 +847,7 @@ func test_sheet_upgrade_opens_the_locked_modal() -> void:
 	GameState.data["currencies"]["cloudsilk"] = 20
 	screen._rebuild()
 	screen._on_plot_tapped("plot_0")
-	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
+	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(1)
 	assert_eq(upgrade.text, "Upgrade...")
 	upgrade.pressed.emit()
 	assert_false(screen.get_node("PlotSheet").visible, "the sheet yields to the modal")
