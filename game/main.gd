@@ -21,6 +21,13 @@ func _ready() -> void:
 		$FuelRefillIcon.texture_normal = load("res://game/art/icons/fuel.png")
 	if ResourceLoader.exists("res://game/art/icons/ad_badge.png"):
 		$FuelRefillIcon/AdBadge.texture = load("res://game/art/icons/ad_badge.png")
+	if ResourceLoader.exists("res://game/art/ui/arrow_left.png"):
+		$RegionPrev.texture_normal = load("res://game/art/ui/arrow_left.png")
+		$RegionNext.texture_normal = load("res://game/art/ui/arrow_right.png")
+	ButtonStyle.apply(launch_button)
+	ButtonStyle.apply($IslandButton)
+	ButtonStyle.apply($AdModal/VBox/AdWatch, 210.0)
+	ButtonStyle.apply($AdModal/VBox/AdCancel, 210.0)
 	_refresh()
 
 

@@ -987,3 +987,7 @@ func test_back_arrow_and_resource_readout_sit_in_the_top_bar() -> void:
 	Economy.add("scrap", 5)
 	assert_eq(String(screen.get_node("ResourceBar/ScrapLabel").text), "2005",
 		"the readout follows balance changes live")
+
+func test_back_button_wears_the_painted_art() -> void:
+	assert_true(screen.get_node("BackButton").has_theme_stylebox_override("normal"),
+		"the one grey holdout on this screen")

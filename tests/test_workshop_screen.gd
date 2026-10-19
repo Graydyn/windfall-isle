@@ -198,3 +198,8 @@ func test_inflight_craft_on_a_now_locked_gizmo_still_collects() -> void:
 	screen._on_modal_action_pressed()
 	assert_eq(int(GameState.data["gizmos"]["owned"]["crystal_prism"]), 1,
 		"the craft the player already paid for completes")
+
+func test_buttons_wear_the_painted_art() -> void:
+	for path in ["BackButton", "CraftModal/VBox/ActionRow/ActionButton", "CraftModal/VBox/ActionRow/CloseButton"]:
+		assert_true(screen.get_node(path).has_theme_stylebox_override("normal"),
+			path + " uses ui/button.png, not the grey default")

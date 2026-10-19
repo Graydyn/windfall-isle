@@ -400,3 +400,10 @@ func test_reroll_press_with_no_candidates_consumes_nothing() -> void:
 	scene._on_reroll_pressed()
 	assert_eq(scene._free_rerolls, 1, "the wind charm survives a pointless reroll press")
 	assert_false(scene._offer_rerolled)
+
+func test_buttons_wear_the_painted_art() -> void:
+	for path in ["UI/AbandonButton", "UI/SetupUI/StartButton", "UI/SetupUI/BackButton",
+			"UI/Results/VBox/DoubleButton", "UI/Results/VBox/ReturnButton",
+			"UI/BoonOffer/VBox/Pick0", "UI/BoonOffer/VBox/RerollButton", "UI/BoonOffer/VBox/SkipButton"]:
+		assert_true(scene.get_node(path).has_theme_stylebox_override("normal"),
+			path + " uses ui/button.png, not the grey default")

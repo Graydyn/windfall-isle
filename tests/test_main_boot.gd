@@ -129,6 +129,15 @@ func test_region_label_is_readable() -> void:
 func test_region_emblem_is_gone() -> void:
 	assert_null(main.get_node_or_null("RegionEmblem"))
 
+func test_buttons_wear_the_painted_art() -> void:
+	for path in ["LaunchButton", "IslandButton", "AdModal/VBox/AdWatch", "AdModal/VBox/AdCancel"]:
+		assert_true(main.get_node(path).has_theme_stylebox_override("normal"),
+			path + " uses ui/button.png, not the grey default")
+
+func test_region_arrows_wear_the_arrow_art() -> void:
+	assert_string_contains(main.get_node("RegionPrev").texture_normal.resource_path, "arrow_left")
+	assert_string_contains(main.get_node("RegionNext").texture_normal.resource_path, "arrow_right")
+
 func test_launch_button_carries_the_fuel_cost() -> void:
 	main._refresh()
 	assert_string_contains(main.get_node("LaunchButton").text, "(1 fuel)")

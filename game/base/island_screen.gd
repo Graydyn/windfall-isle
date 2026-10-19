@@ -19,9 +19,6 @@ var _crew_rows: Dictionary = {}
 var _letter_islet := ""
 var _sheet_plot := ""
 var _sheet_islet := ""
-var _sheet_button_styles: Dictionary = {}
-
-const BUTTON_ART := "res://game/art/ui/button.png"
 
 
 func _ready() -> void:
@@ -55,13 +52,13 @@ func _ready() -> void:
 	$CrewSheet.visibility_changed.connect(_update_modal_block)
 	$RewardModal.visibility_changed.connect(_update_modal_block)
 	$RewardModal/VBox/RewardClose.pressed.connect(_on_reward_close_pressed)
-	_build_sheet_button_styles()
-	_style_sheet_button($PlotSheet/VBox/SheetClose)
-	_style_sheet_button($LetterPanel/VBox/LetterClose)
-	_style_sheet_button($CrewSheet/VBox/CrewClose)
+	ButtonStyle.apply($BackButton, 56.0)
+	ButtonStyle.apply($PlotSheet/VBox/SheetClose)
+	ButtonStyle.apply($LetterPanel/VBox/LetterClose)
+	ButtonStyle.apply($CrewSheet/VBox/CrewClose)
 	for path in ["NavRow/PrevButton", "NavRow/NextButton", "ActionRow/ConfirmButton", "ActionRow/CancelButton", "ModalSlotButton"]:
 		var modal_button: Button = $BuildModal/VBox.get_node(NodePath(path))
-		_style_sheet_button(modal_button, 210.0)
+		ButtonStyle.apply(modal_button, 210.0)
 		modal_button.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
 	_rebuild()
 
@@ -370,7 +367,7 @@ func _render_islet_sheet() -> void:
 	var restore := Button.new()
 	restore.text = "Restore (%s)" % _cost_text(islet.get("cost", {}))
 	restore.pressed.connect(_on_sheet_restore_pressed)
-	_style_sheet_button(restore)
+	ButtonStyle.apply(restore)
 	actions.add_child(restore)
 	_fit_sheet()
 
@@ -444,13 +441,13 @@ func _render_sheet() -> void:
 			var complete := Button.new()
 			complete.text = "Complete!"
 			complete.pressed.connect(_on_sheet_collect_pressed)
-			_style_sheet_button(complete)
+			ButtonStyle.apply(complete)
 			actions.add_child(complete)
 		elif Ads.service.is_available(AdService.Placement.TIMER_SKIP):
 			var skip := Button.new()
 			skip.text = "Skip (ad)"
 			skip.pressed.connect(_on_skip_pressed.bind(timer_id))
-			_style_sheet_button(skip)
+			ButtonStyle.apply(skip)
 			actions.add_child(skip)
 		_fit_sheet()
 		return
@@ -460,14 +457,14 @@ func _render_sheet() -> void:
 		var enter := Button.new()
 		enter.text = "Enter the workshop"
 		enter.pressed.connect(_on_workshop_pressed)
-		_style_sheet_button(enter)
+		ButtonStyle.apply(enter)
 		actions.add_child(enter)
 	var upgrade := Button.new()
 	var max_level := int(def.get("max_level", 1))
 	upgrade.text = "Upgrade..." if level < max_level else "Max level"
 	upgrade.disabled = level >= max_level
 	upgrade.pressed.connect(_on_sheet_upgrade_pressed)
-	_style_sheet_button(upgrade)
+	ButtonStyle.apply(upgrade)
 	actions.add_child(upgrade)
 	var convert_id := "convert_" + building
 	if TimerService.active_timers().has(convert_id):
@@ -477,7 +474,7 @@ func _render_sheet() -> void:
 			var batch := Button.new()
 			batch.text = "Collect (%s)" % _cost_text(outputs) if not outputs.is_empty() else "Collect"
 			batch.pressed.connect(_on_sheet_batch_collect_pressed.bind(building))
-			_style_sheet_button(batch)
+			ButtonStyle.apply(batch)
 			actions.add_child(batch)
 	else:
 		for recipe_v in ConvertModel.recipes(DataDefs.buildings, building):
@@ -486,7 +483,7 @@ func _render_sheet() -> void:
 			start_batch.text = _batch_button_text(building, recipe_id)
 			start_batch.disabled = not ConvertModel.can_start(GameState.data, DataDefs.buildings, Economy, TimerService, building, recipe_id)
 			start_batch.pressed.connect(_on_sheet_batch_start_pressed.bind(building, recipe_id))
-			_style_sheet_button(start_batch)
+			ButtonStyle.apply(start_batch)
 			actions.add_child(start_batch)
 	_fit_sheet()
 
@@ -498,50 +495,6 @@ func _set_sheet_lore(flavor: String, description: String) -> void:
 	$PlotSheet/VBox/SheetDescription.visible = description != ""
 
 
-func _build_sheet_button_styles() -> void:
-	# ui/button.png wired for the sheet's buttons (audit section 7); the
-	# full theme pass still owns the rest of the game's chrome.
-	if not ResourceLoader.exists(BUTTON_ART):
-		return
-	var art: Texture2D = load(BUTTON_ART)
-	var tints := {
-		"normal": Color.WHITE,
-		"hover": Color(1.06, 1.06, 1.06),
-		"pressed": Color(0.88, 0.88, 0.88),
-		"disabled": Color(0.72, 0.72, 0.72, 0.9),
-	}
-	for state in tints:
-		var style := StyleBoxTexture.new()
-		style.texture = art
-		# button.png is a small rounded square centered on a mostly
-		# transparent 384x112 canvas (jig centers its subjects), so the
-		# nine-patch must slice the PAINTED region, not the whole canvas,
-		# and its margins must stay under half the smallest drawn button.
-		style.region_rect = Rect2(136, 2, 112, 108)
-		style.texture_margin_left = 34.0
-		style.texture_margin_right = 34.0
-		style.texture_margin_top = 26.0
-		style.texture_margin_bottom = 30.0
-		style.set_content_margin_all(10.0)
-		style.content_margin_left = 24.0
-		style.content_margin_right = 24.0
-		style.modulate_color = tints[state]
-		_sheet_button_styles[String(state)] = style
-
-
-func _style_sheet_button(button: Button, min_width := 280.0) -> void:
-	if _sheet_button_styles.is_empty():
-		return
-	for state in _sheet_button_styles:
-		button.add_theme_stylebox_override(String(state), _sheet_button_styles[state])
-	button.add_theme_color_override("font_color", Color(0.12, 0.16, 0.3))
-	button.add_theme_color_override("font_hover_color", Color(0.12, 0.16, 0.3))
-	button.add_theme_color_override("font_pressed_color", Color(0.12, 0.16, 0.3))
-	button.add_theme_color_override("font_disabled_color", Color(0.12, 0.16, 0.3, 0.5))
-	# Pills hold a modest width and center; edge-to-edge buttons crowd the
-	# painted frame (owner request, 2026-10-16).
-	button.custom_minimum_size = Vector2(min_width, 60)
-	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 
 func _fit_modal() -> void:
@@ -618,7 +571,7 @@ func _render_crew_sheet() -> void:
 		assign.text = "Assign" if rescued else "Lost at sea"
 		assign.disabled = not rescued
 		assign.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_style_sheet_button(assign, 180.0)
+		ButtonStyle.apply(assign, 180.0)
 		assign.pressed.connect(_on_assign_pressed.bind(member_id))
 		row.add_child(assign)
 		rows.add_child(row)
@@ -683,7 +636,7 @@ func _show_reward(title: String, payout: Dictionary) -> void:
 	var picture: TextureRect = $RewardModal/VBox/RewardPicture
 	picture.texture = load(art_path) if ResourceLoader.exists(art_path) else null
 	picture.visible = picture.texture != null
-	_style_sheet_button($RewardModal/VBox/RewardClose, 240.0)
+	ButtonStyle.apply($RewardModal/VBox/RewardClose, 240.0)
 	$RewardModal.visible = true
 	_fit_reward_modal()
 

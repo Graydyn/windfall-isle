@@ -23,6 +23,9 @@ func _ready() -> void:
 	$RefreshTimer.timeout.connect(_refresh_tick)
 	$CraftModal/VBox/ActionRow/ActionButton.pressed.connect(_on_modal_action_pressed)
 	$CraftModal/VBox/ActionRow/CloseButton.pressed.connect(_on_modal_close_pressed)
+	ButtonStyle.apply($BackButton, 56.0)
+	ButtonStyle.apply($CraftModal/VBox/ActionRow/ActionButton, 210.0)
+	ButtonStyle.apply($CraftModal/VBox/ActionRow/CloseButton, 210.0)
 	_rebuild()
 
 

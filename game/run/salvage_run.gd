@@ -65,6 +65,18 @@ func _ready() -> void:
 		(panel as PanelContainer).add_theme_stylebox_override("panel", _opaque_panel_style())
 	$UI/SetupUI/StartButton.pressed.connect(_on_start_pressed)
 	$UI/SetupUI/BackButton.pressed.connect(_on_setup_back_pressed)
+	# AbandonButton keeps its slim top-right footprint; the pill's 60 px
+	# minimum height would push it over the HUD row.
+	ButtonStyle.apply($UI/AbandonButton, 140.0)
+	$UI/AbandonButton.custom_minimum_size = Vector2(140, 40)
+	ButtonStyle.apply($UI/SetupUI/StartButton)
+	ButtonStyle.apply($UI/SetupUI/BackButton)
+	ButtonStyle.apply($UI/Results/VBox/DoubleButton)
+	ButtonStyle.apply($UI/Results/VBox/ReturnButton)
+	for pick in [$UI/BoonOffer/VBox/Pick0, $UI/BoonOffer/VBox/Pick1, $UI/BoonOffer/VBox/Pick2]:
+		ButtonStyle.apply(pick)
+	ButtonStyle.apply($UI/BoonOffer/VBox/RerollButton, 210.0)
+	ButtonStyle.apply($UI/BoonOffer/VBox/SkipButton, 210.0)
 	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)
 	_setup_tick()
 	_build_setup_ui(region)
