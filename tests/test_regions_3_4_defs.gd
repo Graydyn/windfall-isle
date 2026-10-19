@@ -26,13 +26,13 @@ func test_region_rows_are_pinned() -> void:
 	assert_eq(int(r3.get("min_dock_level", 0)), 3)
 	assert_eq(int(r3.get("fuel_cost", 0)), 3)
 	assert_eq(int(r3.get("reduced_fuel_cost", 0)), 2)
-	assert_eq(int(r3.get("reduced_at_dock_level", 0)), 4)
+	assert_eq(int(r3.get("reduced_at_observatory_level", 0)), 2)
 	var r4: Dictionary = RegionModel.entry(DataDefs.run, "region_4")
 	assert_eq(String(r4.get("name", "")), "Stormglass Verge")
 	assert_eq(int(r4.get("min_dock_level", 0)), 4)
 	assert_eq(int(r4.get("fuel_cost", 0)), 3)
 	assert_false(r4.has("reduced_fuel_cost"),
-		"no reduction row until a dock level 5 exists (spec section 8)")
+		"no reduction row until an observatory level 3 exists (spec section 8)")
 
 
 func test_dock_gating_truth_table() -> void:
@@ -54,11 +54,15 @@ func test_dock_gating_truth_table() -> void:
 				"dock lv %d vs %s" % [int(dock_level), String(region_id)])
 
 
-func test_region_3_fuel_discount_at_dock_four() -> void:
+func test_region_3_fuel_discount_at_observatory_two() -> void:
 	var entry := RegionModel.entry(DataDefs.run, "region_3")
-	var island := {"plots": {"plot_0": {"building": "dock", "level": 3}}, "build_slots": 1}
-	assert_eq(RegionModel.fuel_cost(entry, island), 3)
-	(island["plots"]["plot_0"] as Dictionary)["level"] = 4
+	var island := {"plots": {
+		"plot_0": {"building": "dock", "level": 4},
+		"plot_3": {"building": "observatory", "level": 1},
+	}, "build_slots": 1}
+	assert_eq(RegionModel.fuel_cost(entry, island), 3,
+		"observatory level 1 only discounts region 2")
+	(island["plots"]["plot_3"] as Dictionary)["level"] = 2
 	assert_eq(RegionModel.fuel_cost(entry, island), 2)
 
 

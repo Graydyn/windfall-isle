@@ -354,7 +354,7 @@ func test_upgrade_opens_a_locked_modal() -> void:
 	assert_eq(Economy.balance("scrap"), 2000 - 240)
 
 func test_max_level_disables_the_confirm() -> void:
-	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 2}
 	screen._rebuild()
 	screen._open_build_modal("plot_3")
 	assert_true(screen.get_node("BuildModal/VBox/ActionRow/ConfirmButton").disabled)
@@ -668,8 +668,11 @@ func test_modal_stats_are_computed_from_the_defs() -> void:
 		"• +1 fuel cap per level\n• 120s faster fuel regen per level")
 	assert_eq(screen._stats_text("workshop", defs["workshop"]), "• 1 craft slot per level")
 	assert_eq(screen._stats_text("lens_array", defs["lens_array"]), "• +5% expedition payout per level")
-	assert_eq(screen._stats_text("observatory", defs["observatory"]), "",
-		"the observatory is deliberately all flavor")
+	assert_eq(screen._stats_text("observatory", defs["observatory"]),
+		"• Lv 1: Brasswork Reach fuel 2 -> 1\n• Lv 2: Rimefall Shallows fuel 3 -> 2",
+		"the observatory's discounts come straight from the region rows")
+	assert_eq(screen._stats_text("dock", defs["dock"]), "",
+		"the dock's unlocks live in the region rows, its modal stays flavor")
 	assert_eq(screen._stats_text("gardens", defs["gardens"]),
 		"• 20 scrap per hour per level, banks up to 8h\n• Makes: Put up provisions (free -> 2 provisions, 60m)\n• Batch outputs scale with building level")
 	assert_eq(screen._stats_text("smeltery", defs["smeltery"]),
@@ -691,9 +694,9 @@ func test_modal_renders_the_stats_line() -> void:
 	assert_string_contains(String(screen.get_node("BuildModal/VBox/ModalStats").text), "fuel cap")
 
 func test_stats_hide_when_a_building_has_none() -> void:
-	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	GameState.data["island"]["plots"]["plot_0"] = {"building": "dock", "level": 1}
 	screen._rebuild()
-	screen._open_build_modal("plot_3")
+	screen._open_build_modal("plot_0")
 	assert_false(screen.get_node("BuildModal/VBox/ModalStats").visible)
 
 func test_flavor_reads_as_a_different_voice() -> void:
@@ -857,7 +860,7 @@ func test_sheet_upgrade_opens_the_locked_modal() -> void:
 
 
 func test_sheet_max_level_disables_upgrade() -> void:
-	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
+	GameState.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 2}
 	screen._rebuild()
 	screen._on_plot_tapped("plot_3")
 	var upgrade: Button = screen.get_node("PlotSheet/VBox/SheetActions").get_child(0)
@@ -973,3 +976,14 @@ func test_sheet_panel_nine_slices_only_the_painted_art() -> void:
 		assert_eq(style.region_rect, used, "%s panel 9-slice starts from the painted art" % node_path)
 		assert_eq(style.texture_margin_left, style.texture_margin_right,
 			"%s frame slices stay symmetric so content centers in the frame" % node_path)
+
+
+func test_back_arrow_and_resource_readout_sit_in_the_top_bar() -> void:
+	assert_eq(String(screen.get_node("BackButton").text), "←", "back shrinks to a small arrow")
+	assert_not_null(screen.get_node("ResourceBar/ScrapIcon").texture, "scrap icon art")
+	assert_not_null(screen.get_node("ResourceBar/CloudsilkIcon").texture, "cloudsilk icon art")
+	assert_eq(String(screen.get_node("ResourceBar/ScrapLabel").text), "2000")
+	assert_eq(String(screen.get_node("ResourceBar/CloudsilkLabel").text), "0")
+	Economy.add("scrap", 5)
+	assert_eq(String(screen.get_node("ResourceBar/ScrapLabel").text), "2005",
+		"the readout follows balance changes live")

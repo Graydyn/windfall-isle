@@ -36,6 +36,12 @@ func _ready() -> void:
 		$BonusCrateIcon.texture_normal = load("res://game/art/icons/bonus_crate.png")
 	if ResourceLoader.exists("res://game/art/icons/ad_badge.png"):
 		$BonusCrateIcon/AdBadge.texture = load("res://game/art/icons/ad_badge.png")
+	if ResourceLoader.exists("res://game/art/icons/scrap.png"):
+		$ResourceBar/ScrapIcon.texture = load("res://game/art/icons/scrap.png")
+	if ResourceLoader.exists("res://game/art/icons/cloudsilk.png"):
+		$ResourceBar/CloudsilkIcon.texture = load("res://game/art/icons/cloudsilk.png")
+	Economy.balance_changed.connect(_on_balance_changed)
+	_refresh_balances()
 	$LetterPanel/VBox/LetterClose.pressed.connect(_on_letter_close_pressed)
 	$BuildModal/VBox/NavRow/PrevButton.pressed.connect(_on_modal_prev_pressed)
 	$BuildModal/VBox/NavRow/NextButton.pressed.connect(_on_modal_next_pressed)
@@ -777,10 +783,20 @@ func _render_modal() -> void:
 func _stats_text(building_id: String, def: Dictionary) -> String:
 	# Concrete numbers straight from the def (owner request, 2026-09-11): the
 	# line can never drift from the data because it IS the data. Buildings
-	# whose whole effect is narrative (observatory, dock) return "".
+	# whose whole effect is narrative (dock) return "".
 	var lines := PackedStringArray()
 	if building_id == "workshop":
 		lines.append("• 1 craft slot per level")
+	if building_id == "observatory":
+		for region_v in (DataDefs.run.get("regions", []) as Array):
+			var region := region_v as Dictionary
+			if region.has("reduced_fuel_cost") and region.has("reduced_at_observatory_level"):
+				lines.append("• Lv %d: %s fuel %d -> %d" % [
+					int(region["reduced_at_observatory_level"]),
+					String(region.get("name", region.get("id", ""))),
+					int(region.get("fuel_cost", 1)),
+					int(region["reduced_fuel_cost"]),
+				])
 	if def.has("fuel_cap_bonus_per_level"):
 		lines.append("• +%d fuel cap per level" % int(def["fuel_cap_bonus_per_level"]))
 	if def.has("regen_delta_per_level"):
@@ -977,6 +993,15 @@ func _on_workshop_pressed() -> void:
 func _on_back_pressed() -> void:
 	GameState.save_game()
 	get_tree().change_scene_to_file("res://game/main.tscn")
+
+
+func _on_balance_changed(_currency: String, _amount: int) -> void:
+	_refresh_balances()
+
+
+func _refresh_balances() -> void:
+	$ResourceBar/ScrapLabel.text = str(Economy.balance("scrap"))
+	$ResourceBar/CloudsilkLabel.text = str(Economy.balance("cloudsilk"))
 
 
 func _collect_trickle() -> void:

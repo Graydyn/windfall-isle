@@ -78,7 +78,10 @@ func test_dock_unlock_to_brass_craft_flywheel() -> void:
 	assert_eq(String((reloaded["expedition"] as Dictionary)["region"]), "region_2")
 	assert_eq(String(((reloaded["gizmos"]["loadout"] as Dictionary)["region_2"] as Dictionary)["slot_4"]), "gyro_damper")
 
-func test_dock_level_2_discount_end_to_end() -> void:
+func test_observatory_discount_end_to_end() -> void:
 	state.data["island"]["plots"]["plot_0"] = {"building": "dock", "level": 2}
+	assert_eq(RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, "region_2"), state.data["island"]), 2,
+		"the Dock alone no longer discounts fuel")
+	state.data["island"]["plots"]["plot_3"] = {"building": "observatory", "level": 1}
 	assert_eq(RegionModel.fuel_cost(RegionModel.entry(DataDefs.run, "region_2"), state.data["island"]), 1,
-		"spec 4.1: higher Dock levels reduce expedition fuel costs")
+		"spec 4.1: the Observatory reduces expedition fuel costs")

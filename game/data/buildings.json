@@ -67,7 +67,7 @@
 		"dock": {
 			"name": "Dock",
 			"flavor": "Every horizon needs somewhere to leave from.",
-			"description": "Opens expeditions to farther regions; higher levels cut their fuel cost.",
+			"description": "Opens expeditions to farther regions as it grows.",
 			"max_level": 4,
 			"levels": [
 				{
@@ -163,8 +163,8 @@
 		"observatory": {
 			"name": "Observatory",
 			"flavor": "The clouds keep their secrets badly.",
-			"description": "Charts the winds and reveals what waits beyond the known skies.",
-			"max_level": 1,
+			"description": "Charts the winds to cut expedition fuel costs, and its sheet carries word of the next region waiting out in the clouds.",
+			"max_level": 2,
 			"teaser": "Charted winds hint at the Brasswork Reach beyond the eastern clouds.",
 			"levels": [
 				{
@@ -173,6 +173,13 @@
 						"crystals": 2
 					},
 					"build_seconds": 300
+				},
+				{
+					"cost": {
+						"scrap": 1200,
+						"brasswork": 4
+					},
+					"build_seconds": 3600
 				}
 			]
 		},

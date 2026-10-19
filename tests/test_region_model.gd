@@ -5,7 +5,7 @@ const RUN_DEFS := {
 	"regions": [
 		{"id": "region_1", "name": "Home Skies", "fuel_cost": 1, "min_dock_level": 0},
 		{"id": "region_2", "name": "Brasswork Reach", "fuel_cost": 2, "min_dock_level": 1,
-			"reduced_fuel_cost": 1, "reduced_at_dock_level": 2},
+			"reduced_fuel_cost": 1, "reduced_at_observatory_level": 1},
 	],
 }
 
@@ -14,6 +14,13 @@ func island_with_dock(level: int) -> Dictionary:
 	if level <= 0:
 		return {"plots": {}, "build_slots": 1}
 	return {"plots": {"plot_0": {"building": "dock", "level": level}}, "build_slots": 1}
+
+
+func island_with_dock_and_observatory(dock_level: int, observatory_level: int) -> Dictionary:
+	var island := island_with_dock(dock_level)
+	if observatory_level > 0:
+		island["plots"]["plot_3"] = {"building": "observatory", "level": observatory_level}
+	return island
 
 
 func test_region_1_is_always_unlocked_at_one_fuel() -> void:
@@ -28,11 +35,17 @@ func test_region_2_needs_the_dock() -> void:
 	assert_true(RegionModel.unlocked(entry, island_with_dock(1)),
 		"spec 4.1: the Dock unlocks new skyfield regions")
 
-func test_dock_level_2_reduces_region_2_fuel_cost() -> void:
+func test_observatory_reduces_region_2_fuel_cost() -> void:
 	var entry: Dictionary = RUN_DEFS["regions"][1]
-	assert_eq(RegionModel.fuel_cost(entry, island_with_dock(1)), 2)
-	assert_eq(RegionModel.fuel_cost(entry, island_with_dock(2)), 1,
-		"spec 4.1: higher Dock levels reduce expedition fuel costs")
+	assert_eq(RegionModel.fuel_cost(entry, island_with_dock(1)), 2,
+		"no Observatory, no discount")
+	assert_eq(RegionModel.fuel_cost(entry, island_with_dock_and_observatory(1, 1)), 1,
+		"the Observatory charts the winds and cuts expedition fuel costs")
+
+func test_dock_level_alone_no_longer_discounts_fuel() -> void:
+	var entry: Dictionary = RUN_DEFS["regions"][1]
+	assert_eq(RegionModel.fuel_cost(entry, island_with_dock(4)), 2,
+		"fuel discounts moved from the Dock to the Observatory")
 
 func test_unlocked_entries_keep_declared_order() -> void:
 	var locked := RegionModel.unlocked_entries(RUN_DEFS, island_with_dock(0))
@@ -69,8 +82,16 @@ func test_shipped_run_defs_carry_both_regions() -> void:
 	assert_eq(String((regions[1] as Dictionary)["id"]), "region_2")
 	assert_eq(int((regions[1] as Dictionary)["fuel_cost"]), 2)
 	assert_eq(int((regions[1] as Dictionary)["min_dock_level"]), 1)
+	assert_eq(int((regions[1] as Dictionary)["reduced_at_observatory_level"]), 1,
+		"the Observatory, not the Dock, discounts fuel")
 	assert_eq(String((regions[2] as Dictionary)["id"]), "region_3")
 	assert_eq(String((regions[3] as Dictionary)["id"]), "region_4")
+
+func test_shipped_observatory_reaches_level_two() -> void:
+	var observatory: Dictionary = (DataDefs.buildings["defs"] as Dictionary)["observatory"]
+	assert_eq(int(observatory.get("max_level", 0)), 2,
+		"one level per fuel discount tier (regions 2 and 3)")
+	assert_eq((observatory.get("levels", []) as Array).size(), 2)
 
 func test_selected_id_tolerates_a_wrong_typed_expedition_section() -> void:
 	assert_eq(RegionModel.selected_id({"expedition": "region_2"}, RUN_DEFS, island_with_dock(2)), "region_1",
@@ -81,6 +102,16 @@ func test_next_region_id_cycles_unlocked_regions_in_order() -> void:
 		"nothing to cycle to without a Dock")
 	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_1"), "region_2")
 	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_2"), "region_1", "wraps")
+
+func test_prev_region_id_cycles_unlocked_regions_in_reverse() -> void:
+	assert_eq(RegionModel.prev_region_id(RUN_DEFS, island_with_dock(0), "region_1"), "region_1",
+		"no cycle with a single unlocked region")
+	assert_eq(RegionModel.prev_region_id(RUN_DEFS, island_with_dock(1), "region_2"), "region_1")
+	assert_eq(RegionModel.prev_region_id(RUN_DEFS, island_with_dock(1), "region_1"), "region_2", "wraps")
+
+func test_prev_region_id_recovers_an_unknown_current() -> void:
+	assert_eq(RegionModel.prev_region_id(RUN_DEFS, island_with_dock(1), "region_9"), "region_2",
+		"an unknown current id steps from the top of the list")
 
 func test_next_region_id_recovers_an_unknown_current() -> void:
 	assert_eq(RegionModel.next_region_id(RUN_DEFS, island_with_dock(1), "region_9"), "region_2",

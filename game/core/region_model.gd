@@ -1,6 +1,6 @@
 class_name RegionModel
 ## Pure region rules (spec 3.4, 4.1): unlock by Dock level, per-region fuel
-## cost with the Dock's level-2 discount, and the persisted-selection
+## cost with the Observatory's discount, and the persisted-selection
 ## fallback. FuelModel pattern: defs in, values out, no nodes, no clock.
 
 const FALLBACK_ID := "region_1"
@@ -12,8 +12,8 @@ static func unlocked(region_entry: Dictionary, island: Dictionary) -> bool:
 
 static func fuel_cost(region_entry: Dictionary, island: Dictionary) -> int:
 	var cost := int(region_entry.get("fuel_cost", 1))
-	if region_entry.has("reduced_fuel_cost") and region_entry.has("reduced_at_dock_level") \
-			and IslandModel.building_level(island, "dock") >= int(region_entry["reduced_at_dock_level"]):
+	if region_entry.has("reduced_fuel_cost") and region_entry.has("reduced_at_observatory_level") \
+			and IslandModel.building_level(island, "observatory") >= int(region_entry["reduced_at_observatory_level"]):
 		cost = int(region_entry["reduced_fuel_cost"])
 	return cost
 
@@ -50,6 +50,16 @@ static func selected_id(data: Dictionary, run_defs: Dictionary, island: Dictiona
 static func next_region_id(run_defs: Dictionary, island: Dictionary, current_id: String) -> String:
 	# Cycle helper shared by the launcher and loadout screens: the next
 	# unlocked id in declared order, or current_id when there is no cycle.
+	return _cycled_id(run_defs, island, current_id, 1)
+
+
+static func prev_region_id(run_defs: Dictionary, island: Dictionary, current_id: String) -> String:
+	# Mirror of next_region_id for the launcher's left arrow: the previous
+	# unlocked id in declared order, wrapping past the front.
+	return _cycled_id(run_defs, island, current_id, -1)
+
+
+static func _cycled_id(run_defs: Dictionary, island: Dictionary, current_id: String, step: int) -> String:
 	var entries := unlocked_entries(run_defs, island)
 	if entries.size() <= 1:
 		return current_id
@@ -58,7 +68,7 @@ static func next_region_id(run_defs: Dictionary, island: Dictionary, current_id:
 		if String((entries[i] as Dictionary).get("id", "")) == current_id:
 			index = i
 			break
-	return String((entries[(index + 1) % entries.size()] as Dictionary).get("id", FALLBACK_ID))
+	return String((entries[posmod(index + step, entries.size())] as Dictionary).get("id", FALLBACK_ID))
 
 
 static func _entries(run_defs: Dictionary) -> Array:

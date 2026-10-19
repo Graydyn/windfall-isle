@@ -3,14 +3,14 @@
 	"regions": [
 		{"id": "region_1", "name": "Home Skies", "fuel_cost": 1, "min_dock_level": 0},
 		{"id": "region_2", "name": "Brasswork Reach", "fuel_cost": 2, "min_dock_level": 1,
-			"reduced_fuel_cost": 1, "reduced_at_dock_level": 2},
+			"reduced_fuel_cost": 1, "reduced_at_observatory_level": 1},
 		{
 			"id": "region_3",
 			"name": "Rimefall Shallows",
 			"fuel_cost": 3,
 			"min_dock_level": 3,
 			"reduced_fuel_cost": 2,
-			"reduced_at_dock_level": 4
+			"reduced_at_observatory_level": 2
 		},
 		{
 			"id": "region_4",

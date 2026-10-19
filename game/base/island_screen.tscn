@@ -111,9 +111,44 @@ stretch_mode = 5
 [node name="BackButton" type="Button" parent="."]
 offset_left = 10.0
 offset_top = 14.0
-offset_right = 150.0
+offset_right = 66.0
 offset_bottom = 70.0
-text = "Back"
+theme_override_font_sizes/font_size = 28
+text = "←"
+
+[node name="ResourceBar" type="HBoxContainer" parent="."]
+offset_left = 78.0
+offset_top = 14.0
+offset_right = 560.0
+offset_bottom = 70.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="ScrapIcon" type="TextureRect" parent="ResourceBar"]
+custom_minimum_size = Vector2(40, 40)
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ScrapLabel" type="Label" parent="ResourceBar"]
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 24
+
+[node name="PairGap" type="Control" parent="ResourceBar"]
+custom_minimum_size = Vector2(14, 0)
+mouse_filter = 2
+
+[node name="CloudsilkIcon" type="TextureRect" parent="ResourceBar"]
+custom_minimum_size = Vector2(40, 40)
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloudsilkLabel" type="Label" parent="ResourceBar"]
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 24
 
 [node name="ModalBlock" type="ColorRect" parent="."]
 visible = false

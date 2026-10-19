@@ -1,6 +1,19 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/main.gd" id="1_main"]
+[ext_resource type="Texture2D" path="res://game/art/ui/panel.png" id="2_panel"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sheet"]
+texture = ExtResource("2_panel")
+region_rect = Rect2(17, 27, 452, 463)
+texture_margin_left = 64.0
+texture_margin_top = 64.0
+texture_margin_right = 64.0
+texture_margin_bottom = 64.0
+content_margin_left = 116.0
+content_margin_top = 82.0
+content_margin_right = 116.0
+content_margin_bottom = 96.0
 
 [node name="Main" type="Control"]
 anchors_preset = 15
@@ -8,18 +21,76 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_main")
 
-[node name="DebugLabel" type="Label" parent="."]
-offset_left = 24.0
-offset_top = 48.0
-offset_right = 500.0
-offset_bottom = 300.0
+[node name="RegionBackground" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
 
-[node name="LaunchButton" type="Button" parent="."]
-offset_left = 160.0
-offset_top = 1080.0
-offset_right = 560.0
-offset_bottom = 1160.0
-text = "Launch Expedition"
+[node name="FuelRow" type="HBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 40.0
+offset_right = 400.0
+offset_bottom = 96.0
+theme_override_constants/separation = 10
+
+[node name="FuelIcon" type="TextureRect" parent="FuelRow"]
+custom_minimum_size = Vector2(52, 52)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FuelLabel" type="Label" parent="FuelRow"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_colors/font_outline_color = Color(0.96, 0.93, 0.85, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+vertical_alignment = 1
+
+[node name="FuelRefillIcon" type="TextureButton" parent="."]
+visible = false
+offset_left = 24.0
+offset_top = 108.0
+offset_right = 92.0
+offset_bottom = 176.0
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="AdBadge" type="TextureRect" parent="FuelRefillIcon"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 68.0
+offset_bottom = 68.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RegionLabel" type="Label" parent="."]
+offset_left = 60.0
+offset_top = 420.0
+offset_right = 660.0
+offset_bottom = 480.0
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_colors/font_outline_color = Color(0.96, 0.93, 0.85, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 44
+horizontal_alignment = 1
+text = "Region"
+
+[node name="RegionPrev" type="Button" parent="."]
+offset_left = 16.0
+offset_top = 600.0
+offset_right = 80.0
+offset_bottom = 680.0
+text = "<"
+
+[node name="RegionNext" type="Button" parent="."]
+offset_left = 640.0
+offset_top = 600.0
+offset_right = 704.0
+offset_bottom = 680.0
+text = ">"
 
 [node name="IslandButton" type="Button" parent="."]
 offset_left = 160.0
@@ -28,21 +99,50 @@ offset_right = 560.0
 offset_bottom = 960.0
 text = "Island"
 
-[node name="RegionButton" type="Button" parent="."]
+[node name="LaunchButton" type="Button" parent="."]
 offset_left = 160.0
-offset_top = 720.0
+offset_top = 1080.0
 offset_right = 560.0
-offset_bottom = 780.0
-theme_override_constants/icon_max_width = 48
-text = "Region"
-
-[node name="RefillButton" type="Button" parent="."]
-offset_left = 160.0
-offset_top = 800.0
-offset_right = 560.0
-offset_bottom = 860.0
-text = "Refill fuel (ad)"
+offset_bottom = 1160.0
+text = "Launch Expedition"
 
 [node name="RefreshTimer" type="Timer" parent="."]
 wait_time = 1.0
 autostart = true
+
+[node name="ModalBlock" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.45)
+
+[node name="AdModal" type="PanelContainer" parent="."]
+visible = false
+offset_left = 36.0
+offset_top = 440.0
+offset_right = 684.0
+offset_bottom = 840.0
+theme_override_styles/panel = SubResource("StyleBoxTexture_sheet")
+
+[node name="VBox" type="VBoxContainer" parent="AdModal"]
+theme_override_constants/separation = 12
+
+[node name="AdTitle" type="Label" parent="AdModal/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+text = "Refill fuel"
+
+[node name="AdBody" type="Label" parent="AdModal/VBox"]
+theme_override_colors/font_color = Color(0.13, 0.17, 0.32, 1)
+custom_minimum_size = Vector2(400, 0)
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "Watch a short ad to refill your fuel tank to full."
+
+[node name="AdWatch" type="Button" parent="AdModal/VBox"]
+text = "Watch ad"
+
+[node name="AdCancel" type="Button" parent="AdModal/VBox"]
+text = "Not now"
