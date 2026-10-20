@@ -73,8 +73,14 @@ func _ready() -> void:
 	ButtonStyle.apply($UI/SetupUI/BackButton)
 	ButtonStyle.apply($UI/Results/VBox/DoubleButton)
 	ButtonStyle.apply($UI/Results/VBox/ReturnButton)
+	# Pick buttons hold two lines (name + description) of varying length, so
+	# they get one fixed footprint with wrapped, centered text instead of the
+	# pill's shrink-to-text default.
 	for pick in [$UI/BoonOffer/VBox/Pick0, $UI/BoonOffer/VBox/Pick1, $UI/BoonOffer/VBox/Pick2]:
-		ButtonStyle.apply(pick)
+		ButtonStyle.apply(pick, 560.0)
+		pick.custom_minimum_size = Vector2(560, 110)
+		pick.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		pick.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ButtonStyle.apply($UI/BoonOffer/VBox/RerollButton, 210.0)
 	ButtonStyle.apply($UI/BoonOffer/VBox/SkipButton, 210.0)
 	$UI/SetupUI/SetupRefreshTimer.timeout.connect(_setup_tick)

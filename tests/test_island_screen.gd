@@ -979,7 +979,8 @@ func test_sheet_panel_nine_slices_only_the_painted_art() -> void:
 
 
 func test_back_arrow_and_resource_readout_sit_in_the_top_bar() -> void:
-	assert_eq(String(screen.get_node("BackButton").text), "←", "back shrinks to a small arrow")
+	assert_not_null(screen.get_node("BackButton").texture_normal,
+		"back wears the main menu's left-arrow art")
 	assert_not_null(screen.get_node("ResourceBar/ScrapIcon").texture, "scrap icon art")
 	assert_not_null(screen.get_node("ResourceBar/CloudsilkIcon").texture, "cloudsilk icon art")
 	assert_eq(String(screen.get_node("ResourceBar/ScrapLabel").text), "2000")
@@ -989,5 +990,7 @@ func test_back_arrow_and_resource_readout_sit_in_the_top_bar() -> void:
 		"the readout follows balance changes live")
 
 func test_back_button_wears_the_painted_art() -> void:
-	assert_true(screen.get_node("BackButton").has_theme_stylebox_override("normal"),
-		"the one grey holdout on this screen")
+	var tex: Texture2D = screen.get_node("BackButton").texture_normal
+	assert_not_null(tex, "back button carries arrow art, not the grey Button chrome")
+	assert_eq(tex.resource_path, "res://game/art/ui/arrow_left.png",
+		"back reuses the main menu's region arrow")

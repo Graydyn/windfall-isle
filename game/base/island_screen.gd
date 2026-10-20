@@ -23,6 +23,8 @@ var _sheet_islet := ""
 
 func _ready() -> void:
 	$BackButton.pressed.connect(_on_back_pressed)
+	if ResourceLoader.exists("res://game/art/ui/arrow_left.png"):
+		$BackButton.texture_normal = load("res://game/art/ui/arrow_left.png")
 	$RefreshTimer.timeout.connect(_refresh_tick)
 	$DailyCrateIcon.pressed.connect(_on_crate_pressed)
 	$BonusCrateIcon.pressed.connect(_on_bonus_crate_pressed)
@@ -52,7 +54,6 @@ func _ready() -> void:
 	$CrewSheet.visibility_changed.connect(_update_modal_block)
 	$RewardModal.visibility_changed.connect(_update_modal_block)
 	$RewardModal/VBox/RewardClose.pressed.connect(_on_reward_close_pressed)
-	ButtonStyle.apply($BackButton, 56.0)
 	ButtonStyle.apply($PlotSheet/VBox/SheetClose)
 	ButtonStyle.apply($LetterPanel/VBox/LetterClose)
 	ButtonStyle.apply($CrewSheet/VBox/CrewClose)

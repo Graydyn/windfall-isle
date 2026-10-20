@@ -29,7 +29,7 @@
 		"balloon_cluster": {
 			"name": "Balloon Cluster",
 			"rarity": "common",
-			"description": "A bundle of balloons that bounces the pod upward. Pops after a few hits.",
+			"description": "A bundle of balloons that bounces the pod up and away. Pops after a few hits.",
 			"scene": "res://game/run/gizmos/balloon_cluster.tscn",
 			"impulse": 420.0,
 			"max_hits": 3,

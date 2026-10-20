@@ -56,6 +56,8 @@ offset_bottom = 780.0
 
 [node name="Title" type="Label" parent="UI/BoonOffer/VBox"]
 text = "The winds favor you. Choose a boon:"
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
 
 [node name="Pick0" type="Button" parent="UI/BoonOffer/VBox"]
 

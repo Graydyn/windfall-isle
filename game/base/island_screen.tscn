@@ -108,13 +108,13 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" type="TextureButton" parent="."]
 offset_left = 10.0
-offset_top = 14.0
+offset_top = 7.0
 offset_right = 66.0
-offset_bottom = 70.0
-theme_override_font_sizes/font_size = 28
-text = "←"
+offset_bottom = 77.0
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="ResourceBar" type="HBoxContainer" parent="."]
 offset_left = 78.0

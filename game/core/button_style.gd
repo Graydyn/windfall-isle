@@ -49,5 +49,10 @@ static func _build() -> void:
 		style.set_content_margin_all(10.0)
 		style.content_margin_left = 24.0
 		style.content_margin_right = 24.0
+		# The pill's rounded border eats into the top and bottom of the content
+		# box, so multi-line text needs extra clearance there (the bottom gets
+		# more because the art carries a drop shadow below the visual center).
+		style.content_margin_top = 14.0
+		style.content_margin_bottom = 18.0
 		style.modulate_color = tints[state]
 		_styles[String(state)] = style
